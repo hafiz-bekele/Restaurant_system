@@ -1,0 +1,139 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
+use App\Events\OrderPlaced;
+use App\Events\OrderStatusChanged;
+use App\Models\Cart;
+use App\Models\Coupon;
+use App\Models\CouponUsage;
+use App\Models\Order;
+use App\Models\OrderStatusHistory;
+use Illuminate\Support\Facades\DB;
+
+class OrderService
+{
+    public function __construct(private readonly CartService $cartService) {}
+
+    public function createFromCart(Cart $cart, array $data, string $idempotencyKey): Order
+    {
+        // Check for duplicate submission
+        $existing = Order::where('idempotency_key', $idempotencyKey)->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $deliveryFee = (float) ($data['delivery_fee'] ?? 0);
+        $totals = $this->cartService->calculateTotals($cart, $deliveryFee);
+
+        return DB::transaction(function () use ($cart, $data, $idempotencyKey, $totals) {
+            $order = Order::create([
+                'user_id' => $cart->user_id,
+                'table_id' => $data['table_id'] ?? null,
+                'delivery_zone_id' => $data['delivery_zone_id'] ?? null,
+                'type' => $data['type'],
+                'status' => OrderStatus::Pending,
+                'subtotal' => $totals['subtotal'],
+                'tax' => $totals['tax'],
+                'delivery_fee' => $totals['deliveryFee'],
+                'tip' => $data['tip'] ?? 0,
+                'discount' => $totals['discount'],
+                'total' => $totals['total'] + ($data['tip'] ?? 0),
+                'payment_method' => $data['payment_method'],
+                'coupon_code' => $cart->coupon_code,
+                'address_snapshot' => $data['address'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'scheduled_at' => $data['scheduled_at'] ?? null,
+                'idempotency_key' => $idempotencyKey,
+                'payment_status' => $data['payment_method'] === 'cash'
+                    ? PaymentStatus::Pending
+                    : PaymentStatus::Pending,
+            ]);
+
+            // Snapshot order items from cart
+            $cart->load(['items.dish', 'items.variant']);
+
+            foreach ($cart->items as $item) {
+                $price = (float) $item->dish->price;
+
+                if ($item->variant) {
+                    $price += (float) $item->variant->price_delta;
+                }
+
+                $addonTotal = collect($item->options ?? [])->sum('price');
+                $price += $addonTotal;
+
+                $order->items()->create([
+                    'dish_id' => $item->dish_id,
+                    'name_snapshot' => $item->dish->name,
+                    'unit_price' => $price,
+                    'quantity' => $item->quantity,
+                    'options' => $item->options,
+                    'station' => $item->dish->category?->name,
+                ]);
+            }
+
+            // Record initial status history
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'user_id' => $cart->user_id,
+                'status' => OrderStatus::Pending,
+                'note' => 'Order placed',
+            ]);
+
+            // Record coupon usage
+            if ($cart->coupon_code) {
+                $coupon = Coupon::where('code', $cart->coupon_code)->first();
+
+                if ($coupon) {
+                    CouponUsage::create([
+                        'coupon_id' => $coupon->id,
+                        'user_id' => $cart->user_id,
+                        'order_id' => $order->id,
+                        'used_at' => now(),
+                    ]);
+
+                    $coupon->increment('used_count');
+                }
+            }
+
+            // Clear cart
+            $cart->items()->delete();
+            $cart->update(['coupon_code' => null]);
+
+            event(new OrderPlaced($order));
+
+            return $order;
+        });
+    }
+
+    public function updateStatus(Order $order, OrderStatus $newStatus, ?int $actorId = null, ?string $note = null): Order
+    {
+        DB::transaction(function () use ($order, $newStatus, $actorId, $note) {
+            $order->update(['status' => $newStatus]);
+
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'user_id' => $actorId,
+                'status' => $newStatus,
+                'note' => $note,
+            ]);
+        });
+
+        event(new OrderStatusChanged($order));
+
+        return $order->fresh();
+    }
+
+    public function cancel(Order $order, ?string $reason = null): Order
+    {
+        if (! $order->canBeCancelled()) {
+            throw new \RuntimeException('This order cannot be cancelled.');
+        }
+
+        return $this->updateStatus($order, OrderStatus::Cancelled, auth()->id(), $reason ?? 'Cancelled by customer');
+    }
+}

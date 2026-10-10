@@ -103,13 +103,61 @@ export const staffApi = {
 
 // Admin
 export const adminApi = {
+  // Dishes
   dishes:       (params)     => api.get('/admin/dishes', { params }),
   createDish:   (data)       => api.post('/admin/dishes', data),
   updateDish:   (id, data)   => api.put(`/admin/dishes/${id}`, data),
   deleteDish:   (id)         => api.delete(`/admin/dishes/${id}`),
+
+  // Orders
   orders:       (params)     => api.get('/admin/orders', { params }),
   updateOrder:  (id, data)   => api.patch(`/admin/orders/${id}/status`, data),
+
+  // Reports
   salesReport:  (params)     => api.get('/admin/reports/sales', { params }),
+
+  // Settings
   settings:     ()           => api.get('/admin/settings'),
   saveSettings: (data)       => api.put('/admin/settings', { settings: data }),
+
+  // Coupons
+  coupons:         (params)       => api.get('/admin/coupons', { params }),
+  createCoupon:    (data)         => api.post('/admin/coupons', data),
+  updateCoupon:    (id, data)     => api.patch(`/admin/coupons/${id}`, data),
+  deleteCoupon:    (id)           => api.delete(`/admin/coupons/${id}`),
+
+  // Users
+  users:           (params)       => api.get('/admin/users', { params }),
+  createUser:      (data)         => api.post('/admin/users', data),
+  showUser:        (id)           => api.get(`/admin/users/${id}`),
+  updateUser:      (id, data)     => api.patch(`/admin/users/${id}`, data),
+  deleteUser:      (id)           => api.delete(`/admin/users/${id}`),
+  roles:           ()             => api.get('/admin/users/roles'),
+
+  // Tables
+  tables:          (params)       => api.get('/admin/tables', { params }),
+  tableAreas:      ()             => api.get('/admin/tables/areas'),
+  createTable:     (data)         => api.post('/admin/tables', data),
+  updateTable:     (id, data)     => api.patch(`/admin/tables/${id}`, data),
+  deleteTable:     (id)           => api.delete(`/admin/tables/${id}`),
+  regenerateQr:    (id)           => api.post(`/admin/tables/${id}/regenerate-qr`),
+
+  // Admin Reservations
+  adminReservations:      (params)       => api.get('/admin/reservations', { params }),
+  todayReservations:      ()             => api.get('/admin/reservations/today'),
+  showReservation:        (id)           => api.get(`/admin/reservations/${id}`),
+  updateReservation:      (id, data)     => api.patch(`/admin/reservations/${id}`, data),
+  deleteReservation:      (id)           => api.delete(`/admin/reservations/${id}`),
+
+  // Inventory
+  ingredients:     (params)       => api.get('/admin/inventory/ingredients', { params }),
+  createIngredient:(data)         => api.post('/admin/inventory/ingredients', data),
+  updateIngredient:(id, data)     => api.patch(`/admin/inventory/ingredients/${id}`, data),
+  adjustStock:     (id, data)     => api.post(`/admin/inventory/ingredients/${id}/adjust`, data),
+  lowStock:        ()             => api.get('/admin/inventory/low-stock'),
+  suppliers:       ()             => api.get('/admin/inventory/suppliers'),
+  createSupplier:  (data)         => api.post('/admin/inventory/suppliers', data),
+
+  // Audit log
+  auditLog:        (params)       => api.get('/admin/audit', { params }),
 }

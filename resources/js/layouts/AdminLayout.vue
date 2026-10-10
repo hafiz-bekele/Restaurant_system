@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings, Menu, X, LogOut, ChefHat } from '@lucide/vue'
+import { LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings, Menu, X, LogOut, ChefHat, Users, Grid3x3, Calendar, Tag, Package, Shield } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -10,11 +10,17 @@ const router = useRouter()
 const sidebarOpen = ref(true)
 
 const nav = [
-  { to: '/admin',          icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/menu',     icon: UtensilsCrossed,  label: 'Menu' },
-  { to: '/admin/orders',   icon: ShoppingBag,      label: 'Orders' },
-  { to: '/admin/reports',  icon: BarChart2,        label: 'Reports' },
-  { to: '/admin/settings', icon: Settings,         label: 'Settings' },
+  { to: '/admin',              icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/admin/menu',         icon: UtensilsCrossed,  label: 'Menu' },
+  { to: '/admin/orders',       icon: ShoppingBag,      label: 'Orders' },
+  { to: '/admin/reservations', icon: Calendar,         label: 'Reservations' },
+  { to: '/admin/tables',       icon: Grid3x3,          label: 'Tables' },
+  { to: '/admin/coupons',      icon: Tag,              label: 'Coupons' },
+  { to: '/admin/inventory',    icon: Package,          label: 'Inventory' },
+  { to: '/admin/users',        icon: Users,            label: 'Users' },
+  { to: '/admin/reports',      icon: BarChart2,        label: 'Reports' },
+  { to: '/admin/audit',        icon: Shield,           label: 'Audit Log' },
+  { to: '/admin/settings',     icon: Settings,         label: 'Settings' },
 ]
 
 async function logout() {
@@ -31,10 +37,10 @@ async function logout() {
         <ChefHat :size="24" class="text-primary-400 shrink-0" />
         <span v-if="sidebarOpen" class="font-heading font-bold text-white">Admin</span>
       </div>
-      <nav class="flex-1 py-4 space-y-1 px-2">
+      <nav class="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
         <RouterLink
           v-for="item in nav" :key="item.to" :to="item.to"
-          :class="['flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-warm-400 hover:bg-warm-800 hover:text-white', { '!bg-primary-600 !text-white': $route.path === item.to }]"
+          :class="['flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-warm-400 hover:bg-warm-800 hover:text-white', { '!bg-primary-600 !text-white': item.to === '/admin' ? $route.path === '/admin' : $route.path.startsWith(item.to) }]"
           :title="!sidebarOpen ? item.label : ''"
         >
           <component :is="item.icon" :size="20" class="shrink-0" />

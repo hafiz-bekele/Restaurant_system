@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings, Menu, X, LogOut, ChefHat, Users, Grid3x3, Calendar, Tag, Package, Shield } from '@lucide/vue'
+import { LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings, Menu, X, LogOut, ChefHat, Users, Grid3x3, Calendar, Tag, Package, Shield, AlertTriangle, Truck, BedDouble } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -10,17 +10,20 @@ const router = useRouter()
 const sidebarOpen = ref(true)
 
 const nav = [
-  { to: '/admin',              icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/menu',         icon: UtensilsCrossed,  label: 'Menu' },
-  { to: '/admin/orders',       icon: ShoppingBag,      label: 'Orders' },
-  { to: '/admin/reservations', icon: Calendar,         label: 'Reservations' },
-  { to: '/admin/tables',       icon: Grid3x3,          label: 'Tables' },
-  { to: '/admin/coupons',      icon: Tag,              label: 'Coupons' },
-  { to: '/admin/inventory',    icon: Package,          label: 'Inventory' },
-  { to: '/admin/users',        icon: Users,            label: 'Users' },
-  { to: '/admin/reports',      icon: BarChart2,        label: 'Reports' },
-  { to: '/admin/audit',        icon: Shield,           label: 'Audit Log' },
-  { to: '/admin/settings',     icon: Settings,         label: 'Settings' },
+  { to: '/admin',               icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/admin/menu',          icon: UtensilsCrossed,  label: 'Menu' },
+  { to: '/admin/orders',        icon: ShoppingBag,      label: 'Orders' },
+  { to: '/admin/reservations',  icon: Calendar,         label: 'Reservations' },
+  { to: '/admin/tables',        icon: Grid3x3,          label: 'Tables' },
+  { to: '/admin/rooms',         icon: BedDouble,        label: 'Rooms' },
+  { to: '/admin/coupons',       icon: Tag,              label: 'Coupons' },
+  { to: '/admin/inventory',     icon: Package,          label: 'Inventory' },
+  { to: '/admin/delivery-zones',icon: Truck,            label: 'Delivery Zones' },
+  { to: '/admin/complaints',    icon: AlertTriangle,    label: 'Complaints' },
+  { to: '/admin/users',         icon: Users,            label: 'Users' },
+  { to: '/admin/reports',       icon: BarChart2,        label: 'Reports' },
+  { to: '/admin/audit',         icon: Shield,           label: 'Audit Log' },
+  { to: '/admin/settings',      icon: Settings,         label: 'Settings' },
 ]
 
 async function logout() {

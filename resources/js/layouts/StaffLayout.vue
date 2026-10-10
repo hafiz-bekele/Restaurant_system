@@ -1,15 +1,16 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import { ChefHat, UtensilsCrossed, CreditCard, Truck, ChevronRight } from '@lucide/vue'
+import { ChefHat, UtensilsCrossed, CreditCard, Truck, ChevronRight, CalendarCheck } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 
 const tabs = [
-  { to: '/staff/kitchen',  icon: ChefHat,         label: 'Kitchen',  role: 'kitchen' },
-  { to: '/staff/waiter',   icon: UtensilsCrossed,  label: 'Waiter',   role: 'waiter' },
-  { to: '/staff/cashier',  icon: CreditCard,       label: 'Cashier',  role: 'cashier' },
-  { to: '/staff/delivery', icon: Truck,            label: 'Delivery', role: 'delivery' },
+  { to: '/staff/kitchen',   icon: ChefHat,          label: 'Kitchen',    role: 'kitchen' },
+  { to: '/staff/waiter',    icon: UtensilsCrossed,   label: 'Waiter',     role: 'waiter' },
+  { to: '/staff/reception', icon: CalendarCheck,     label: 'Reception',  role: 'waiter' },
+  { to: '/staff/cashier',   icon: CreditCard,        label: 'Cashier',    role: 'cashier' },
+  { to: '/staff/delivery',  icon: Truck,             label: 'Delivery',   role: 'delivery' },
 ].filter(t => auth.hasRole(t.role) || auth.hasRole('super-admin') || auth.hasRole('manager'))
 </script>
 

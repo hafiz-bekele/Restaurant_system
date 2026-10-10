@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminInventoryController;
 use App\Http\Controllers\Api\V1\Admin\AdminOrderController;
 use App\Http\Controllers\Api\V1\Admin\AdminReportController;
 use App\Http\Controllers\Api\V1\Admin\AdminReservationController;
+use App\Http\Controllers\Api\V1\Admin\AdminRoomController;
 use App\Http\Controllers\Api\V1\Admin\AdminSettingController;
 use App\Http\Controllers\Api\V1\Admin\AdminTableController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;

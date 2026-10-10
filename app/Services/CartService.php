@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\Dish;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 
 class CartService

@@ -11,11 +11,15 @@ use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
+use App\Services\WaiterAssignmentService;
 use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
-    public function __construct(private readonly CartService $cartService) {}
+    public function __construct(
+        private readonly CartService $cartService,
+        private readonly WaiterAssignmentService $waiterAssignmentService,
+    ) {}
 
     public function createFromCart(Cart $cart, array $data, string $idempotencyKey): Order
     {
@@ -36,9 +40,10 @@ class OrderService
                 'delivery_zone_id' => $data['delivery_zone_id'] ?? null,
                 'type' => $data['type'],
                 'status' => OrderStatus::Pending,
-                'subtotal' => $totals['subtotal'],
-                'tax' => $totals['tax'],
-                'delivery_fee' => $totals['deliveryFee'],
+                'subtotal'       => $totals['subtotal'],
+                'tax'            => $totals['tax'],
+                'service_charge' => $totals['serviceCharge'],
+                'delivery_fee'   => $totals['deliveryFee'],
                 'tip' => $data['tip'] ?? 0,
                 'discount' => $totals['discount'],
                 'total' => $totals['total'] + ($data['tip'] ?? 0),
@@ -105,6 +110,9 @@ class OrderService
             $cart->update(['coupon_code' => null]);
 
             event(new OrderPlaced($order));
+
+            // REQ-7.1: auto-assign a waiter after the order is created
+            $this->waiterAssignmentService->assign($order);
 
             return $order;
         });

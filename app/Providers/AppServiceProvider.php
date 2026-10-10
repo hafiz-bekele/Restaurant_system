@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Events\ComplaintSubmitted;
 use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
 use App\Events\ReservationCreated;
 use App\Listeners\NotifyCustomerOfStatusChange;
+use App\Listeners\NotifyManagerOfComplaint;
 use App\Listeners\SendOrderConfirmation;
 use App\Listeners\SendReservationConfirmation;
 use App\Models\Order;
@@ -43,5 +45,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OrderPlaced::class, SendOrderConfirmation::class);
         Event::listen(OrderStatusChanged::class, NotifyCustomerOfStatusChange::class);
         Event::listen(ReservationCreated::class, SendReservationConfirmation::class);
+        Event::listen(ComplaintSubmitted::class, NotifyManagerOfComplaint::class);
     }
 }

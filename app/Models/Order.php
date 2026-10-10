@@ -19,7 +19,7 @@ class Order extends Model
 
     protected $fillable = [
         'ulid', 'user_id', 'table_id', 'delivery_zone_id', 'type', 'status',
-        'subtotal', 'tax', 'delivery_fee', 'tip', 'discount', 'total',
+        'subtotal', 'tax', 'service_charge', 'delivery_fee', 'tip', 'discount', 'total',
         'payment_status', 'payment_method', 'coupon_code',
         'address_snapshot', 'notes', 'scheduled_at', 'idempotency_key',
     ];
@@ -31,9 +31,10 @@ class Order extends Model
             'type' => OrderType::class,
             'payment_status' => PaymentStatus::class,
             'address_snapshot' => 'array',
-            'subtotal' => 'decimal:2',
-            'tax' => 'decimal:2',
-            'delivery_fee' => 'decimal:2',
+            'subtotal'       => 'decimal:2',
+            'tax'            => 'decimal:2',
+            'service_charge' => 'decimal:2',
+            'delivery_fee'   => 'decimal:2',
             'tip' => 'decimal:2',
             'discount' => 'decimal:2',
             'total' => 'decimal:2',

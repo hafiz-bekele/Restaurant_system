@@ -23,15 +23,76 @@ class PaymentController extends Controller
         $result = $gateway->createIntent($order);
 
         Payment::create([
-            'order_id' => $order->id,
-            'gateway' => config('services.payment.default', 'stripe'),
+            'order_id'       => $order->id,
+            'gateway'        => config('services.payment.default', 'stripe'),
             'transaction_id' => $result['payment_id'],
-            'amount' => $order->total,
-            'currency' => config('app.currency', 'USD'),
-            'status' => PaymentStatus::Pending,
+            'amount'         => $order->total,
+            'currency'       => config('app.currency', 'USD'),
+            'status'         => PaymentStatus::Pending,
         ]);
 
         return $this->success($result, 'Payment intent created');
+    }
+
+    /**
+     * REQ-9.2: Chapa checkout_url flow.
+     * Returns checkout_url for the guest to redirect to Chapa portal.
+     */
+    public function createChapaIntent(Request $request): JsonResponse
+    {
+        $request->validate(['order_ulid' => 'required|string|exists:orders,ulid']);
+
+        $order = Order::where('ulid', $request->order_ulid)->firstOrFail();
+        $gateway = app('payment.chapa');
+        $result  = $gateway->createIntent($order);
+
+        Payment::create([
+            'order_id'       => $order->id,
+            'gateway'        => 'chapa',
+            'transaction_id' => $result['payment_id'],
+            'amount'         => $order->total,
+            'currency'       => 'ETB',
+            'status'         => PaymentStatus::Pending,
+        ]);
+
+        return $this->success($result, 'Chapa payment initiated');
+    }
+
+    /**
+     * REQ-9.1 Room Charge: post order total to the guest's active room booking folio.
+     */
+    public function roomCharge(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order_ulid' => 'required|string|exists:orders,ulid',
+            'booking_id' => 'required|integer|exists:room_bookings,id',
+        ]);
+
+        $order   = Order::where('ulid', $request->order_ulid)->firstOrFail();
+        $booking = \App\Models\RoomBooking::findOrFail($request->booking_id);
+
+        if (! in_array($booking->status, ['confirmed', 'checked_in'])) {
+            return $this->error('No active room reservation found for room charge.', 422);
+        }
+
+        $txId = 'RC-'.$order->ulid;
+
+        $booking->increment('paid_amount', (float) $order->total);
+
+        Payment::create([
+            'order_id'       => $order->id,
+            'gateway'        => 'room_charge',
+            'transaction_id' => $txId,
+            'amount'         => $order->total,
+            'currency'       => 'ETB',
+            'status'         => PaymentStatus::Paid,
+            'payload'        => ['booking_id' => $booking->id],
+        ]);
+
+        $order->update(['payment_status' => PaymentStatus::Paid]);
+        app(OrderService::class)->updateStatus($order, OrderStatus::Confirmed, null, 'Room charge applied');
+
+        return $this->success(['transaction_id' => $txId], 'Room charge applied successfully');
     }
 
     public function stripeWebhook(Request $request): JsonResponse

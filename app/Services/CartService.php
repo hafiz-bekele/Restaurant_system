@@ -115,12 +115,18 @@ class CartService
             }
         }
 
-        $taxRate = (float) Setting::get('tax_rate', 0.15);
-        $taxable = max(0, $subtotal - $discount);
-        $tax = round($taxable * $taxRate, 2);
-        $total = $taxable + $tax + $deliveryFee;
+        $taxRate           = (float) Setting::get('tax_rate', 0.15);
+        $serviceChargeRate = (float) Setting::get('service_charge_rate', 0.10);
 
-        return compact('subtotal', 'discount', 'tax', 'deliveryFee', 'total');
+        $taxable = max(0, $subtotal - $discount);
+
+        // REQ-6.2: Taxable Basis = Subtotal + Service Charge Amount
+        $serviceCharge = round($taxable * $serviceChargeRate, 2);
+        $taxableBasis  = $taxable + $serviceCharge;
+        $tax           = round($taxableBasis * $taxRate, 2);
+        $total         = $taxableBasis + $tax + $deliveryFee;
+
+        return compact('subtotal', 'discount', 'serviceCharge', 'tax', 'deliveryFee', 'total');
     }
 
     public function mergeGuestCart(string $sessionId, int $userId): void

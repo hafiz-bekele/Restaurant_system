@@ -1,0 +1,29 @@
+<script setup>
+import { ref } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
+import { adminApi } from '../../services/api'
+
+const from = ref(new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0])
+const to   = ref(new Date().toISOString().split('T')[0])
+
+const { data, isLoading } = useQuery({
+  queryKey: ['admin', 'reports', from, to],
+  queryFn:  () => adminApi.salesReport({ from: from.value, to: to.value }).then(r => r.data.data),
+  staleTime: 60000,
+})
+</script>
+<template>
+  <div>
+    <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mb-6">Sales Reports</h1>
+    <div class="flex gap-3 mb-6">
+      <input v-model="from" type="date" class="input w-auto" /><span class="self-center text-warm-400">to</span>
+      <input v-model="to" type="date" class="input w-auto" />
+    </div>
+    <div v-if="isLoading" class="skeleton h-40 rounded-2xl"></div>
+    <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="card p-5 text-center"><p class="text-3xl font-heading font-bold text-warm-900 dark:text-white">{{ data?.summary?.total_orders ?? 0 }}</p><p class="text-sm text-warm-500 mt-1">Orders</p></div>
+      <div class="card p-5 text-center"><p class="text-3xl font-heading font-bold text-primary-600">${{ Number(data?.summary?.total_revenue ?? 0).toFixed(2) }}</p><p class="text-sm text-warm-500 mt-1">Revenue</p></div>
+      <div class="card p-5 text-center"><p class="text-3xl font-heading font-bold text-warm-900 dark:text-white">${{ Number(data?.summary?.avg_order ?? 0).toFixed(2) }}</p><p class="text-sm text-warm-500 mt-1">Avg Order</p></div>
+    </div>
+  </div>
+</template>

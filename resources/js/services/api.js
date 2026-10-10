@@ -89,16 +89,36 @@ export const profileApi = {
 
 // Payments
 export const paymentApi = {
-  createIntent: (orderUlid)  => api.post('/payments/intent', { order_ulid: orderUlid }),
+  createIntent:     (orderUlid)          => api.post('/payments/intent', { order_ulid: orderUlid }),
+  createChapaIntent:(orderUlid)          => api.post('/payments/chapa', { order_ulid: orderUlid }),
+  roomCharge:       (orderUlid, bookingId) => api.post('/payments/room-charge', { order_ulid: orderUlid, booking_id: bookingId }),
+}
+
+// Guest QR + Room Booking
+export const guestApi = {
+  resolveQr:        (token)    => api.get(`/guest/resolve-qr/${token}`),
+  banners:          ()         => api.get('/banners'),
+  availableRooms:   (params)   => api.get('/rooms/available', { params }),
+  bookRoom:         (data)     => api.post('/rooms/book', data),
+  getBooking:       (id)       => api.get(`/rooms/bookings/${id}`),
+  submitComplaint:  (data)     => api.post('/complaints', data),
+  getComplaint:     (ticket)   => api.get(`/complaints/${ticket}`),
 }
 
 // Staff
 export const staffApi = {
-  kitchenTickets:   ()           => api.get('/kitchen/tickets'),
-  updateTicket:     (id, status) => api.patch(`/kitchen/tickets/${id}`, { status }),
-  waiterTables:     ()           => api.get('/waiter/tables'),
-  deliveryOrders:   ()           => api.get('/delivery/orders'),
-  updateDelivery:   (id, status) => api.patch(`/delivery/orders/${id}`, { status }),
+  kitchenTickets:         ()           => api.get('/kitchen/tickets'),
+  updateTicket:           (id, status) => api.patch(`/kitchen/tickets/${id}`, { status }),
+  waiterTables:           ()           => api.get('/waiter/tables'),
+  deliveryOrders:         ()           => api.get('/delivery/orders'),
+  updateDelivery:         (id, status) => api.patch(`/delivery/orders/${id}`, { status }),
+  // Reception
+  receptionDashboard:     ()           => api.get('/reception/dashboard'),
+  availableTables:        (params)     => api.get('/reception/tables/available', { params }),
+  walkIn:                 (data)       => api.post('/reception/walk-in', data),
+  checkIn:                (id)         => api.post(`/reception/reservations/${id}/check-in`),
+  noShow:                 (id)         => api.post(`/reception/reservations/${id}/no-show`),
+  releaseTable:           (id)         => api.post(`/reception/tables/${id}/release`),
 }
 
 // Admin
@@ -160,4 +180,23 @@ export const adminApi = {
 
   // Audit log
   auditLog:        (params)       => api.get('/admin/audit', { params }),
+
+  // Complaints (REQ-11.2)
+  complaints:         (params)       => api.get('/admin/complaints', { params }),
+  showComplaint:      (id)           => api.get(`/admin/complaints/${id}`),
+  updateComplaint:    (id, data)     => api.patch(`/admin/complaints/${id}`, data),
+
+  // Delivery zones
+  deliveryZones:      ()             => api.get('/admin/delivery-zones'),
+  createZone:         (data)         => api.post('/admin/delivery-zones', data),
+  updateZone:         (id, data)     => api.patch(`/admin/delivery-zones/${id}`, data),
+  deleteZone:         (id)           => api.delete(`/admin/delivery-zones/${id}`),
+
+  // Rooms + bookings
+  adminRooms:         (params)       => api.get('/admin/rooms', { params }),
+  createRoom:         (data)         => api.post('/admin/rooms', data),
+  updateRoom:         (id, data)     => api.patch(`/admin/rooms/${id}`, data),
+  deleteRoom:         (id)           => api.delete(`/admin/rooms/${id}`),
+  roomBookings:       (params)       => api.get('/admin/room-bookings', { params }),
+  updateBooking:      (id, data)     => api.patch(`/admin/room-bookings/${id}`, data),
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreDishRequest;
+use App\Http\Requests\Admin\UpdateDishRequest;
 use App\Http\Resources\V1\DishResource;
 use App\Models\ActivityLog;
 use App\Models\Dish;
@@ -24,26 +26,12 @@ class AdminDishController extends Controller
         return $this->paginated($dishes->through(fn ($d) => new DishResource($d)));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreDishRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'category_id' => 'required|integer|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'image' => 'nullable|string',
-            'calories' => 'nullable|integer',
-            'prep_time' => 'nullable|integer',
-            'is_vegetarian' => 'boolean',
-            'is_vegan' => 'boolean',
-            'spice_level' => 'integer|between:0,3',
-            'is_available' => 'boolean',
-            'is_featured' => 'boolean',
-        ]);
-
+        $data         = $request->validated();
         $data['slug'] = Str::slug($data['name']).'-'.Str::random(4);
-        $dish = Dish::create($data);
 
+        $dish = Dish::create($data);
         ActivityLog::record('dish.created', $dish, ['name' => $dish->name]);
 
         return $this->success(new DishResource($dish), 'Dish created', 201);
@@ -54,22 +42,9 @@ class AdminDishController extends Controller
         return $this->success(new DishResource($dish->load('category')));
     }
 
-    public function update(Request $request, Dish $dish): JsonResponse
+    public function update(UpdateDishRequest $request, Dish $dish): JsonResponse
     {
-        $data = $request->validate([
-            'category_id' => 'sometimes|integer|exists:categories,id',
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'sometimes|numeric|min:0',
-            'image' => 'nullable|string',
-            'is_available' => 'boolean',
-            'is_featured' => 'boolean',
-            'spice_level' => 'integer|between:0,3',
-            'calories' => 'nullable|integer',
-            'prep_time' => 'nullable|integer',
-        ]);
-
-        $dish->update($data);
+        $dish->update($request->validated());
         ActivityLog::record('dish.updated', $dish, ['name' => $dish->name]);
 
         return $this->success(new DishResource($dish->fresh('category')), 'Dish updated');

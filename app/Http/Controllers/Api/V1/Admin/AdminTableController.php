@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreTableRequest;
+use App\Http\Requests\Admin\UpdateTableRequest;
 use App\Models\ActivityLog;
 use App\Models\RestaurantTable;
 use App\Services\QrCodeService;
@@ -28,32 +30,28 @@ class AdminTableController extends Controller
         return $this->success($tables);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreTableRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name'       => 'required|string|max:50|unique:tables,name',
-            'capacity'   => 'required|integer|min:1|max:50',
-            'area'       => 'nullable|string|max:50',
-            'position_x' => 'nullable|numeric',
-            'position_y' => 'nullable|numeric',
-        ]);
-
-        $table = RestaurantTable::create($data);
+        $table = RestaurantTable::create($request->validated());
         ActivityLog::record('table.created', $table, ['name' => $table->name]);
 
         return $this->success($this->tableResource($table), 'Table created', 201);
     }
 
-    public function update(Request $request, RestaurantTable $table): JsonResponse
+    public function update(UpdateTableRequest $request, RestaurantTable $table): JsonResponse
     {
-        $data = $request->validate([
-            'name'       => "sometimes|string|max:50|unique:tables,name,{$table->id}",
-            'capacity'   => 'sometimes|integer|min:1|max:50',
-            'area'       => 'nullable|string|max:50',
-            'status'     => 'sometimes|in:available,occupied,reserved,inactive',
-            'position_x' => 'nullable|numeric',
-            'position_y' => 'nullable|numeric',
-        ]);
+        $data = $request->validated();
+
+        // Make unique check exclude current table for name
+        if (isset($data['name'])) {
+            $exists = RestaurantTable::where('name', $data['name'])
+                ->where('id', '!=', $table->id)
+                ->exists();
+
+            if ($exists) {
+                return $this->error('A table with that name already exists.', 422);
+            }
+        }
 
         $table->update($data);
         ActivityLog::record('table.updated', $table, ['name' => $table->name]);
@@ -101,16 +99,16 @@ class AdminTableController extends Controller
     private function tableResource(RestaurantTable $table): array
     {
         return [
-            'id'         => $table->id,
-            'name'       => $table->name,
-            'capacity'   => $table->capacity,
-            'qr_token'   => $table->qr_token,
-            'area'       => $table->area,
-            'position_x' => $table->position_x,
-            'position_y' => $table->position_y,
-            'status'     => $table->status instanceof \App\Enums\TableStatus ? $table->status->value : $table->status,
-            'qr_url'     => url("/api/v1/admin/tables/{$table->id}/qr"),
-            'dine_in_url'=> url("/qr/{$table->qr_token}"),
+            'id'          => $table->id,
+            'name'        => $table->name,
+            'capacity'    => $table->capacity,
+            'qr_token'    => $table->qr_token,
+            'area'        => $table->area,
+            'position_x'  => $table->position_x,
+            'position_y'  => $table->position_y,
+            'status'      => $table->status instanceof \App\Enums\TableStatus ? $table->status->value : $table->status,
+            'qr_url'      => url("/api/v1/admin/tables/{$table->id}/qr"),
+            'dine_in_url' => url("/qr/{$table->qr_token}"),
         ];
     }
 }

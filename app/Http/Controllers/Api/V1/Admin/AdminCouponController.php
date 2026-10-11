@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCouponRequest;
+use App\Http\Requests\Admin\UpdateCouponRequest;
 use App\Models\ActivityLog;
 use App\Models\Coupon;
 use Illuminate\Http\JsonResponse;
@@ -22,19 +24,9 @@ class AdminCouponController extends Controller
         return $this->paginated($coupons);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCouponRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'code'      => 'nullable|string|max:50|unique:coupons,code',
-            'type'      => 'required|in:percent,fixed,free_delivery',
-            'value'     => 'required|numeric|min:0',
-            'min_order' => 'nullable|numeric|min:0',
-            'max_uses'  => 'nullable|integer|min:1',
-            'starts_at' => 'nullable|date',
-            'ends_at'   => 'nullable|date|after:starts_at',
-            'is_active' => 'boolean',
-        ]);
-
+        $data         = $request->validated();
         $data['code'] = strtoupper($data['code'] ?? Str::random(8));
 
         $coupon = Coupon::create($data);
@@ -43,19 +35,9 @@ class AdminCouponController extends Controller
         return $this->success($coupon, 'Coupon created', 201);
     }
 
-    public function update(Request $request, Coupon $coupon): JsonResponse
+    public function update(UpdateCouponRequest $request, Coupon $coupon): JsonResponse
     {
-        $data = $request->validate([
-            'type'      => 'sometimes|in:percent,fixed,free_delivery',
-            'value'     => 'sometimes|numeric|min:0',
-            'min_order' => 'nullable|numeric|min:0',
-            'max_uses'  => 'nullable|integer|min:1',
-            'starts_at' => 'nullable|date',
-            'ends_at'   => 'nullable|date',
-            'is_active' => 'boolean',
-        ]);
-
-        $coupon->update($data);
+        $coupon->update($request->validated());
         ActivityLog::record('coupon.updated', $coupon, ['code' => $coupon->code]);
 
         return $this->success($coupon->fresh(), 'Coupon updated');

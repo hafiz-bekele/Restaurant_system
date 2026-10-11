@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -37,15 +39,9 @@ class AdminUserController extends Controller
         ]));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'phone'    => 'nullable|string|max:20',
-            'password' => 'required|string|min:8',
-            'role'     => 'required|string|exists:roles,name',
-        ]);
+        $data = $request->validated();
 
         $user = User::create([
             'name'     => $data['name'],
@@ -80,15 +76,9 @@ class AdminUserController extends Controller
         ]);
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $data = $request->validate([
-            'name'     => 'sometimes|string|max:255',
-            'phone'    => 'nullable|string|max:20',
-            'status'   => 'sometimes|in:active,inactive,blocked',
-            'role'     => 'sometimes|string|exists:roles,name',
-            'password' => 'sometimes|string|min:8',
-        ]);
+        $data = $request->validated();
 
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
@@ -120,8 +110,6 @@ class AdminUserController extends Controller
 
     public function roles(): JsonResponse
     {
-        $roles = Role::orderBy('name')->get(['id', 'name']);
-
-        return $this->success($roles);
+        return $this->success(Role::orderBy('name')->get(['id', 'name']));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Resources\V1\OrderResource;
 use App\Models\ActivityLog;
 use App\Models\Order;
@@ -26,21 +27,17 @@ class AdminOrderController extends Controller
         return $this->paginated($orders->through(fn ($o) => new OrderResource($o)));
     }
 
-    public function updateStatus(Request $request, Order $order): JsonResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
-        $request->validate([
-            'status' => 'required|in:confirmed,preparing,ready,out_for_delivery,delivered,cancelled',
-            'note' => 'nullable|string|max:255',
-        ]);
-
+        $data  = $request->validated();
         $order = $this->orderService->updateStatus(
             $order,
-            OrderStatus::from($request->status),
+            OrderStatus::from($data['status']),
             $request->user()->id,
-            $request->note
+            $data['note'] ?? null
         );
 
-        ActivityLog::record('order.status_changed', $order, ['status' => $request->status]);
+        ActivityLog::record('order.status_changed', $order, ['status' => $data['status']]);
 
         return $this->success(new OrderResource($order), 'Order status updated');
     }

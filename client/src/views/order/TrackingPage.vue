@@ -1,13 +1,28 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { orderApi } from '../../services/api'
+import { orderApi, paymentApi, reviewApi } from '../../services/api'
+import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
-import { CheckCircle, Clock, ChefHat, Truck, Package } from '@lucide/vue'
+import {
+  CheckCircle, Clock, ChefHat, Truck, Package, ShieldCheck,
+  RefreshCw, Smartphone, ExternalLink, Star, MessageSquare, Check, Send
+} from '@lucide/vue'
 
 const route = useRoute()
+const ui = useUiStore()
 const order = ref(null)
 const loading = ref(true)
+const paying = ref(false)
+const verifying = ref(false)
+
+// Review system state
+const activeRatingDishId = ref(null)
+const ratingValues = ref({})
+const commentValues = ref({})
+const hoverStars = ref({})
+const ratedDishes = ref({})
+const submittingReview = ref(false)
 
 const steps = [
   { status: 'pending',          label: 'Order Placed',  icon: CheckCircle },
@@ -24,18 +39,85 @@ async function fetchOrder() {
   loading.value = false
 }
 
+async function payWithChapa() {
+  paying.value = true
+  try {
+    const { data } = await paymentApi.createChapaIntent(route.params.ulid)
+    const checkoutUrl = data.data?.checkout_url
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl
+    }
+  } catch (err) {
+    ui.toast('Failed to initialize Chapa gateway', 'error')
+  } finally {
+    paying.value = false
+  }
+}
+
+async function verifyChapaPayment(silent = false) {
+  verifying.value = true
+  try {
+    await paymentApi.verifyChapa({ order_ulid: route.params.ulid })
+    if (!silent) ui.toast('Chapa payment verified and confirmed!', 'success')
+    await fetchOrder()
+  } catch (err) {
+    if (!silent) ui.toast('Could not verify Chapa transaction', 'error')
+  } finally {
+    verifying.value = false
+  }
+}
+
 const stepIndex = (status) => steps.findIndex(s => s.status === status)
 
+function toggleRatingForm(dishId) {
+  if (activeRatingDishId.value === dishId) {
+    activeRatingDishId.value = null
+  } else {
+    activeRatingDishId.value = dishId
+    if (!ratingValues.value[dishId]) ratingValues.value[dishId] = 5
+  }
+}
+
+async function submitDishReview(dishId) {
+  const rating = ratingValues.value[dishId] || 5
+  const comment = commentValues.value[dishId]?.trim() || null
+
+  submittingReview.value = true
+  try {
+    await reviewApi.submit({
+      dish_id:  dishId,
+      order_id: order.value?.id,
+      rating,
+      comment,
+    })
+
+    ui.toast('Thank you for rating your dish!', 'success')
+    ratedDishes.value[dishId] = true
+    activeRatingDishId.value = null
+  } catch (err) {
+    const msg = err.response?.data?.message || 'Failed to submit rating'
+    ui.toast(msg, 'error')
+  } finally {
+    submittingReview.value = false
+  }
+}
+
 let interval
-onMounted(() => {
-  fetchOrder()
+onMounted(async () => {
+  await fetchOrder()
   interval = setInterval(fetchOrder, 15000)
+
+  // Auto-verify if returning from Chapa redirect
+  if (route.query.payment === 'chapa_return' || route.query.payment === 'chapa_simulation') {
+    await verifyChapaPayment(true)
+  }
 
   // Listen via WebSocket
   if (window.Echo) {
     window.Echo.channel(`orders.${route.params.ulid}`).listen('OrderStatusChanged', fetchOrder)
   }
 })
+
 onUnmounted(() => {
   clearInterval(interval)
   if (window.Echo) window.Echo.leaveChannel(`orders.${route.params.ulid}`)
@@ -51,42 +133,230 @@ onUnmounted(() => {
         <div v-for="i in 3" :key="i" class="skeleton h-6 w-full"></div>
       </div>
 
-      <div v-else-if="order" class="card p-8">
-        <div class="flex items-center justify-between mb-8">
-          <div>
-            <p class="text-sm text-warm-500">Order ID</p>
-            <p class="font-mono font-semibold text-warm-900 dark:text-white text-sm">{{ order.ulid }}</p>
+      <div v-else-if="order" class="space-y-6">
+        <!-- Main Tracking Progress Card -->
+        <div class="card p-8">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <p class="text-xs text-warm-500 font-semibold uppercase tracking-wider">Order Reference</p>
+              <p class="font-mono font-bold text-warm-900 dark:text-white text-base">
+                {{ order.order_number || order.ulid }}
+              </p>
+            </div>
+            <span :class="['badge font-bold uppercase text-xs', order.status === 'delivered' ? 'badge-green' : order.status === 'cancelled' ? 'badge-red' : 'badge-orange']">
+              {{ order.status_label }}
+            </span>
           </div>
-          <span :class="['badge', order.status === 'delivered' ? 'badge-green' : order.status === 'cancelled' ? 'badge-red' : 'badge-orange']">
-            {{ order.status_label }}
-          </span>
-        </div>
 
-        <!-- Progress steps -->
-        <div class="relative">
-          <div class="absolute top-5 left-5 right-5 h-0.5 bg-warm-200 dark:bg-warm-700"></div>
-          <div
-            class="absolute top-5 left-5 h-0.5 bg-primary-500 transition-all duration-700"
-            :style="{ width: `${(stepIndex(order.status) / (steps.length - 1)) * 100}%`, maxWidth: 'calc(100% - 2.5rem)' }"
-          ></div>
-          <div class="relative flex justify-between">
-            <div v-for="(step, idx) in steps" :key="step.status" class="flex flex-col items-center gap-2">
-              <div :class="[
-                'w-10 h-10 rounded-full flex items-center justify-center z-10 transition-all duration-300',
-                idx <= stepIndex(order.status)
-                  ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30'
-                  : 'bg-warm-100 dark:bg-warm-800 text-warm-400'
-              ]">
-                <component :is="step.icon" :size="18" />
+          <!-- Progress steps -->
+          <div class="relative mb-6">
+            <div class="absolute top-5 left-5 right-5 h-0.5 bg-warm-200 dark:bg-warm-700"></div>
+            <div
+              class="absolute top-5 left-5 h-0.5 bg-primary-500 transition-all duration-700"
+              :style="{ width: `${(stepIndex(order.status) / (steps.length - 1)) * 100}%`, maxWidth: 'calc(100% - 2.5rem)' }"
+            ></div>
+            <div class="relative flex justify-between">
+              <div v-for="(step, idx) in steps" :key="step.status" class="flex flex-col items-center gap-2">
+                <div :class="[
+                  'w-10 h-10 rounded-full flex items-center justify-center z-10 transition-all duration-300',
+                  idx <= stepIndex(order.status)
+                    ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30'
+                    : 'bg-warm-100 dark:bg-warm-800 text-warm-400'
+                ]">
+                  <component :is="step.icon" :size="18" />
+                </div>
+                <span class="text-xs font-medium text-warm-600 dark:text-warm-400 text-center leading-tight max-w-16">{{ step.label }}</span>
               </div>
-              <span class="text-xs font-medium text-warm-600 dark:text-warm-400 text-center leading-tight max-w-16">{{ step.label }}</span>
             </div>
           </div>
+
+          <!-- Chapa Payment Status Section -->
+          <div v-if="order.payment_method === 'chapa'" class="mt-8 pt-6 border-t border-warm-100 dark:border-warm-800">
+            <!-- Paid State -->
+            <div v-if="order.payment_status === 'paid'" class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3 text-emerald-800 dark:text-emerald-200">
+                <ShieldCheck :size="24" class="text-emerald-500 shrink-0" />
+                <div>
+                  <p class="font-bold text-sm">Payment Verified via Chapa</p>
+                  <p class="text-xs text-emerald-600 dark:text-emerald-400">Total of ETB {{ Number(order.total).toFixed(2) }} settled successfully via Telebirr / CBE / Card.</p>
+                </div>
+              </div>
+              <span class="badge badge-green text-xs font-bold uppercase">PAID</span>
+            </div>
+
+            <!-- Pending State -->
+            <div v-else class="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
+                  <Smartphone :size="20" class="text-amber-600" />
+                  <div>
+                    <p class="font-bold text-sm">Chapa Payment Pending</p>
+                    <p class="text-xs text-amber-700 dark:text-amber-400">Please complete payment of ETB {{ Number(order.total).toFixed(2) }} via Telebirr, CBE Birr, or Card.</p>
+                  </div>
+                </div>
+                <span class="badge badge-orange text-xs font-bold uppercase">UNPAID</span>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-1">
+                <button
+                  @click="payWithChapa"
+                  :disabled="paying"
+                  class="btn-primary text-xs py-2 px-4 shadow-sm gap-1.5"
+                >
+                  <ExternalLink :size="14" />
+                  <span>{{ paying ? 'Launching Chapa...' : 'Pay with Chapa (Telebirr / CBE)' }}</span>
+                </button>
+                <button
+                  @click="verifyChapaPayment(false)"
+                  :disabled="verifying"
+                  class="btn-secondary text-xs py-2 px-3.5 gap-1.5"
+                >
+                  <RefreshCw :size="14" :class="{ 'animate-spin': verifying }" />
+                  <span>{{ verifying ? 'Verifying...' : 'Verify Payment Status' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="order.estimated_time" class="mt-6 flex items-center gap-2 text-sm text-warm-600 dark:text-warm-400 bg-warm-50 dark:bg-warm-800/50 rounded-xl px-4 py-3">
+            <Clock :size="16" class="text-primary-500" />
+            Estimated delivery: ~{{ order.estimated_time }} minutes
+          </div>
         </div>
 
-        <div v-if="order.estimated_time" class="mt-8 flex items-center gap-2 text-sm text-warm-600 dark:text-warm-400 bg-warm-50 dark:bg-warm-800/50 rounded-xl px-4 py-3">
-          <Clock :size="16" class="text-primary-500" />
-          Estimated delivery: ~{{ order.estimated_time }} minutes
+        <!-- ──────────────── Rating & Feedback for Order Dishes ──────────────── -->
+        <div v-if="order.items?.length" class="card p-6 md:p-8 border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-primary-500/5 to-transparent rounded-3xl">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center">
+                <Star :size="20" class="fill-amber-400" />
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
+                  Rate Your Culinary Experience
+                </h3>
+                <p class="text-xs text-warm-500 dark:text-warm-400">
+                  How was each dish prepared? Rate your meal to help our chefs!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dishes in this order list -->
+          <div class="divide-y divide-warm-100 dark:divide-warm-800">
+            <div
+              v-for="item in order.items"
+              :key="item.id"
+              class="py-4 first:pt-2 last:pb-0"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-warm-100 dark:bg-warm-800 overflow-hidden shrink-0">
+                    <img
+                      v-if="item.dish?.image"
+                      :src="item.dish.image"
+                      :alt="item.dish?.name"
+                      class="w-full h-full object-cover"
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center text-warm-400">
+                      <ChefHat :size="18" />
+                    </div>
+                  </div>
+                  <div>
+                    <h4 class="font-heading font-semibold text-sm text-warm-900 dark:text-white">
+                      {{ item.dish?.name || 'Dish' }}
+                    </h4>
+                    <p class="text-xs text-warm-400">
+                      Qty: {{ item.quantity }} &bull; ${{ Number(item.unit_price).toFixed(2) }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Rating action / state -->
+                <div>
+                  <div v-if="ratedDishes[item.dish_id]" class="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800">
+                    <Check :size="14" />
+                    Rated
+                  </div>
+                  <button
+                    v-else
+                    @click="toggleRatingForm(item.dish_id)"
+                    class="btn-secondary text-xs py-1.5 px-3 rounded-xl gap-1.5"
+                  >
+                    <Star :size="13" class="text-amber-400 fill-amber-400" />
+                    <span>{{ activeRatingDishId === item.dish_id ? 'Close' : 'Rate Dish' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inline Rating Expand Form -->
+              <div
+                v-if="activeRatingDishId === item.dish_id && !ratedDishes[item.dish_id]"
+                class="mt-4 p-4 rounded-2xl bg-white dark:bg-warm-800/80 border border-warm-200 dark:border-warm-700 space-y-4"
+              >
+                <div>
+                  <label class="block text-xs font-semibold text-warm-500 mb-1.5 uppercase tracking-wider">
+                    Select Rating
+                  </label>
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      v-for="s in 5"
+                      :key="s"
+                      type="button"
+                      @mouseenter="hoverStars[item.dish_id] = s"
+                      @mouseleave="hoverStars[item.dish_id] = 0"
+                      @click="ratingValues[item.dish_id] = s"
+                      class="p-1 hover:scale-110 transition-transform"
+                    >
+                      <Star
+                        :size="24"
+                        :class="[
+                          'transition-colors',
+                          s <= (hoverStars[item.dish_id] || ratingValues[item.dish_id] || 5)
+                            ? 'text-amber-400 fill-amber-400'
+                            : 'text-warm-300 dark:text-warm-700'
+                        ]"
+                      />
+                    </button>
+                    <span class="text-xs font-bold text-amber-600 ml-2">
+                      {{ (hoverStars[item.dish_id] || ratingValues[item.dish_id] || 5) }} Stars
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-warm-500 mb-1.5 uppercase tracking-wider">
+                    Comments (Optional)
+                  </label>
+                  <textarea
+                    v-model="commentValues[item.dish_id]"
+                    rows="2"
+                    placeholder="Taste, temperature, portion size..."
+                    class="input-text w-full text-xs p-2.5 rounded-xl resize-none"
+                  ></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    @click="activeRatingDishId = null"
+                    class="btn-secondary text-xs py-1.5 px-3 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="submittingReview"
+                    @click="submitDishReview(item.dish_id)"
+                    class="btn-primary text-xs py-1.5 px-4 rounded-xl gap-1.5"
+                  >
+                    <Send :size="13" />
+                    <span>{{ submittingReview ? 'Submitting...' : 'Submit Review' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

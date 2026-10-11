@@ -14,8 +14,8 @@ const done    = ref(false)
 const ticket  = ref(null)
 
 const form = ref({
-  hotel_id:    localStorage.getItem('hotel_id') ?? '',
-  order_id:    route.query.order_id ?? '',
+  hotel_id:    Number(localStorage.getItem('hotel_id') || 1),
+  order_id:    route.query.order_id ? Number(route.query.order_id) : undefined,
   category:    'other',
   subject:     '',
   description: '',

@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Default binding so TenantScope never throws "not bound" error
-        app()->instance('current_hotel_id', null);
+        app()->bind('current_hotel_id', fn () => null);
     }
 
     /**

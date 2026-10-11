@@ -100,15 +100,24 @@ export const profileApi = {
   submitReview: (data: Record<string, any>) => api.post('/reviews', data),
 }
 
+// Reviews
+export const reviewApi = {
+  dishReviews:   (dishId: number | string, params?: Record<string, any>) => api.get(`/dishes/${dishId}/reviews`, { params }),
+  submit:        (data: Record<string, any>) => api.post('/reviews', data),
+  myReviews:     (params?: Record<string, any>) => api.get('/reviews/my', { params }),
+}
+
 // Payments
 export const paymentApi = {
   createIntent:     (orderUlid: string) => api.post('/payments/intent', { order_ulid: orderUlid }),
   createChapaIntent:(orderUlid: string) => api.post('/payments/chapa', { order_ulid: orderUlid }),
+  verifyChapa:      (data: { order_ulid?: string, tx_ref?: string }) => api.post('/payments/chapa/verify', data),
   roomCharge:       (orderUlid: string, bookingId: number | string) => api.post('/payments/room-charge', { order_ulid: orderUlid, booking_id: bookingId }),
 }
 
-// Guest QR + Room Booking
+// Guest QR + Room Booking + Delivery Zones
 export const guestApi = {
+  deliveryZones:    ()                          => api.get('/delivery-zones'),
   resolveQr:        (token: string)             => api.get(`/guest/resolve-qr/${token}`),
   banners:          ()                          => api.get('/banners'),
   availableRooms:   (params?: Record<string, any>) => api.get('/rooms/available', { params }),
@@ -122,9 +131,21 @@ export const guestApi = {
 export const staffApi = {
   kitchenTickets:         ()                    => api.get('/kitchen/tickets'),
   updateTicket:           (id: number | string, status: string) => api.patch(`/kitchen/tickets/${id}`, { status }),
+  // Waiter
   waiterTables:           ()                    => api.get('/waiter/tables'),
+  waiterOrders:           ()                    => api.get('/waiter/orders'),
+  createWaiterOrder:      (data: Record<string, any>) => api.post('/waiter/orders', data),
+  markServed:             (id: number | string) => api.post(`/waiter/orders/${id}/served`),
+
+  // Cashier / Billing POS
+  cashierOrders:          ()                    => api.get('/cashier/orders'),
+  confirmPayment:         (id: number | string, data?: Record<string, any>) => api.post(`/cashier/orders/${id}/confirm-payment`, data),
+  cashierSummary:         ()                    => api.get('/cashier/summary'),
+
+  // Delivery
   deliveryOrders:         ()                    => api.get('/delivery/orders'),
   updateDelivery:         (id: number | string, status: string) => api.patch(`/delivery/orders/${id}`, { status }),
+
   // Reception
   receptionDashboard:     ()                    => api.get('/reception/dashboard'),
   availableTables:        (params?: Record<string, any>) => api.get('/reception/tables/available', { params }),
@@ -166,6 +187,7 @@ export const adminApi = {
   updateUser:      (id: number | string, data: Record<string, any>) => api.patch(`/admin/users/${id}`, data),
   deleteUser:      (id: number | string)         => api.delete(`/admin/users/${id}`),
   roles:           ()                            => api.get('/admin/users/roles'),
+  permissions:     ()                            => api.get('/admin/users/permissions'),
 
   // Tables
   tables:          (params?: Record<string, any>) => api.get('/admin/tables', { params }),
@@ -205,6 +227,15 @@ export const adminApi = {
   updateZone:         (id: number | string, data: Record<string, any>) => api.patch(`/admin/delivery-zones/${id}`, data),
   deleteZone:         (id: number | string)          => api.delete(`/admin/delivery-zones/${id}`),
 
+  // Reassign Waiter (REQ-7.2)
+  reassignWaiter:     (orderUlid: string, waiterId: number | string) => api.post(`/admin/orders/${orderUlid}/reassign-waiter`, { waiter_id: waiterId }),
+
+  // Hotels (Super Admin Multi-Tenant Management)
+  hotels:             (params?: Record<string, any>) => api.get('/admin/hotels', { params }),
+  createHotel:        (data: Record<string, any>)    => api.post('/admin/hotels', data),
+  updateHotel:        (id: number | string, data: Record<string, any>) => api.patch(`/admin/hotels/${id}`, data),
+  deleteHotel:        (id: number | string)          => api.delete(`/admin/hotels/${id}`),
+
   // Rooms + bookings
   adminRooms:         (params?: Record<string, any>) => api.get('/admin/rooms', { params }),
   createRoom:         (data: Record<string, any>)    => api.post('/admin/rooms', data),
@@ -212,4 +243,9 @@ export const adminApi = {
   deleteRoom:         (id: number | string)          => api.delete(`/admin/rooms/${id}`),
   roomBookings:       (params?: Record<string, any>) => api.get('/admin/room-bookings', { params }),
   updateBooking:      (id: number | string, data: Record<string, any>) => api.patch(`/admin/room-bookings/${id}`, data),
+
+  // Reviews Moderation
+  reviews:            (params?: Record<string, any>) => api.get('/admin/reviews', { params }),
+  updateReview:       (id: number | string, data: Record<string, any>) => api.patch(`/admin/reviews/${id}`, data),
+  deleteReview:       (id: number | string)          => api.delete(`/admin/reviews/${id}`),
 }

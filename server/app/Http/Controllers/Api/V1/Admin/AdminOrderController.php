@@ -18,7 +18,7 @@ class AdminOrderController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $orders = Order::with(['user:id,name,email', 'items'])
+        $orders = Order::with(['user:id,name,email', 'items', 'table', 'activeWaiter.waiter'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->latest()
@@ -40,5 +40,19 @@ class AdminOrderController extends Controller
         ActivityLog::record('order.status_changed', $order, ['status' => $data['status']]);
 
         return $this->success(new OrderResource($order), 'Order status updated');
+    }
+
+    public function reassignWaiter(Request $request, Order $order, \App\Services\WaiterAssignmentService $waiterService): JsonResponse
+    {
+        $data = $request->validate([
+            'waiter_id' => ['required', 'exists:users,id'],
+        ]);
+
+        $waiterService->reassign($order, (int) $data['waiter_id']);
+        ActivityLog::record('order.waiter_reassigned', $order, ['waiter_id' => $data['waiter_id']]);
+
+        $order->load(['user', 'items', 'table', 'activeWaiter.waiter']);
+
+        return $this->success(new OrderResource($order), 'Waiter reassigned successfully');
     }
 }

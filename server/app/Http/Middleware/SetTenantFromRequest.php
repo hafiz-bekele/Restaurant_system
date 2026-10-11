@@ -27,7 +27,8 @@ class SetTenantFromRequest
             ?? $request->user()?->hotel_id;
 
         // Bind into container so TenantScope can read it
-        app()->instance('current_hotel_id', $hotelId ? (int) $hotelId : null);
+        $resolvedId = $hotelId ? (int) $hotelId : null;
+        app()->bind('current_hotel_id', fn () => $resolvedId);
 
         // If an authenticated user belongs to a different hotel than requested, block them
         $user = $request->user();

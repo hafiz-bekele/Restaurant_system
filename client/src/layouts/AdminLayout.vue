@@ -1,7 +1,7 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings, Menu, X, LogOut, ChefHat, Users, Grid3x3, Calendar, Tag, Package, Shield, AlertTriangle, Truck, BedDouble } from '@lucide/vue'
+import { LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings, Menu, X, LogOut, ChefHat, Users, Grid3x3, Calendar, Tag, Package, Shield, AlertTriangle, Truck, BedDouble, Building2, ExternalLink, Star } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -9,22 +9,31 @@ const auth   = useAuthStore()
 const router = useRouter()
 const sidebarOpen = ref(true)
 
-const nav = [
-  { to: '/admin',               icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/menu',          icon: UtensilsCrossed,  label: 'Menu' },
-  { to: '/admin/orders',        icon: ShoppingBag,      label: 'Orders' },
-  { to: '/admin/reservations',  icon: Calendar,         label: 'Reservations' },
-  { to: '/admin/tables',        icon: Grid3x3,          label: 'Tables' },
-  { to: '/admin/rooms',         icon: BedDouble,        label: 'Rooms' },
-  { to: '/admin/coupons',       icon: Tag,              label: 'Coupons' },
-  { to: '/admin/inventory',     icon: Package,          label: 'Inventory' },
-  { to: '/admin/delivery-zones',icon: Truck,            label: 'Delivery Zones' },
-  { to: '/admin/complaints',    icon: AlertTriangle,    label: 'Complaints' },
-  { to: '/admin/users',         icon: Users,            label: 'Users' },
-  { to: '/admin/reports',       icon: BarChart2,        label: 'Reports' },
-  { to: '/admin/audit',         icon: Shield,           label: 'Audit Log' },
-  { to: '/admin/settings',      icon: Settings,         label: 'Settings' },
-]
+const nav = computed(() => {
+  const items = [
+    { to: '/admin',               icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/admin/menu',          icon: UtensilsCrossed,  label: 'Menu' },
+    { to: '/admin/orders',        icon: ShoppingBag,      label: 'Orders' },
+    { to: '/admin/reviews',       icon: Star,             label: 'Reviews & Ratings' },
+    { to: '/admin/reservations',  icon: Calendar,         label: 'Reservations' },
+    { to: '/admin/tables',        icon: Grid3x3,          label: 'Tables' },
+    { to: '/admin/rooms',         icon: BedDouble,        label: 'Rooms' },
+  ]
+  if (auth.hasRole('super-admin')) {
+    items.push({ to: '/admin/hotels', icon: Building2, label: 'Properties' })
+  }
+  items.push(
+    { to: '/admin/coupons',       icon: Tag,              label: 'Coupons' },
+    { to: '/admin/inventory',     icon: Package,          label: 'Inventory' },
+    { to: '/admin/delivery-zones',icon: Truck,            label: 'Delivery Zones' },
+    { to: '/admin/complaints',    icon: AlertTriangle,    label: 'Complaints' },
+    { to: '/admin/users',         icon: Users,            label: 'Staff & Permissions' },
+    { to: '/admin/reports',       icon: BarChart2,        label: 'Reports' },
+    { to: '/admin/audit',         icon: Shield,           label: 'Audit Log' },
+    { to: '/admin/settings',      icon: Settings,         label: 'Settings' },
+  )
+  return items
+})
 
 async function logout() {
   await auth.logout()
@@ -60,9 +69,28 @@ async function logout() {
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Topbar -->
       <header class="h-16 bg-white dark:bg-gray-900 border-b border-warm-200 dark:border-warm-800 flex items-center justify-between px-6">
-        <button @click="sidebarOpen = !sidebarOpen" class="text-warm-500 hover:text-warm-700">
-          <Menu :size="20" />
-        </button>
+        <div class="flex items-center gap-3">
+          <button @click="sidebarOpen = !sidebarOpen" class="text-warm-500 hover:text-warm-700">
+            <Menu :size="20" />
+          </button>
+          <!-- Storefront Website Link -->
+          <RouterLink
+            to="/"
+            target="_blank"
+            class="flex items-center gap-1.5 btn-secondary text-xs py-1.5 px-3"
+            title="Preview customer storefront website in new tab"
+          >
+            <ExternalLink :size="14" />
+            <span>Storefront Website</span>
+          </RouterLink>
+          <RouterLink
+            to="/staff/kitchen"
+            class="hidden sm:flex items-center gap-1.5 btn-secondary text-xs py-1.5 px-3"
+          >
+            <ChefHat :size="15" />
+            <span>Staff Portals</span>
+          </RouterLink>
+        </div>
         <div class="flex items-center gap-4">
           <span class="text-sm font-medium text-warm-700 dark:text-warm-300">{{ auth.user?.name }}</span>
           <span class="badge badge-orange text-xs capitalize">{{ auth.user?.roles?.[0] }}</span>

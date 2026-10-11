@@ -77,9 +77,10 @@ async function toggleFavorite() {
       <p class="text-sm text-warm-500 dark:text-warm-400 line-clamp-2 mb-3">{{ dish.description }}</p>
 
       <div class="flex items-center gap-3 text-xs text-warm-400 mb-4">
-        <span v-if="dish.avg_rating > 0" class="flex items-center gap-1">
-          <Star :size="12" class="text-yellow-400 fill-yellow-400" />
-          {{ dish.avg_rating }}
+        <span v-if="dish.avg_rating > 0" class="flex items-center gap-1 font-medium text-warm-700 dark:text-warm-300">
+          <Star :size="12" class="text-amber-400 fill-amber-400" />
+          {{ Number(dish.avg_rating).toFixed(1) }}
+          <span v-if="dish.reviews_count" class="text-warm-400 font-normal">({{ dish.reviews_count }})</span>
         </span>
         <span v-if="dish.prep_time" class="flex items-center gap-1">
           <Clock :size="12" /> {{ dish.prep_time }}m

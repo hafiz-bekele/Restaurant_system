@@ -14,7 +14,21 @@ class CartService
     public function getOrCreate(?int $userId, ?string $sessionId): Cart
     {
         if ($userId) {
-            return Cart::firstOrCreate(['user_id' => $userId]);
+            $userCart = Cart::firstOrCreate(['user_id' => $userId]);
+
+            // Merge / transfer session cart to user cart if user cart has no items
+            if ($sessionId && $userCart->items()->count() === 0) {
+                $sessionCart = Cart::where('session_id', $sessionId)->first();
+                if ($sessionCart && $sessionCart->id !== $userCart->id) {
+                    $sessionCart->items()->update(['cart_id' => $userCart->id]);
+                    if ($sessionCart->coupon_id && ! $userCart->coupon_id) {
+                        $userCart->update(['coupon_id' => $sessionCart->coupon_id]);
+                    }
+                    $sessionCart->delete();
+                }
+            }
+
+            return $userCart;
         }
 
         return Cart::firstOrCreate(['session_id' => $sessionId]);

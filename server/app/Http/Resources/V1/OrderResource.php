@@ -16,6 +16,7 @@ class OrderResource extends JsonResource
             'status_label' => $this->status->label(),
             'subtotal' => $this->subtotal,
             'tax' => $this->tax,
+            'service_charge' => $this->service_charge,
             'delivery_fee' => $this->delivery_fee,
             'tip' => $this->tip,
             'discount' => $this->discount,
@@ -26,6 +27,15 @@ class OrderResource extends JsonResource
             'notes' => $this->notes,
             'scheduled_at' => $this->scheduled_at,
             'created_at' => $this->created_at,
+            'user' => $this->whenLoaded('user', fn () => [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+                'email' => $this->user->email,
+            ]),
+            'waiter' => ($this->relationLoaded('activeWaiter') && $this->activeWaiter?->waiter) ? [
+                'id' => $this->activeWaiter->waiter->id,
+                'name' => $this->activeWaiter->waiter->name,
+            ] : null,
             'items' => $this->whenLoaded('items'),
             'status_history' => $this->whenLoaded('statusHistory'),
             'table' => $this->whenLoaded('table'),

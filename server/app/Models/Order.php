@@ -91,6 +91,16 @@ class Order extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function waiterAssignments(): HasMany
+    {
+        return $this->hasMany(WaiterAssignment::class);
+    }
+
+    public function activeWaiter(): HasOne
+    {
+        return $this->hasOne(WaiterAssignment::class)->where('status', 'assigned')->latestOfMany();
+    }
+
     public function scopeByStatus($query, OrderStatus $status)
     {
         return $query->where('status', $status);

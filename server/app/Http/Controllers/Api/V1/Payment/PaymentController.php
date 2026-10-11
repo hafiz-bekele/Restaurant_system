@@ -59,6 +59,73 @@ class PaymentController extends Controller
     }
 
     /**
+     * Verify Chapa transaction status (telebirr, CBE, card).
+     */
+    public function verifyChapa(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order_ulid' => 'required_without:tx_ref|nullable|string|exists:orders,ulid',
+            'tx_ref'     => 'required_without:order_ulid|nullable|string',
+        ]);
+
+        $order = null;
+        if ($request->filled('order_ulid')) {
+            $order = Order::where('ulid', $request->order_ulid)->firstOrFail();
+        }
+
+        $payment = null;
+        if ($request->filled('tx_ref')) {
+            $payment = Payment::where('transaction_id', $request->tx_ref)->first();
+            if ($payment && ! $order) {
+                $order = $payment->order;
+            }
+        }
+
+        if ($order && ! $payment) {
+            $payment = Payment::where('order_id', $order->id)->where('gateway', 'chapa')->latest()->first();
+        }
+
+        $txRef = $request->tx_ref ?: ($payment?->transaction_id ?: 'RES-'.$order->ulid);
+        $gateway = app('payment.chapa');
+        $verifyResult = $gateway->verify($txRef);
+
+        if (($verifyResult['status'] ?? '') === 'success' || ($verifyResult['data']['status'] ?? '') === 'success') {
+            if ($payment) {
+                $payment->update([
+                    'status' => PaymentStatus::Paid,
+                    'payload' => $verifyResult,
+                ]);
+            } elseif ($order) {
+                Payment::create([
+                    'order_id'       => $order->id,
+                    'gateway'        => 'chapa',
+                    'transaction_id' => $txRef,
+                    'amount'         => $order->total,
+                    'currency'       => 'ETB',
+                    'status'         => PaymentStatus::Paid,
+                    'payload'        => $verifyResult,
+                ]);
+            }
+
+            if ($order) {
+                $order->update(['payment_status' => PaymentStatus::Paid]);
+                if ($order->status === OrderStatus::Pending) {
+                    app(OrderService::class)->updateStatus($order, OrderStatus::Confirmed, null, 'Chapa payment confirmed');
+                }
+            }
+
+            return $this->success([
+                'order_ulid'     => $order?->ulid,
+                'payment_status' => 'paid',
+                'order_status'   => $order?->fresh()->status->value,
+                'details'        => $verifyResult,
+            ], 'Chapa payment successfully verified');
+        }
+
+        return $this->error('Chapa payment could not be verified', 422, $verifyResult);
+    }
+
+    /**
      * REQ-9.1 Room Charge: post order total to the guest's active room booking folio.
      */
     public function roomCharge(Request $request): JsonResponse

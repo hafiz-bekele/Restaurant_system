@@ -51,6 +51,7 @@ const routes = [
       { path: '',               name: 'admin',                  component: () => import('../views/admin/DashboardPage.vue') },
       { path: 'menu',           name: 'admin.menu',             component: () => import('../views/admin/MenuPage.vue') },
       { path: 'orders',         name: 'admin.orders',           component: () => import('../views/admin/OrdersPage.vue') },
+      { path: 'reviews',        name: 'admin.reviews',          component: () => import('../views/admin/ReviewsPage.vue') },
       { path: 'reports',        name: 'admin.reports',          component: () => import('../views/admin/ReportsPage.vue') },
       { path: 'settings',       name: 'admin.settings',         component: () => import('../views/admin/SettingsPage.vue') },
       { path: 'users',          name: 'admin.users',            component: () => import('../views/admin/UsersPage.vue') },
@@ -62,6 +63,7 @@ const routes = [
       { path: 'complaints',     name: 'admin.complaints',       component: () => import('../views/admin/ComplaintsPage.vue') },
       { path: 'delivery-zones', name: 'admin.delivery-zones',   component: () => import('../views/admin/DeliveryZonesPage.vue') },
       { path: 'rooms',          name: 'admin.rooms',            component: () => import('../views/admin/RoomsPage.vue') },
+      { path: 'hotels',         name: 'admin.hotels',           component: () => import('../views/admin/HotelsPage.vue') },
     ],
   },
 

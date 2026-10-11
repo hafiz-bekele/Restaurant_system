@@ -18,8 +18,10 @@ class CartController extends Controller
 
     private function resolveCart(Request $request)
     {
+        $user = $request->user() ?? auth('sanctum')->user();
+
         return $this->cartService->getOrCreate(
-            $request->user()?->id,
+            $user?->id,
             $request->header('X-Session-Id')
         );
     }

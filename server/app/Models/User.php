@@ -17,6 +17,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
+        'hotel_id',
         'name',
         'email',
         'phone',
@@ -24,6 +25,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'loyalty_points',
         'status',
+        'on_duty',
+        'section',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'two_factor_confirmed_at',
@@ -39,10 +42,12 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function casts(): array
     {
         return [
+            'hotel_id' => 'integer',
             'email_verified_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'on_duty' => 'boolean',
             'loyalty_points' => 'integer',
         ];
     }

@@ -23,14 +23,15 @@ class DishResource extends JsonResource
             'spice_level' => $this->spice_level,
             'is_available' => $this->is_available,
             'is_featured' => $this->is_featured,
-            'avg_rating' => $this->avg_rating,
+            'avg_rating' => (float) ($this->avg_rating ?? 0),
             'orders_count' => $this->orders_count,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'images' => $this->whenLoaded('images', fn () => $this->images->pluck('path')),
             'variants' => $this->whenLoaded('variants'),
             'addon_groups' => $this->whenLoaded('addonGroups'),
             'allergens' => $this->whenLoaded('allergens'),
-            'reviews_count' => $this->whenCounted('reviews'),
+            'reviews_count' => (int) ($this->reviews_count ?? 0),
+            'reviews' => $this->whenLoaded('reviews'),
         ];
     }
 }

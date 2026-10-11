@@ -74,11 +74,17 @@ class OrderController extends Controller
     public function track(Order $order): JsonResponse
     {
         return $this->success([
+            'id'             => $order->id,
             'ulid'           => $order->ulid,
+            'order_number'   => $order->order_number,
             'status'         => $order->status->value,
             'status_label'   => $order->status->label(),
             'status_history' => $order->statusHistory()->latest()->get(),
             'estimated_time' => $order->deliveryZone?->eta_minutes,
+            'total'          => (float) $order->total,
+            'payment_method' => $order->payment_method,
+            'payment_status' => $order->payment_status?->value ?? 'pending',
+            'items'          => $order->items()->with('dish:id,name,image,slug')->get(),
         ]);
     }
 }

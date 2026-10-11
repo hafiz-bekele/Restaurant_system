@@ -16,8 +16,8 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('auth_token'))
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
-  const isAdmin         = computed(() => user.value?.roles?.includes('super-admin') || user.value?.roles?.includes('manager'))
-  const isStaff         = computed(() => ['super-admin', 'manager', 'waiter', 'kitchen', 'cashier', 'delivery'].some(r => user.value?.roles?.includes(r)))
+  const isAdmin         = computed(() => user.value?.roles?.includes('super-admin') || user.value?.roles?.includes('admin') || user.value?.roles?.includes('manager'))
+  const isStaff         = computed(() => ['super-admin', 'admin', 'manager', 'waiter', 'kitchen', 'cashier', 'reception', 'delivery'].some(r => user.value?.roles?.includes(r)))
   const hasRole         = (role: string) => user.value?.roles?.includes(role) ?? false
 
   async function login(credentials: Record<string, any>) {

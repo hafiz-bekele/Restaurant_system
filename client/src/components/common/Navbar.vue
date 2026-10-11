@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { ShoppingCart, Menu, X, Sun, Moon, User, LogOut, ChefHat } from '@lucide/vue'
+import { ShoppingCart, Menu, X, Sun, Moon, User, LogOut, ChefHat, Globe, ShieldCheck } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useCartStore } from '../../stores/cart'
 import { useUiStore }   from '../../stores/ui'
@@ -10,16 +11,32 @@ const auth   = useAuthStore()
 const cart   = useCartStore()
 const ui     = useUiStore()
 const router = useRouter()
+const { locale } = useI18n()
 
 const mobileOpen  = ref(false)
 const userMenuOpen = ref(false)
 
-const navLinks = [
-  { name: 'Home',        to: '/' },
-  { name: 'Menu',        to: '/menu' },
-  { name: 'Reservations',to: '/reservations' },
-  { name: 'About',       to: '/about' },
-]
+function toggleLanguage() {
+  locale.value = locale.value === 'en' ? 'am' : 'en'
+  localStorage.setItem('locale', locale.value)
+}
+
+const navLinks = computed(() => [
+  { name: locale.value === 'am' ? 'መነሻ' : 'Home',         to: '/' },
+  { name: locale.value === 'am' ? 'ምናሌ' : 'Menu',         to: '/menu' },
+  { name: locale.value === 'am' ? 'ቦታ ማስያዝ' : 'Reservations', to: '/reservations' },
+  { name: locale.value === 'am' ? 'የሆቴል ክፍሎች' : 'Hotel Suites', to: '/rooms' },
+  { name: locale.value === 'am' ? 'ስለ እኛ' : 'About',        to: '/about' },
+])
+
+const staffHomeLink = computed(() => {
+  if (auth.hasRole('kitchen')) return '/staff/kitchen'
+  if (auth.hasRole('waiter')) return '/staff/waiter'
+  if (auth.hasRole('cashier')) return '/staff/cashier'
+  if (auth.hasRole('reception')) return '/staff/reception'
+  if (auth.hasRole('delivery')) return '/staff/delivery'
+  return '/staff/kitchen'
+})
 
 async function handleLogout() {
   await auth.logout()
@@ -49,7 +66,17 @@ async function handleLogout() {
       </ul>
 
       <!-- Actions -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 md:gap-3">
+        <!-- Language Switcher (EN / AM per SRS Section 5.4) -->
+        <button
+          @click="toggleLanguage"
+          class="btn-ghost px-2 py-1 rounded-xl text-xs font-bold flex items-center gap-1 border border-warm-200 dark:border-warm-700 hover:border-primary-500 text-warm-700 dark:text-warm-300 transition-colors"
+          :title="locale === 'en' ? 'Switch to Amharic (አማርኛ)' : 'Switch to English'"
+        >
+          <Globe :size="15" class="text-primary-500" />
+          <span>{{ locale === 'en' ? 'EN' : 'አማ' }}</span>
+        </button>
+
         <!-- Dark mode -->
         <button @click="ui.toggleDarkMode" class="btn-ghost p-2 rounded-xl" :aria-label="ui.darkMode ? 'Switch to light mode' : 'Switch to dark mode'">
           <Moon v-if="!ui.darkMode" :size="20" />
@@ -63,6 +90,16 @@ async function handleLogout() {
             {{ cart.itemCount > 9 ? '9+' : cart.itemCount }}
           </span>
         </button>
+
+        <!-- Admin Quick Switcher Link -->
+        <RouterLink
+          v-if="auth.isAdmin"
+          to="/admin"
+          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 hover:bg-primary-500 hover:text-white transition-all shadow-xs"
+        >
+          <ShieldCheck :size="15" />
+          <span>Admin Panel</span>
+        </RouterLink>
 
         <!-- User menu -->
         <div v-if="auth.isAuthenticated" class="relative">
@@ -80,8 +117,8 @@ async function handleLogout() {
             <RouterLink v-if="auth.isAdmin" to="/admin" @click="userMenuOpen = false" class="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800">
               Admin Panel
             </RouterLink>
-            <RouterLink v-if="auth.isStaff && !auth.isAdmin" to="/staff/kitchen" @click="userMenuOpen = false" class="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800">
-              Staff Panel
+            <RouterLink v-if="auth.isStaff" :to="staffHomeLink" @click="userMenuOpen = false" class="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800">
+              Staff Portal
             </RouterLink>
             <hr class="my-1 border-warm-100 dark:border-warm-800" />
             <button @click="handleLogout" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">

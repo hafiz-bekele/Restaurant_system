@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { guestApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
@@ -18,10 +18,13 @@ const saving    = ref(false)
 const showModal = ref(false)
 const selected  = ref(null)
 
+const todayStr = new Date().toISOString().split('T')[0]
+const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+
 const form = ref({
-  hotel_id:       route.query.hotel_id ?? '',
-  check_in_date:  '',
-  check_out_date: '',
+  hotel_id:       Number(route.query.hotel_id || 1),
+  check_in_date:  todayStr,
+  check_out_date: tomorrowStr,
   capacity:       2,
 })
 
@@ -47,6 +50,10 @@ async function search() {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  search()
+})
 
 function openBooking(room) {
   selected.value = room

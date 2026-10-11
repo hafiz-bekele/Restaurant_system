@@ -16,7 +16,7 @@ class StoreReviewRequest extends FormRequest
     {
         return [
             'dish_id'  => ['required', 'integer', 'exists:dishes,id'],
-            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'rating'   => ['required', 'integer', 'between:1,5'],
             'comment'  => ['nullable', 'string', 'max:1000'],
         ];

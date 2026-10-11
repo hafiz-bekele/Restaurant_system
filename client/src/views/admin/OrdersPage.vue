@@ -1,65 +1,488 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
-import { adminApi } from '../../services/api'
+import { adminApi, staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { ShoppingBag, UserCheck, Utensils, RefreshCw, X, Search, Plus, Trash2, CheckCircle } from '@lucide/vue'
 
-const ui     = useUiStore()
-const qc     = useQueryClient()
+const ui = useUiStore()
+const qc = useQueryClient()
+
 const status = ref('')
+const search = ref('')
+const selectedOrder = ref(null)
+const showReassignModal = ref(false)
+const selectedWaiterId = ref('')
+const reassigning = ref(false)
 
-const { data, isLoading } = useQuery({
+// Create order state
+const showCreateModal = ref(false)
+const selectedTableId = ref('')
+const guestName = ref('')
+const guestPhone = ref('')
+const newOrderItems = ref([])
+const newOrderNotes = ref('')
+const dishSearch = ref('')
+const creatingOrder = ref(false)
+
+const { data: ordersData, isLoading } = useQuery({
   queryKey: ['admin', 'orders', status],
-  queryFn:  () => adminApi.orders({ status: status.value || undefined }).then(r => r.data),
+  queryFn: () => adminApi.orders({ status: status.value || undefined }).then(r => r.data),
+  refetchInterval: 15000,
 })
-const orders = () => data.value?.data ?? []
+
+const { data: waitersData } = useQuery({
+  queryKey: ['admin', 'waiters-list'],
+  queryFn: () => adminApi.users({ role: 'waiter' }).then(r => r.data.data),
+})
+
+const { data: tablesData } = useQuery({
+  queryKey: ['admin', 'tables-list'],
+  queryFn: () => adminApi.tables().then(r => r.data.data),
+})
+
+const { data: dishesData } = useQuery({
+  queryKey: ['admin', 'dishes-list'],
+  queryFn: () => adminApi.dishes().then(r => r.data.data),
+})
+
+const orders = () => {
+  const list = ordersData.value?.data ?? []
+  if (!search.value) return list
+  const q = search.value.toLowerCase()
+  return list.filter(o =>
+    o.ulid?.toLowerCase().includes(q) ||
+    o.user?.name?.toLowerCase().includes(q) ||
+    o.table?.name?.toLowerCase().includes(q)
+  )
+}
+
+const waiters = () => waitersData.value ?? []
+const tables = () => tablesData.value ?? []
+const dishes = () => dishesData.value ?? []
+
+const filteredDishes = computed(() => {
+  const list = dishes().filter(d => d.is_available)
+  if (!dishSearch.value) return list
+  const q = dishSearch.value.toLowerCase()
+  return list.filter(d => d.name.toLowerCase().includes(q))
+})
 
 const statusOptions = ['', 'pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled']
 
 async function updateStatus(id, newStatus) {
-  await adminApi.updateOrder(id, { status: newStatus })
-  qc.invalidateQueries({ queryKey: ['admin', 'orders'] })
-  ui.toast('Order updated')
+  try {
+    await adminApi.updateOrder(id, { status: newStatus })
+    qc.invalidateQueries({ queryKey: ['admin', 'orders'] })
+    ui.toast('Order status updated', 'success')
+  } catch {
+    ui.toast('Failed to update status', 'error')
+  }
+}
+
+function openReassign(order) {
+  selectedOrder.value = order
+  selectedWaiterId.value = order.waiter?.id ? String(order.waiter.id) : ''
+  showReassignModal.value = true
+}
+
+async function submitReassign() {
+  if (!selectedWaiterId.value) return
+  reassigning.value = true
+  try {
+    await adminApi.reassignWaiter(selectedOrder.value.ulid, selectedWaiterId.value)
+    qc.invalidateQueries({ queryKey: ['admin', 'orders'] })
+    ui.toast('Waiter reassigned successfully', 'success')
+    showReassignModal.value = false
+  } catch (e) {
+    ui.toast(e.response?.data?.message || 'Failed to reassign waiter', 'error')
+  } finally {
+    reassigning.value = false
+  }
+}
+
+// Create Order Functions
+function openCreateOrder() {
+  selectedTableId.value = tables()[0]?.id || ''
+  guestName.value = ''
+  guestPhone.value = ''
+  newOrderItems.value = []
+  newOrderNotes.value = ''
+  dishSearch.value = ''
+  showCreateModal.value = true
+}
+
+function addItemToNewOrder(dish) {
+  const existing = newOrderItems.value.find(i => i.dish_id === dish.id)
+  if (existing) {
+    existing.quantity++
+  } else {
+    newOrderItems.value.push({
+      dish_id: dish.id,
+      name: dish.name,
+      price: Number(dish.price),
+      quantity: 1,
+    })
+  }
+}
+
+function updateItemQty(index, delta) {
+  newOrderItems.value[index].quantity += delta
+  if (newOrderItems.value[index].quantity <= 0) {
+    newOrderItems.value.splice(index, 1)
+  }
+}
+
+const subtotal = computed(() => {
+  return newOrderItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+})
+const serviceCharge = computed(() => {
+  return Math.round(subtotal.value * 0.10 * 100) / 100
+})
+const vatAmount = computed(() => {
+  const basis = subtotal.value + serviceCharge.value
+  return Math.round(basis * 0.15 * 100) / 100
+})
+const grandTotal = computed(() => {
+  return subtotal.value + serviceCharge.value + vatAmount.value
+})
+
+async function submitNewOrder() {
+  if (!selectedTableId.value || !newOrderItems.value.length) return
+  creatingOrder.value = true
+  try {
+    const notesParts = []
+    if (guestName.value.trim()) notesParts.push(`Customer: ${guestName.value.trim()}`)
+    if (guestPhone.value.trim()) notesParts.push(`Phone: ${guestPhone.value.trim()}`)
+    if (newOrderNotes.value.trim()) notesParts.push(newOrderNotes.value.trim())
+    const combinedNotes = notesParts.length ? notesParts.join(' | ') : undefined
+
+    await staffApi.createWaiterOrder({
+      table_id: selectedTableId.value,
+      items: newOrderItems.value.map(i => ({ dish_id: i.dish_id, quantity: i.quantity })),
+      notes: combinedNotes,
+    })
+    qc.invalidateQueries({ queryKey: ['admin', 'orders'] })
+    ui.toast('In-house order created and dispatched to Kitchen KDS!', 'success')
+    showCreateModal.value = false
+  } catch (err) {
+    ui.toast(err.response?.data?.message || 'Failed to create order', 'error')
+  } finally {
+    creatingOrder.value = false
+  }
 }
 </script>
+
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white">Orders</h1>
-      <select v-model="status" class="input w-auto text-sm">
-        <option v-for="s in statusOptions" :key="s" :value="s">{{ s || 'All Statuses' }}</option>
-      </select>
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
+          <ShoppingBag :size="24" class="text-primary-500" />
+          Live Orders & Operational Dispatch
+        </h1>
+        <p class="text-sm text-warm-500 dark:text-warm-400 mt-1">
+          Manager Order Lifecycle Management & Waiter Reassignment Engine (REQ-7.2 & REQ-8.1)
+        </p>
+      </div>
+
+      <!-- Action Buttons & Filters -->
+      <div class="flex flex-wrap items-center gap-3">
+        <button
+          @click="openCreateOrder"
+          class="btn-primary text-xs gap-1.5 py-2 px-3.5 shadow-sm"
+        >
+          <Plus :size="15" /> In-House / Phone Order
+        </button>
+
+        <div class="relative">
+          <Search :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
+          <input
+            v-model="search"
+            type="search"
+            placeholder="Search reference or guest..."
+            class="input pl-9 w-44 sm:w-56 text-xs"
+          />
+        </div>
+
+        <select v-model="status" class="input w-auto text-xs py-2 font-medium">
+          <option v-for="s in statusOptions" :key="s" :value="s">{{ s ? s.toUpperCase() : 'ALL STATUSES' }}</option>
+        </select>
+      </div>
     </div>
+
+    <!-- Loading Skeleton -->
     <div v-if="isLoading" class="space-y-3">
-      <div v-for="i in 5" :key="i" class="skeleton h-14 rounded-xl"></div>
+      <div v-for="i in 5" :key="i" class="skeleton h-16 rounded-2xl"></div>
     </div>
-    <div v-else class="card overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-warm-50 dark:bg-warm-800">
-          <tr class="text-left text-warm-600 dark:text-warm-400">
-            <th class="px-5 py-3 font-medium">Order</th>
-            <th class="px-5 py-3 font-medium">Customer</th>
-            <th class="px-5 py-3 font-medium">Total</th>
-            <th class="px-5 py-3 font-medium">Status</th>
-            <th class="px-5 py-3 font-medium">Update</th>
+
+    <!-- Orders Table -->
+    <div v-else class="card overflow-x-auto shadow-sm">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
+          <tr>
+            <th class="px-5 py-3.5">Reference</th>
+            <th class="px-5 py-3.5">Type & Location</th>
+            <th class="px-5 py-3.5">Customer</th>
+            <th class="px-5 py-3.5">Items</th>
+            <th class="px-5 py-3.5">Assigned Waiter</th>
+            <th class="px-5 py-3.5">Total</th>
+            <th class="px-5 py-3.5">Status</th>
+            <th class="px-5 py-3.5 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-warm-50 dark:divide-warm-800">
-          <tr v-for="order in orders()" :key="order.ulid" class="hover:bg-warm-50 dark:hover:bg-warm-800/50">
-            <td class="px-5 py-3 font-mono text-xs text-warm-500">{{ order.ulid.slice(-8) }}</td>
-            <td class="px-5 py-3 text-warm-700 dark:text-warm-300">{{ order.user?.name ?? 'Guest' }}</td>
-            <td class="px-5 py-3 font-semibold text-primary-600 dark:text-primary-400">${{ Number(order.total).toFixed(2) }}</td>
-            <td class="px-5 py-3">
-              <span :class="['badge', order.status === 'delivered' ? 'badge-green' : order.status === 'cancelled' ? 'badge-red' : 'badge-orange']">{{ order.status_label }}</span>
+        <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
+          <tr
+            v-for="order in orders()"
+            :key="order.ulid"
+            class="hover:bg-warm-50/70 dark:hover:bg-warm-800/40 transition-colors"
+          >
+            <!-- Reference -->
+            <td class="px-5 py-3.5">
+              <span class="font-mono font-bold text-xs text-primary-600 dark:text-primary-400">
+                #{{ order.ulid.slice(-6).toUpperCase() }}
+              </span>
+              <p class="text-[11px] text-warm-400">{{ new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
             </td>
-            <td class="px-5 py-3">
-              <select class="input text-xs py-1 px-2 w-auto" @change="e => updateStatus(order.ulid, e.target.value)" :value="order.status">
-                <option v-for="s in ['confirmed','preparing','ready','out_for_delivery','delivered','cancelled']" :key="s" :value="s">{{ s }}</option>
+
+            <!-- Type & Table -->
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-1.5 font-medium text-warm-800 dark:text-warm-200 text-xs">
+                <span class="capitalize">{{ order.type }}</span>
+                <span v-if="order.table" class="badge badge-orange text-[10px]">{{ order.table.name }} ({{ order.table.area || 'Floor' }})</span>
+              </div>
+            </td>
+
+            <!-- Customer -->
+            <td class="px-5 py-3.5 text-xs text-warm-700 dark:text-warm-300">
+              <p class="font-semibold">{{ order.user?.name ?? 'Walk-in Guest' }}</p>
+              <p class="text-[11px] text-warm-400">{{ order.user?.email ?? 'Table QR Scan' }}</p>
+            </td>
+
+            <!-- Items count -->
+            <td class="px-5 py-3.5 text-xs text-warm-600 dark:text-warm-400">
+              {{ order.items?.length ?? 1 }} item(s)
+            </td>
+
+            <!-- Waiter (REQ-7.2) -->
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-2">
+                <span v-if="order.waiter" class="badge badge-green text-xs flex items-center gap-1">
+                  <UserCheck :size="12" /> {{ order.waiter.name }}
+                </span>
+                <span v-else class="text-xs text-warm-400 italic">Unassigned</span>
+                <button
+                  @click="openReassign(order)"
+                  class="btn-ghost p-1 text-[11px] text-primary-600 font-semibold hover:underline"
+                  title="Reassign Waiter"
+                >
+                  Change
+                </button>
+              </div>
+            </td>
+
+            <!-- Total -->
+            <td class="px-5 py-3.5 font-bold text-warm-900 dark:text-white">
+              ${{ Number(order.total).toFixed(2) }}
+            </td>
+
+            <!-- Status Badge -->
+            <td class="px-5 py-3.5">
+              <span
+                :class="[
+                  'badge text-xs capitalize',
+                  order.status === 'delivered' ? 'badge-green' :
+                  order.status === 'ready' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' :
+                  order.status === 'cancelled' ? 'badge-red' : 'badge-orange'
+                ]"
+              >
+                {{ order.status }}
+              </span>
+            </td>
+
+            <!-- Status Switcher -->
+            <td class="px-5 py-3.5 text-right">
+              <select
+                class="input text-xs py-1 px-2.5 w-auto"
+                :value="order.status"
+                @change="e => updateStatus(order.ulid, e.target.value)"
+              >
+                <option v-for="s in ['pending','confirmed','preparing','ready','out_for_delivery','delivered','cancelled']" :key="s" :value="s">
+                  {{ s }}
+                </option>
               </select>
             </td>
           </tr>
         </tbody>
       </table>
+
+      <div v-if="orders().length === 0" class="text-center py-12 text-warm-500 text-sm">
+        No orders match current filter criteria.
+      </div>
+    </div>
+
+    <!-- In-House / Phone Order Modal for Admin/Manager -->
+    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="card w-full max-w-2xl shadow-float max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-warm-100 dark:border-warm-800 mb-3">
+          <div>
+            <h3 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
+              <ShoppingBag :size="18" class="text-primary-500" />
+              In-House / Phone Order Entry
+            </h3>
+            <p class="text-xs text-warm-500">Ring up an order on behalf of a guest/customer and dispatch directly to Kitchen KDS.</p>
+          </div>
+          <button @click="showCreateModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto pr-1">
+          <!-- Left: Customer Details & Menu Item Picker -->
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Customer / Guest</label>
+                <input v-model="guestName" type="text" placeholder="e.g. Alex / Caller" class="input text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Phone Number</label>
+                <input v-model="guestPhone" type="tel" placeholder="+251..." class="input text-xs" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Target Table *</label>
+              <select v-model="selectedTableId" class="input text-xs">
+                <option v-for="t in tables()" :key="t.id" :value="t.id">
+                  {{ t.name }} ({{ t.area || 'Floor' }}, {{ t.capacity }} seats)
+                </option>
+              </select>
+            </div>
+
+            <div class="relative">
+              <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
+              <input
+                v-model="dishSearch"
+                type="search"
+                placeholder="Search menu dishes..."
+                class="input pl-8 text-xs"
+              />
+            </div>
+
+            <div class="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+              <div
+                v-for="d in filteredDishes"
+                :key="d.id"
+                @click="addItemToNewOrder(d)"
+                class="flex items-center justify-between p-2 rounded-xl bg-warm-50 dark:bg-warm-850 hover:bg-primary-50 dark:hover:bg-primary-950/40 cursor-pointer transition-colors border border-warm-100 dark:border-warm-800"
+              >
+                <div>
+                  <p class="font-semibold text-xs text-warm-900 dark:text-white">{{ d.name }}</p>
+                  <p class="text-[11px] text-warm-400">${{ Number(d.price).toFixed(2) }}</p>
+                </div>
+                <button type="button" class="btn-primary p-1 rounded-lg text-[10px]"><Plus :size="12" /></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Summary & Financials (REQ-6.2) -->
+          <div class="flex flex-col justify-between bg-warm-50 dark:bg-warm-900 p-3.5 rounded-2xl border border-warm-200 dark:border-warm-800">
+            <div>
+              <h4 class="font-bold text-xs uppercase text-warm-600 dark:text-warm-400 mb-2">Selected Items ({{ newOrderItems.length }})</h4>
+
+              <div v-if="!newOrderItems.length" class="text-center py-8 text-xs text-warm-400 italic">
+                Click items from the catalog on the left to add
+              </div>
+
+              <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div
+                  v-for="(item, idx) in newOrderItems"
+                  :key="item.dish_id"
+                  class="flex items-center justify-between text-xs bg-white dark:bg-warm-850 p-2 rounded-xl shadow-xs"
+                >
+                  <div class="flex-1 truncate mr-2">
+                    <p class="font-semibold text-warm-900 dark:text-white truncate">{{ item.name }}</p>
+                    <span class="text-[10px] text-warm-400">${{ (item.price * item.quantity).toFixed(2) }}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" @click="updateItemQty(idx, -1)" class="w-5 h-5 rounded bg-warm-200 dark:bg-warm-700 font-bold text-xs flex items-center justify-center">-</button>
+                    <span class="font-bold w-4 text-center">{{ item.quantity }}</span>
+                    <button type="button" @click="updateItemQty(idx, 1)" class="w-5 h-5 rounded bg-warm-200 dark:bg-warm-700 font-bold text-xs flex items-center justify-center">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <input v-model="newOrderNotes" type="text" placeholder="Kitchen instructions..." class="input text-xs" />
+              </div>
+            </div>
+
+            <!-- Financial Calculation (REQ-6.2) -->
+            <div class="pt-3 mt-3 border-t border-warm-200 dark:border-warm-800 space-y-1 text-xs">
+              <div class="flex justify-between text-warm-500">
+                <span>Subtotal:</span>
+                <span>${{ subtotal.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between text-warm-500">
+                <span>Service Fee (10%):</span>
+                <span>${{ serviceCharge.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between text-warm-500">
+                <span>VAT (15%):</span>
+                <span>${{ vatAmount.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between font-bold text-sm text-warm-900 dark:text-white pt-1 border-t border-warm-200 dark:border-warm-800">
+                <span>Total:</span>
+                <span class="text-primary-600 dark:text-primary-400">${{ grandTotal.toFixed(2) }}</span>
+              </div>
+
+              <button
+                @click="submitNewOrder"
+                :disabled="!newOrderItems.length || creatingOrder"
+                class="btn-primary w-full justify-center text-xs py-2.5 mt-2 shadow-md"
+              >
+                {{ creatingOrder ? 'Dispatching to KDS...' : 'Create & Dispatch Order' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waiter Reassign Modal (REQ-7.2) -->
+    <div v-if="showReassignModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="card w-full max-w-md shadow-float">
+        <div class="flex items-center justify-between pb-3 border-b border-warm-100 dark:border-warm-800 mb-4">
+          <h3 class="font-heading font-bold text-warm-900 dark:text-white flex items-center gap-2">
+            <UserCheck :size="18" class="text-primary-500" />
+            Reassign Order #{{ selectedOrder?.ulid?.slice(-6).toUpperCase() }}
+          </h3>
+          <button @click="showReassignModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
+        </div>
+
+        <p class="text-xs text-warm-600 dark:text-warm-400 mb-4">
+          Assign this active dining order to an on-duty floor server:
+        </p>
+
+        <form @submit.prevent="submitReassign" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Select Waiter *</label>
+            <select v-model="selectedWaiterId" required class="input">
+              <option value="" disabled>-- Select On-Duty Waiter --</option>
+              <option v-for="w in waiters()" :key="w.id" :value="String(w.id)">
+                {{ w.name }} ({{ w.email }})
+              </option>
+            </select>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">
+            <button type="button" @click="showReassignModal = false" class="btn-ghost">Cancel</button>
+            <button type="submit" :disabled="reassigning" class="btn-primary">
+              {{ reassigning ? 'Reassigning...' : 'Confirm Reassignment' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>

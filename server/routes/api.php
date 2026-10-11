@@ -6,10 +6,12 @@ use App\Http\Controllers\Api\V1\Admin\AdminComplaintController;
 use App\Http\Controllers\Api\V1\Admin\AdminCouponController;
 use App\Http\Controllers\Api\V1\Admin\AdminDeliveryZoneController;
 use App\Http\Controllers\Api\V1\Admin\AdminDishController;
+use App\Http\Controllers\Api\V1\Admin\AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\AdminInventoryController;
 use App\Http\Controllers\Api\V1\Admin\AdminOrderController;
 use App\Http\Controllers\Api\V1\Admin\AdminReportController;
 use App\Http\Controllers\Api\V1\Admin\AdminReservationController;
+use App\Http\Controllers\Api\V1\Admin\AdminReviewController;
 use App\Http\Controllers\Api\V1\Admin\AdminRoomController;
 use App\Http\Controllers\Api\V1\Admin\AdminSettingController;
 use App\Http\Controllers\Api\V1\Admin\AdminTableController;
@@ -28,6 +30,7 @@ use App\Http\Controllers\Api\V1\Profile\FavoriteController;
 use App\Http\Controllers\Api\V1\Profile\ProfileController;
 use App\Http\Controllers\Api\V1\Profile\ReviewController;
 use App\Http\Controllers\Api\V1\Reservation\ReservationController;
+use App\Http\Controllers\Api\V1\Staff\CashierController;
 use App\Http\Controllers\Api\V1\Staff\DeliveryController;
 use App\Http\Controllers\Api\V1\Staff\KitchenController;
 use App\Http\Controllers\Api\V1\Staff\ReceptionController;
@@ -49,6 +52,7 @@ Route::prefix('v1')->group(function () {
     Route::get('categories/{category}', [CategoryController::class, 'show']);
     Route::get('dishes/featured', [DishController::class, 'featured']);
     Route::get('dishes/{slug}', [DishController::class, 'show']);
+    Route::get('dishes/{dish}/reviews', [ReviewController::class, 'dishReviews']);
     Route::get('dishes', [DishController::class, 'index']);
     Route::get('search', [DishController::class, 'search']);
 
@@ -85,9 +89,10 @@ Route::prefix('v1')->group(function () {
     Route::patch('reservations/{reservation}', [ReservationController::class, 'update']);
     Route::delete('reservations/{reservation}', [ReservationController::class, 'destroy']);
 
-    // ── Payment webhooks (no auth — verified by signature) ────────────────────
+    // ── Payment webhooks & Public verification ──────────────────────────────
     Route::post('webhooks/stripe', [PaymentController::class, 'stripeWebhook']);
     Route::post('webhooks/chapa', [PaymentController::class, 'chapaWebhook']);
+    Route::post('payments/chapa/verify', [PaymentController::class, 'verifyChapa']);
 
     // ── Authenticated routes ───────────────────────────────────────────────────
     Route::middleware('auth:sanctum')->group(function () {
@@ -111,27 +116,38 @@ Route::prefix('v1')->group(function () {
         Route::get('favorites', [FavoriteController::class, 'index']);
         Route::post('favorites', [FavoriteController::class, 'store']);
         Route::delete('favorites/{dishId}', [FavoriteController::class, 'destroy']);
+        Route::get('reviews/my', [ReviewController::class, 'myReviews']);
         Route::post('reviews', [ReviewController::class, 'store']);
 
         // Staff — kitchen (REQ-8.x)
-        Route::middleware('role:kitchen|super-admin')->group(function () {
+        Route::middleware('role:kitchen|manager|admin|super-admin')->group(function () {
             Route::get('kitchen/tickets', [KitchenController::class, 'tickets']);
             Route::patch('kitchen/tickets/{order}', [KitchenController::class, 'updateTicket']);
         });
 
-        // Staff — waiter
-        Route::middleware('role:waiter|super-admin')->group(function () {
+        // Staff — waiter (REQ-7.x, REQ-8.3)
+        Route::middleware('role:waiter|manager|admin|super-admin')->group(function () {
             Route::get('waiter/tables', [WaiterController::class, 'tables']);
+            Route::get('waiter/orders', [WaiterController::class, 'orders']);
+            Route::post('waiter/orders', [WaiterController::class, 'createOrder']);
+            Route::post('waiter/orders/{order}/served', [WaiterController::class, 'markServed']);
+        });
+
+        // Staff — cashier / POS billing (REQ-9.x)
+        Route::middleware('role:cashier|manager|admin|super-admin')->group(function () {
+            Route::get('cashier/orders', [CashierController::class, 'orders']);
+            Route::post('cashier/orders/{order}/confirm-payment', [CashierController::class, 'confirmPayment']);
+            Route::get('cashier/summary', [CashierController::class, 'summary']);
         });
 
         // Staff — delivery
-        Route::middleware('role:delivery|super-admin')->group(function () {
+        Route::middleware('role:delivery|manager|admin|super-admin')->group(function () {
             Route::get('delivery/orders', [DeliveryController::class, 'index']);
             Route::patch('delivery/orders/{order}', [DeliveryController::class, 'updateStatus']);
         });
 
         // Staff — reception (REQ-10.x)
-        Route::middleware('role:waiter|manager|super-admin')->prefix('reception')->group(function () {
+        Route::middleware('role:reception|waiter|manager|admin|super-admin')->prefix('reception')->group(function () {
             Route::get('dashboard', [ReceptionController::class, 'dashboard']);
             Route::get('tables/available', [ReceptionController::class, 'availableTables']);
             Route::post('walk-in', [ReceptionController::class, 'walkIn']);
@@ -141,14 +157,23 @@ Route::prefix('v1')->group(function () {
         });
 
         // ── Admin ──────────────────────────────────────────────────────────────
-        Route::middleware('role:manager|super-admin')->prefix('admin')->group(function () {
+        Route::middleware('role:admin|manager|super-admin')->prefix('admin')->group(function () {
 
             // Dishes
             Route::apiResource('dishes', AdminDishController::class);
 
+            // Reviews Moderation
+            Route::get('reviews', [AdminReviewController::class, 'index']);
+            Route::patch('reviews/{review}', [AdminReviewController::class, 'update']);
+            Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy']);
+
             // Orders
             Route::get('orders', [AdminOrderController::class, 'index']);
             Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+            Route::post('orders/{order}/reassign-waiter', [AdminOrderController::class, 'reassignWaiter']);
+
+            // Hotels (Multi-Tenant Management)
+            Route::apiResource('hotels', AdminHotelController::class);
 
             // Reports
             Route::get('reports/sales', [AdminReportController::class, 'sales']);
@@ -163,8 +188,9 @@ Route::prefix('v1')->group(function () {
             Route::patch('coupons/{coupon}', [AdminCouponController::class, 'update']);
             Route::delete('coupons/{coupon}', [AdminCouponController::class, 'destroy']);
 
-            // Users — static 'roles' BEFORE {user} wildcard
+            // Users & RBAC Permissions — static routes BEFORE {user} wildcard
             Route::get('users/roles', [AdminUserController::class, 'roles']);
+            Route::get('users/permissions', [AdminUserController::class, 'permissions']);
             Route::get('users', [AdminUserController::class, 'index']);
             Route::post('users', [AdminUserController::class, 'store']);
             Route::get('users/{user}', [AdminUserController::class, 'show']);

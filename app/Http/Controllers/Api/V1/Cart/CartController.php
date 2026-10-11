@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api\V1\Cart;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cart\AddCartItemRequest;
+use App\Http\Requests\Cart\ApplyCouponRequest;
+use App\Http\Requests\Cart\UpdateCartItemRequest;
 use App\Http\Resources\V1\CartResource;
 use App\Models\CartItem;
 use App\Services\CartService;
@@ -23,42 +26,35 @@ class CartController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        $cart = $this->resolveCart($request)->load(['items.dish.images', 'items.variant', 'coupon']);
+        $cart   = $this->resolveCart($request)->load(['items.dish.images', 'items.variant', 'coupon']);
         $totals = $this->cartService->calculateTotals($cart);
 
         return $this->success([
-            'cart' => new CartResource($cart),
+            'cart'   => new CartResource($cart),
             'totals' => $totals,
         ]);
     }
 
-    public function addItem(Request $request): JsonResponse
+    public function addItem(AddCartItemRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'dish_id' => 'required|integer|exists:dishes,id',
-            'quantity' => 'required|integer|min:1|max:20',
-            'variant_id' => 'nullable|integer|exists:dish_variants,id',
-            'options' => 'nullable|array',
-            'note' => 'nullable|string|max:255',
-        ]);
-
+        $data = $request->validated();
         $cart = $this->resolveCart($request);
+
         $item = $this->cartService->addItem(
             $cart,
             $data['dish_id'],
             $data['quantity'],
             $data['variant_id'] ?? null,
-            $data['options'] ?? [],
-            $data['note'] ?? null
+            $data['options']    ?? [],
+            $data['note']       ?? null
         );
 
         return $this->success($item->load('dish', 'variant'), 'Item added to cart', 201);
     }
 
-    public function updateItem(Request $request, CartItem $cartItem): JsonResponse
+    public function updateItem(UpdateCartItemRequest $request, CartItem $cartItem): JsonResponse
     {
-        $data = $request->validate(['quantity' => 'required|integer|min:0|max:20']);
-        $item = $this->cartService->updateItem($cartItem, $data['quantity']);
+        $item = $this->cartService->updateItem($cartItem, $request->validated()['quantity']);
 
         return $this->success($item, 'Cart item updated');
     }
@@ -70,11 +66,10 @@ class CartController extends Controller
         return $this->success(null, 'Item removed from cart');
     }
 
-    public function applyCoupon(Request $request): JsonResponse
+    public function applyCoupon(ApplyCouponRequest $request): JsonResponse
     {
-        $request->validate(['code' => 'required|string']);
-        $cart = $this->resolveCart($request);
-        $coupon = $this->cartService->applyCoupon($cart, $request->code);
+        $cart   = $this->resolveCart($request);
+        $coupon = $this->cartService->applyCoupon($cart, $request->validated()['code']);
 
         return $this->success(['coupon' => $coupon], 'Coupon applied');
     }

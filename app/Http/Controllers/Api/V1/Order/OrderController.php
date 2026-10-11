@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Order;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Order\CancelOrderRequest;
+use App\Http\Requests\Order\StoreOrderRequest;
 use App\Http\Resources\V1\OrderResource;
 use App\Models\Order;
 use App\Services\CartService;
@@ -28,18 +30,9 @@ class OrderController extends Controller
         return $this->paginated($orders->through(fn ($o) => new OrderResource($o)));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreOrderRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'type' => 'required|in:delivery,pickup,dine_in',
-            'payment_method' => 'required|in:stripe,chapa,cash',
-            'table_id' => 'required_if:type,dine_in|nullable|integer|exists:tables,id',
-            'delivery_zone_id' => 'required_if:type,delivery|nullable|integer|exists:delivery_zones,id',
-            'address' => 'required_if:type,delivery|nullable|array',
-            'tip' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string|max:500',
-            'scheduled_at' => 'nullable|date|after:now',
-        ]);
+        $data = $request->validated();
 
         $cart = $this->cartService->getOrCreate(
             $request->user()?->id,
@@ -53,9 +46,13 @@ class OrderController extends Controller
         }
 
         $idempotencyKey = $request->header('X-Idempotency-Key', (string) Str::uuid());
-        $order = $this->orderService->createFromCart($cart, $data, $idempotencyKey);
+        $order          = $this->orderService->createFromCart($cart, $data, $idempotencyKey);
 
-        return $this->success(new OrderResource($order->load('items', 'statusHistory')), 'Order placed successfully', 201);
+        return $this->success(
+            new OrderResource($order->load('items', 'statusHistory')),
+            'Order placed successfully',
+            201
+        );
     }
 
     public function show(Order $order): JsonResponse
@@ -65,11 +62,11 @@ class OrderController extends Controller
         return $this->success(new OrderResource($order->load('items', 'statusHistory', 'payment')));
     }
 
-    public function cancel(Request $request, Order $order): JsonResponse
+    public function cancel(CancelOrderRequest $request, Order $order): JsonResponse
     {
         $this->authorize('cancel', $order);
-        $data = $request->validate(['reason' => 'nullable|string|max:255']);
-        $order = $this->orderService->cancel($order, $data['reason'] ?? null);
+
+        $order = $this->orderService->cancel($order, $request->validated()['reason'] ?? null);
 
         return $this->success(new OrderResource($order), 'Order cancelled');
     }
@@ -77,9 +74,9 @@ class OrderController extends Controller
     public function track(Order $order): JsonResponse
     {
         return $this->success([
-            'ulid' => $order->ulid,
-            'status' => $order->status->value,
-            'status_label' => $order->status->label(),
+            'ulid'           => $order->ulid,
+            'status'         => $order->status->value,
+            'status_label'   => $order->status->label(),
             'status_history' => $order->statusHistory()->latest()->get(),
             'estimated_time' => $order->deliveryZone?->eta_minutes,
         ]);

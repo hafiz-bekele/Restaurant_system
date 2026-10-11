@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\ReservationStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateAdminReservationRequest;
 use App\Models\ActivityLog;
 use App\Models\Reservation;
 use Illuminate\Http\JsonResponse;
@@ -44,15 +45,9 @@ class AdminReservationController extends Controller
         return $this->success($this->resource($reservation->load(['user:id,name,email', 'table'])));
     }
 
-    public function update(Request $request, Reservation $reservation): JsonResponse
+    public function update(UpdateAdminReservationRequest $request, Reservation $reservation): JsonResponse
     {
-        $data = $request->validate([
-            'status'      => 'sometimes|in:pending,confirmed,cancelled,completed,no_show',
-            'table_id'    => 'sometimes|integer|exists:tables,id',
-            'reserved_at' => 'sometimes|date',
-            'notes'       => 'nullable|string|max:500',
-        ]);
-
+        $data = $request->validated();
         $reservation->update($data);
         ActivityLog::record('reservation.updated', $reservation, ['status' => $data['status'] ?? null]);
 

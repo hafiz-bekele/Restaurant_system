@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreRoomRequest;
+use App\Http\Requests\Admin\UpdateRoomRequest;
 use App\Models\Room;
 use App\Models\RoomBooking;
 use Illuminate\Http\JsonResponse;
@@ -13,43 +15,26 @@ class AdminRoomController extends Controller
 {
     public function index(): JsonResponse
     {
-        $rooms = Room::withoutGlobalScopes()
-            ->where('hotel_id', app('current_hotel_id'))
-            ->orderBy('room_number')
-            ->get();
-
-        return $this->success($rooms);
+        return $this->success(
+            Room::withoutGlobalScopes()
+                ->where('hotel_id', app('current_hotel_id'))
+                ->orderBy('room_number')
+                ->get()
+        );
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRoomRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'room_number'    => 'required|string|max:20',
-            'type'           => 'required|in:standard,deluxe,suite,twin,single',
-            'capacity'       => 'required|integer|min:1|max:10',
-            'price_per_night'=> 'required|numeric|min:0',
-            'amenities'      => 'nullable|array',
-            'is_active'      => 'boolean',
-        ]);
-
-        $data['hotel_id']  = app('current_hotel_id');
-        $data['qr_token']  = Str::random(32);
+        $data               = $request->validated();
+        $data['hotel_id']   = app('current_hotel_id');
+        $data['qr_token']   = Str::random(32);
 
         return $this->success(Room::create($data), 'Room created', 201);
     }
 
-    public function update(Request $request, Room $room): JsonResponse
+    public function update(UpdateRoomRequest $request, Room $room): JsonResponse
     {
-        $data = $request->validate([
-            'room_number'    => 'sometimes|string|max:20',
-            'type'           => 'sometimes|in:standard,deluxe,suite,twin,single',
-            'capacity'       => 'sometimes|integer|min:1|max:10',
-            'price_per_night'=> 'sometimes|numeric|min:0',
-            'status'         => 'sometimes|in:available,occupied,maintenance',
-            'is_active'      => 'boolean',
-        ]);
-
-        $room->update($data);
+        $room->update($request->validated());
 
         return $this->success($room->fresh(), 'Room updated');
     }
@@ -75,8 +60,8 @@ class AdminRoomController extends Controller
     public function updateBooking(Request $request, RoomBooking $roomBooking): JsonResponse
     {
         $data = $request->validate([
-            'status' => 'required|in:pending,confirmed,checked_in,checked_out,cancelled',
-            'notes'  => 'nullable|string|max:500',
+            'status' => ['required', 'in:pending,confirmed,checked_in,checked_out,cancelled'],
+            'notes'  => ['nullable', 'string', 'max:500'],
         ]);
 
         $roomBooking->update($data);

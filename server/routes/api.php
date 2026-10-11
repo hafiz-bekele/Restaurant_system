@@ -52,8 +52,9 @@ Route::prefix('v1')->group(function () {
     Route::get('dishes', [DishController::class, 'index']);
     Route::get('search', [DishController::class, 'search']);
 
-    // ── Public banners ─────────────────────────────────────────────────────────
+    // ── Public banners & delivery zones ───────────────────────────────────────
     Route::get('banners', [AdminBannerController::class, 'index']);
+    Route::get('delivery-zones', [AdminDeliveryZoneController::class, 'index']);
 
     // ── Guest QR resolution (REQ-3.2) ─────────────────────────────────────────
     Route::get('guest/resolve-qr/{token}', [GuestQrController::class, 'resolve']);

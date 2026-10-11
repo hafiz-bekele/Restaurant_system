@@ -14,10 +14,12 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.headers.Authorization = `Bearer ${token}`
   }
 
-  const sessionId = localStorage.getItem('session_id')
-  if (sessionId) {
-    config.headers['X-Session-Id'] = sessionId
+  let sessionId = localStorage.getItem('session_id')
+  if (!sessionId) {
+    sessionId = 'sess_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36)
+    localStorage.setItem('session_id', sessionId)
   }
+  config.headers['X-Session-Id'] = sessionId
 
   return config
 })
@@ -27,7 +29,11 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token')
-      window.location.href = '/login'
+      const url = error.config?.url || ''
+      const isAuthCheck = url.includes('/auth/me') || url.includes('/auth/login') || url.includes('/auth/register')
+      if (!isAuthCheck && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

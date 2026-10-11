@@ -43,24 +43,30 @@ abstract class Controller
     /**
      * Return a paginated JSON envelope response.
      */
-    protected function paginated(AbstractPaginator $paginator): JsonResponse
+    protected function paginated(mixed $paginator): JsonResponse
     {
+        $isCursor = $paginator instanceof \Illuminate\Pagination\AbstractCursorPaginator;
+        $currentPage = method_exists($paginator, 'currentPage') ? $paginator->currentPage() : null;
+        $total = method_exists($paginator, 'total') ? $paginator->total() : null;
+        $lastPage = method_exists($paginator, 'lastPage') ? $paginator->lastPage() : null;
+
         return response()->json([
             'data' => $paginator->items(),
             'message' => 'OK',
             'errors' => null,
             'meta' => [
-                'current_page' => $paginator->currentPage(),
+                'current_page' => $currentPage,
                 'per_page' => $paginator->perPage(),
-                'total' => method_exists($paginator, 'total') ? $paginator->total() : null,
-                'last_page' => method_exists($paginator, 'lastPage') ? $paginator->lastPage() : null,
+                'total' => $total,
+                'last_page' => $lastPage,
+                'has_more' => method_exists($paginator, 'hasMorePages') ? $paginator->hasMorePages() : null,
             ],
             'links' => [
-                'first' => method_exists($paginator, 'url') ? $paginator->url(1) : null,
-                'last' => method_exists($paginator, 'url') && method_exists($paginator, 'lastPage')
-                    ? $paginator->url($paginator->lastPage()) : null,
-                'prev' => $paginator->previousPageUrl(),
-                'next' => $paginator->nextPageUrl(),
+                'first' => !$isCursor && method_exists($paginator, 'url') ? $paginator->url(1) : null,
+                'last' => !$isCursor && method_exists($paginator, 'url') && $lastPage !== null
+                    ? $paginator->url($lastPage) : null,
+                'prev' => method_exists($paginator, 'previousPageUrl') ? $paginator->previousPageUrl() : null,
+                'next' => method_exists($paginator, 'nextPageUrl') ? $paginator->nextPageUrl() : null,
             ],
         ]);
     }

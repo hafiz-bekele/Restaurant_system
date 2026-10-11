@@ -15,10 +15,15 @@ class ReservationService
     {
         $endTime = $date->clone()->addMinutes($duration);
 
+        $isSqlite = \Illuminate\Support\Facades\Schema::getConnection()->getDriverName() === 'sqlite';
+        $durationSql = $isSqlite
+            ? "datetime(reserved_at, '+' || duration || ' minutes') BETWEEN ? AND ?"
+            : "DATE_ADD(reserved_at, INTERVAL duration MINUTE) BETWEEN ? AND ?";
+
         $bookedTableIds = Reservation::where('status', '!=', ReservationStatus::Cancelled->value)
-            ->where(function ($q) use ($date, $endTime) {
+            ->where(function ($q) use ($date, $endTime, $durationSql) {
                 $q->whereBetween('reserved_at', [$date, $endTime])
-                    ->orWhereRaw('DATE_ADD(reserved_at, INTERVAL duration MINUTE) BETWEEN ? AND ?', [$date, $endTime]);
+                    ->orWhereRaw($durationSql, [$date->toDateTimeString(), $endTime->toDateTimeString()]);
             })
             ->pluck('table_id');
 

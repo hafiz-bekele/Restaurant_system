@@ -55,7 +55,7 @@ class Dish extends Model
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'category' => $this->category?->name,
+            'category' => $this->relationLoaded('category') ? $this->category?->name : null,
         ];
     }
 

@@ -85,11 +85,15 @@ class DishController extends Controller
     {
         $request->validate(['q' => 'required|string|min:2|max:100']);
 
-        $results = Dish::search($request->q)
+        $q = $request->q;
+        $results = Dish::with(['category', 'images'])
             ->where('is_available', true)
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'like', "%{$q}%")
+                      ->orWhere('description', 'like', "%{$q}%");
+            })
             ->take(10)
-            ->get()
-            ->load('category');
+            ->get();
 
         return $this->success(DishResource::collection($results));
     }

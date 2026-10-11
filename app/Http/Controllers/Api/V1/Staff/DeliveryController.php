@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api\V1\Staff;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\UpdateDeliveryStatusRequest;
 use App\Http\Resources\V1\OrderResource;
 use App\Models\Order;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class DeliveryController extends Controller
 {
@@ -25,12 +25,16 @@ class DeliveryController extends Controller
         return $this->success(OrderResource::collection($orders));
     }
 
-    public function updateStatus(Request $request, Order $order): JsonResponse
+    public function updateStatus(UpdateDeliveryStatusRequest $request, Order $order): JsonResponse
     {
-        $request->validate(['status' => 'required|in:out_for_delivery,delivered']);
-        $status = OrderStatus::from($request->status);
-        $order = $this->orderService->updateStatus($order, $status, $request->user()->id);
+        $data  = $request->validated();
+        $order = $this->orderService->updateStatus(
+            $order,
+            OrderStatus::from($data['status']),
+            $request->user()->id,
+            $data['note'] ?? null
+        );
 
-        return $this->success(new OrderResource($order));
+        return $this->success(new OrderResource($order), 'Delivery status updated');
     }
 }

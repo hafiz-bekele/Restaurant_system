@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\TableStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\WalkInRequest;
 use App\Models\ActivityLog;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
@@ -51,7 +52,7 @@ class ReceptionController extends Controller
         ]);
 
         $summary = [
-            'total_tables'     => $tables->count(),
+            'total_tables'    => $tables->count(),
             'available_tables' => $tables->where('status', 'available')->count(),
             'occupied_tables'  => $tables->where('status', 'occupied')->count(),
             'reserved_tables'  => $tables->where('status', 'reserved')->count(),
@@ -67,10 +68,11 @@ class ReceptionController extends Controller
      */
     public function checkIn(Request $request, Reservation $reservation): JsonResponse
     {
-        if (! in_array(
-            $reservation->status instanceof ReservationStatus ? $reservation->status->value : $reservation->status,
-            ['pending', 'confirmed']
-        )) {
+        $currentStatus = $reservation->status instanceof ReservationStatus
+            ? $reservation->status->value
+            : $reservation->status;
+
+        if (! in_array($currentStatus, ['pending', 'confirmed'])) {
             return $this->error('Reservation cannot be checked in with current status.', 422);
         }
 
@@ -110,44 +112,42 @@ class ReceptionController extends Controller
     /**
      * Create a walk-in dine-in order for a table (no reservation needed).
      */
-    public function walkIn(Request $request): JsonResponse
+    public function walkIn(WalkInRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'table_id'   => 'required|integer|exists:tables,id',
-            'party_size' => 'required|integer|min:1|max:50',
-            'notes'      => 'nullable|string|max:500',
-        ]);
-
+        $data  = $request->validated();
         $table = RestaurantTable::findOrFail($data['table_id']);
 
         if (! $table->isAvailable()) {
-            return $this->error("Table {$table->name} is currently {$table->status->value}.", 422);
+            $status = $table->status instanceof TableStatus ? $table->status->value : $table->status;
+
+            return $this->error("Table {$table->name} is currently {$status}.", 422);
         }
 
         $order = DB::transaction(function () use ($data, $table) {
             $order = Order::create([
-                'ulid'             => (string) Str::ulid(),
-                'user_id'          => null,
-                'table_id'         => $table->id,
-                'type'             => OrderType::DineIn,
-                'status'           => OrderStatus::Confirmed,
-                'subtotal'         => 0,
-                'tax'              => 0,
-                'delivery_fee'     => 0,
-                'tip'              => 0,
-                'discount'         => 0,
-                'total'            => 0,
-                'payment_status'   => PaymentStatus::Pending,
-                'payment_method'   => 'cash',
-                'notes'            => $data['notes'] ?? null,
-                'idempotency_key'  => (string) Str::uuid(),
+                'ulid'            => (string) Str::ulid(),
+                'user_id'         => null,
+                'table_id'        => $table->id,
+                'type'            => OrderType::DineIn,
+                'status'          => OrderStatus::Confirmed,
+                'subtotal'        => 0,
+                'tax'             => 0,
+                'service_charge'  => 0,
+                'delivery_fee'    => 0,
+                'tip'             => 0,
+                'discount'        => 0,
+                'total'           => 0,
+                'payment_status'  => PaymentStatus::Pending,
+                'payment_method'  => 'cash',
+                'notes'           => $data['notes'] ?? null,
+                'idempotency_key' => (string) Str::uuid(),
             ]);
 
             OrderStatusHistory::create([
-                'order_id'   => $order->id,
-                'user_id'    => auth()->id(),
-                'status'     => OrderStatus::Confirmed,
-                'note'       => "Walk-in party of {$data['party_size']}",
+                'order_id' => $order->id,
+                'user_id'  => auth()->id(),
+                'status'   => OrderStatus::Confirmed,
+                'note'     => "Walk-in party of {$data['party_size']}",
             ]);
 
             $table->update(['status' => TableStatus::Occupied]);

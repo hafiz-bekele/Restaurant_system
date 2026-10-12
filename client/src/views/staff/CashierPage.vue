@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { CreditCard, DollarSign, Printer, CheckCircle, RefreshCw, AlertCircle, ShoppingBag, BedDouble, Receipt } from '@lucide/vue'
+import { APP_NAME } from '../../config'
 
 const ui = useUiStore()
 
@@ -89,7 +90,7 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Shift Financial Balance Summary Cards (REQ-2.3, REQ-9.1) -->
+    <!-- Shift Financial Balance Summary Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <div class="card p-5 border-l-4 border-green-500">
         <p class="text-xs font-medium text-warm-500 mb-1">Cash Collected</p>
@@ -219,16 +220,14 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- ESC/POS Thermal Receipt Modal (REQ-4.2) -->
+    <!-- Thermal Receipt Modal -->
     <div v-if="showReceiptModal && selectedOrder" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
       <div class="card p-6 w-full max-w-sm space-y-4 bg-white dark:bg-warm-900 border text-warm-900 dark:text-white">
         <!-- Printable area -->
         <div id="thermal-receipt" class="font-mono text-xs space-y-2 border-b border-dashed border-warm-300 pb-4">
           <div class="text-center border-b border-dashed border-warm-300 pb-3">
-            <h3 class="font-bold text-base tracking-wider uppercase">RESTAURANT &amp; RESORT</h3>
-            <p class="text-[10px] text-warm-500">VAT Registration No: 10492850</p>
-            <p class="text-[10px] text-warm-500">Tel: +251 11 000 0000</p>
-            <p class="text-[10px] text-warm-400 mt-1">{{ new Date().toLocaleString() }}</p>
+            <h3 class="font-bold text-base tracking-wider uppercase">{{ APP_NAME }}</h3>
+            <p class="text-[10px] text-warm-500">{{ new Date().toLocaleString() }}</p>
           </div>
 
           <div class="flex justify-between text-[11px] pt-1">

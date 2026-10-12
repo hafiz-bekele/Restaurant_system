@@ -32,10 +32,10 @@ const { data: bannersData } = useQuery({
 const activeSlide = ref(0)
 
 const stats = [
-  { value: '4.9★', label: 'Average Rating' },
-  { value: '15 min', label: 'Avg Delivery' },
-  { value: '200+', label: 'Menu Items' },
-  { value: '50K+', label: 'Happy Guests' },
+  { value: '4.8★', label: 'Average Rating' },
+  { value: 'Fast', label: 'Table Service' },
+  { value: 'Fresh', label: 'Daily Ingredients' },
+  { value: 'Easy', label: 'Online Ordering' },
 ]
 
 const howItWorks = [
@@ -55,9 +55,9 @@ const features = [
 ]
 
 const testimonials = [
-  { name: 'Abebe K.', role: 'Regular Guest', text: 'The QR ordering is incredible — I placed my order before even sitting down. Food was hot and ready in minutes.', stars: 5 },
-  { name: 'Sara M.', role: 'Business Traveler', text: 'Room service charged straight to my bill. No hassle, no waiting. This is how hotels should work.', stars: 5 },
-  { name: 'Dawit T.', role: 'Food Enthusiast', text: 'The menu is extensive and the dietary filters saved me so much time. Found perfect vegan options instantly.', stars: 5 },
+  { name: 'Abebe K.', role: 'Regular Guest', text: 'The QR ordering is so convenient — I placed my order before even sitting down. Food arrived hot and fresh.', stars: 5 },
+  { name: 'Sara M.', role: 'Business Traveler', text: 'Room service charged straight to my bill. No hassle at all. Exactly how a hotel restaurant should work.', stars: 5 },
+  { name: 'Dawit T.', role: 'Food Enthusiast', text: 'Great variety on the menu and the dietary filters made it easy to find exactly what I was looking for.', stars: 5 },
 ]
 
 const dietaryIcons = [
@@ -88,7 +88,7 @@ const dietaryIcons = [
           <!-- Badge -->
           <div class="flex items-center gap-2 mb-6">
             <span class="badge badge-orange text-xs">Now Open</span>
-            <span class="text-warm-400 text-sm">Free delivery on orders over $30</span>
+            <span class="text-warm-400 text-sm">Dine in, order online, or book a room</span>
           </div>
 
           <h1 class="font-heading text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] text-white mb-6">
@@ -369,7 +369,7 @@ const dietaryIcons = [
           </div>
           <div>
             <p class="text-xs text-warm-500 dark:text-warm-400">Call us anytime</p>
-            <p class="font-heading font-bold text-warm-900 dark:text-white">+1 (555) 000-0000</p>
+            <p class="font-heading font-bold text-warm-900 dark:text-white">+251 11 000 0000</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -378,7 +378,7 @@ const dietaryIcons = [
           </div>
           <div>
             <p class="text-xs text-warm-500 dark:text-warm-400">Find us at</p>
-            <p class="font-heading font-bold text-warm-900 dark:text-white">123 Culinary Street, Addis Ababa</p>
+            <p class="font-heading font-bold text-warm-900 dark:text-white">Bole Road, Addis Ababa</p>
           </div>
         </div>
         <div class="flex items-center gap-3">

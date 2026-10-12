@@ -120,7 +120,7 @@ onUnmounted(() => clearInterval(interval))
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
           <CalendarCheck :size="24" class="text-primary-500" /> Front Desk Reception Portal
         </h1>
-        <p class="text-sm text-warm-500 mt-1">Table Seating, Dining Reservations & Hotel Room Folio Management (REQ-3.4 & REQ-10.x)</p>
+        <p class="text-sm text-warm-500 mt-1">Table seating, dining reservations &amp; hotel room folio management</p>
       </div>
 
       <div class="flex items-center gap-3">
@@ -255,7 +255,7 @@ onUnmounted(() => clearInterval(interval))
       </template>
     </div>
 
-    <!-- TAB 2: HOTEL ROOM BOOKINGS & FOLIO CHECK-IN (REQ-3.4) -->
+    <!-- TAB 2: HOTEL ROOM BOOKINGS -->
     <div v-else>
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
@@ -309,7 +309,7 @@ onUnmounted(() => clearInterval(interval))
                 <p class="text-[10px] text-warm-400">{{ b.guest_email }}</p>
               </td>
               <td class="px-4 py-3 font-mono text-[11px] text-warm-700 dark:text-warm-300">
-                {{ b.check_in_date }} $\rightarrow$ {{ b.check_out_date }}
+                {{ b.check_in_date }} → {{ b.check_out_date }}
               </td>
               <td class="px-4 py-3 font-bold text-primary-600 dark:text-primary-400">
                 ${{ Number(b.total_price).toFixed(2) }}

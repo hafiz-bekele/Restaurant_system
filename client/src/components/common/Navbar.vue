@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useCartStore } from '../../stores/cart'
 import { useUiStore }   from '../../stores/ui'
+import { APP_NAME } from '../../config'
 
 const auth   = useAuthStore()
 const cart   = useCartStore()
@@ -51,7 +52,7 @@ async function handleLogout() {
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2 font-heading font-bold text-xl text-primary-600 dark:text-primary-400">
         <ChefHat :size="26" />
-        <span>Restaurant</span>
+        <span>{{ APP_NAME }}</span>
       </RouterLink>
 
       <!-- Desktop nav -->
@@ -67,7 +68,7 @@ async function handleLogout() {
 
       <!-- Actions -->
       <div class="flex items-center gap-2 md:gap-3">
-        <!-- Language Switcher (EN / AM per SRS Section 5.4) -->
+        <!-- Language Switcher (EN / AM) -->
         <button
           @click="toggleLanguage"
           class="btn-ghost px-2 py-1 rounded-xl text-xs font-bold flex items-center gap-1 border border-warm-200 dark:border-warm-700 hover:border-primary-500 text-warm-700 dark:text-warm-300 transition-colors"

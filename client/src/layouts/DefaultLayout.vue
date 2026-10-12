@@ -1,6 +1,7 @@
 <script setup>
 import Navbar from '../components/common/Navbar.vue'
 import CartDrawer from '../components/cart/CartDrawer.vue'
+import { APP_NAME } from '../config'
 </script>
 
 <template>
@@ -12,8 +13,8 @@ import CartDrawer from '../components/cart/CartDrawer.vue'
     <footer class="bg-warm-900 dark:bg-gray-950 text-warm-300 py-12 mt-16">
       <div class="page-container grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <h3 class="font-heading font-bold text-white text-lg mb-3">Restaurant</h3>
-          <p class="text-sm leading-relaxed">Crafted with passion, served with love. Experience flavors that tell a story.</p>
+          <h3 class="font-heading font-bold text-white text-lg mb-3">{{ APP_NAME }}</h3>
+          <p class="text-sm leading-relaxed">Crafted with passion, served with love. Experience flavours that tell a story.</p>
         </div>
         <div>
           <h4 class="font-semibold text-white mb-3">Quick Links</h4>
@@ -34,7 +35,7 @@ import CartDrawer from '../components/cart/CartDrawer.vue'
         </div>
       </div>
       <div class="page-container mt-8 pt-8 border-t border-warm-800 text-center text-xs text-warm-500">
-        &copy; {{ new Date().getFullYear() }} Restaurant. All rights reserved.
+        &copy; {{ new Date().getFullYear() }} {{ APP_NAME }}. All rights reserved.
       </div>
     </footer>
     <CartDrawer />

@@ -102,7 +102,7 @@ async function deleteHotel(hotel) {
           Multi-Tenant Properties (Hotels)
         </h1>
         <p class="text-sm text-warm-500 dark:text-warm-400 mt-1">
-          Super Admin Global Tenant Configuration & Scoping Engine (REQ-1.x)
+          Manage multi-property configuration and tenant scoping
         </p>
       </div>
       <button @click="openCreateModal" class="btn-primary gap-2 self-start sm:self-auto">
@@ -154,7 +154,7 @@ async function deleteHotel(hotel) {
             </span>
           </div>
 
-          <!-- Financial Configurations (REQ-1.4) -->
+          <!-- Financial Configurations -->
           <div class="grid grid-cols-3 gap-2 p-3 bg-warm-50 dark:bg-warm-850 rounded-xl mb-4 text-center">
             <div>
               <span class="text-[10px] text-warm-400 uppercase font-semibold">Currency</span>

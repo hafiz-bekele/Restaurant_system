@@ -42,7 +42,7 @@ const permissionGroups = [
       { id: 'orders.view', label: 'View Live Orders', desc: 'Monitor active and completed dining orders' },
       { id: 'orders.create', label: 'Create Orders', desc: 'Ring up table and manual telephone orders' },
       { id: 'orders.update_status', label: 'Progress Workflow Status', desc: 'Update order from preparing to ready and served' },
-      { id: 'orders.reassign_waiter', label: 'Reassign Waiter', desc: 'Transfer order to another floor server (REQ-7.2)' },
+      { id: 'orders.reassign_waiter', label: 'Reassign Waiter', desc: 'Transfer order to another floor server' },
       { id: 'orders.cancel', label: 'Cancel & Void Orders', desc: 'Cancel customer orders with justification' },
     ]
   },
@@ -68,7 +68,7 @@ const permissionGroups = [
     permissions: [
       { id: 'reception.view_floor', label: 'View Floor Plan', desc: 'Inspect table statuses and dining occupancy' },
       { id: 'reception.manage_tables', label: 'Seat & Release Tables', desc: 'Assign walk-in guests and clear tables' },
-      { id: 'reception.manage_rooms', label: 'Manage Hotel Suites', desc: 'Check in/out hotel room guests (REQ-4.4)' },
+      { id: 'reception.manage_rooms', label: 'Manage Hotel Suites', desc: 'Check in/out hotel room guests' },
       { id: 'reservations.manage', label: 'Table Reservations', desc: 'Confirm and manage dining bookings' },
     ]
   },
@@ -186,7 +186,7 @@ function applyRoleDefaultPreset() {
   const currentRole = editForm.value.role
   if (rolePresets[currentRole]) {
     editForm.value.permissions = [...rolePresets[currentRole]]
-    ui.toast(`Applied default permissions for ${currentRole}`, 'info')
+    ui.toast(`Applied default permissions for ${currentRole}`, 'success')
   }
 }
 
@@ -273,7 +273,7 @@ function roleBadgeClass(role) {
           Staff Access & Permissions Governance
         </h1>
         <p class="text-xs text-warm-500 dark:text-warm-400 mt-1">
-          Admin Governance Center: Assign operational roles, grant granular permissions, and control staff shifts (REQ-2.3 &amp; REQ-2.4)
+          Assign operational roles, grant granular permissions, and manage staff shifts
         </p>
       </div>
 

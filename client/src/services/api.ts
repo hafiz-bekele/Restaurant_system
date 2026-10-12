@@ -125,6 +125,7 @@ export const guestApi = {
   getBooking:       (id: number | string)       => api.get(`/rooms/bookings/${id}`),
   submitComplaint:  (data: Record<string, any>) => api.post('/complaints', data),
   getComplaint:     (ticket: string)            => api.get(`/complaints/${ticket}`),
+  contact:          (data: Record<string, any>) => api.post('/contact', data),
 }
 
 // Staff

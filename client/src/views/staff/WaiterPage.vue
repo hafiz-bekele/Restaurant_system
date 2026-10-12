@@ -191,7 +191,7 @@ onUnmounted(() => {
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
           <UtensilsCrossed :size="26" class="text-primary-500" /> Waiter Floor Terminal
         </h1>
-        <p class="text-sm text-warm-500">Monitor table sections, receive kitchen pickup alerts, and take table orders (REQ-7.x).</p>
+        <p class="text-sm text-warm-500">Monitor table sections, receive kitchen pickup alerts, and take table orders.</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="openTakeOrder()" class="btn-primary text-xs gap-1.5 py-2 px-3.5 shadow-sm">
@@ -203,7 +203,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Ready for Pickup Alert Banner (REQ-8.3 & REQ-12.1) -->
+    <!-- Ready for Pickup Alert Banner -->
     <div v-if="readyOrders.length" class="mb-8 card border-2 border-primary-500 bg-primary-50/20 dark:bg-primary-950/20 shadow-float">
       <div class="flex items-center justify-between p-4 border-b border-primary-200 dark:border-primary-900">
         <div class="flex items-center gap-2 text-primary-700 dark:text-primary-300 font-bold">
@@ -271,7 +271,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Table Floor Plan Section (REQ-3.10) -->
+    <!-- Table Floor Plan -->
     <div>
       <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
@@ -347,7 +347,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Take Table Order Modal (REQ-7.x) -->
+    <!-- Take Table Order Modal -->
     <div v-if="showOrderModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div class="card w-full max-w-2xl shadow-float max-h-[90vh] flex flex-col">
         <div class="flex items-center justify-between pb-3 border-b border-warm-100 dark:border-warm-800 mb-3">
@@ -432,7 +432,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Financials Breakdown (REQ-6.2) -->
+            <!-- Financials Breakdown -->
             <div class="pt-3 mt-3 border-t border-warm-200 dark:border-warm-800 space-y-1 text-xs">
               <div class="flex justify-between text-warm-500">
                 <span>Subtotal:</span>

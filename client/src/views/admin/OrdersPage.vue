@@ -183,7 +183,7 @@ async function submitNewOrder() {
           Live Orders & Operational Dispatch
         </h1>
         <p class="text-sm text-warm-500 dark:text-warm-400 mt-1">
-          Manager Order Lifecycle Management & Waiter Reassignment Engine (REQ-7.2 & REQ-8.1)
+          Manage order lifecycle, update statuses, and reassign waiters
         </p>
       </div>
 
@@ -265,7 +265,7 @@ async function submitNewOrder() {
               {{ order.items?.length ?? 1 }} item(s)
             </td>
 
-            <!-- Waiter (REQ-7.2) -->
+            <!-- Assigned Waiter -->
             <td class="px-5 py-3.5">
               <div class="flex items-center gap-2">
                 <span v-if="order.waiter" class="badge badge-green text-xs flex items-center gap-1">
@@ -385,7 +385,7 @@ async function submitNewOrder() {
             </div>
           </div>
 
-          <!-- Right: Summary & Financials (REQ-6.2) -->
+          <!-- Right: Order Summary & Financials -->
           <div class="flex flex-col justify-between bg-warm-50 dark:bg-warm-900 p-3.5 rounded-2xl border border-warm-200 dark:border-warm-800">
             <div>
               <h4 class="font-bold text-xs uppercase text-warm-600 dark:text-warm-400 mb-2">Selected Items ({{ newOrderItems.length }})</h4>
@@ -417,7 +417,7 @@ async function submitNewOrder() {
               </div>
             </div>
 
-            <!-- Financial Calculation (REQ-6.2) -->
+            <!-- Financial Breakdown -->
             <div class="pt-3 mt-3 border-t border-warm-200 dark:border-warm-800 space-y-1 text-xs">
               <div class="flex justify-between text-warm-500">
                 <span>Subtotal:</span>
@@ -449,7 +449,7 @@ async function submitNewOrder() {
       </div>
     </div>
 
-    <!-- Waiter Reassign Modal (REQ-7.2) -->
+    <!-- Waiter Reassign Modal -->
     <div v-if="showReassignModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div class="card w-full max-w-md shadow-float">
         <div class="flex items-center justify-between pb-3 border-b border-warm-100 dark:border-warm-800 mb-4">

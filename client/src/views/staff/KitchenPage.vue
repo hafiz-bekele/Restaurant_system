@@ -171,7 +171,7 @@ function getSlaStatus(order) {
           {{ soundEnabled ? 'Audio Alerts On' : 'Audio Muted' }}
         </button>
 
-        <!-- 86 / Stock control (REQ-5.3) -->
+        <!-- Stock Availability control -->
         <button
           @click="openStockModal"
           class="btn-secondary text-xs gap-1.5 py-1.5 px-3 rounded-xl border"
@@ -330,7 +330,7 @@ function getSlaStatus(order) {
       </div>
     </div>
 
-    <!-- 86 Stock Availability Modal (REQ-5.3) -->
+    <!-- Stock Availability Modal -->
     <div v-if="showStockModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div class="card w-full max-w-xl shadow-float max-h-[85vh] flex flex-col">
         <div class="flex items-center justify-between pb-3 border-b border-warm-100 dark:border-warm-800 mb-3">
@@ -339,7 +339,7 @@ function getSlaStatus(order) {
               <Utensils :size="18" class="text-primary-500" />
               Kitchen Item Availability (86 Stock List)
             </h3>
-            <p class="text-xs text-warm-500">Toggle sold-out items to instantly update the guest digital menu (REQ-5.3).</p>
+            <p class="text-xs text-warm-500">Toggle sold-out items to instantly update the guest digital menu.</p>
           </div>
           <button @click="showStockModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
         </div>

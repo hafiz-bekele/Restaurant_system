@@ -22,7 +22,7 @@ const todayStr = new Date().toISOString().split('T')[0]
 const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
 const form = ref({
-  hotel_id:       Number(route.query.hotel_id || 1),
+  hotel_id:       Number(route.query.hotel_id || 0) || undefined,
   check_in_date:  todayStr,
   check_out_date: tomorrowStr,
   capacity:       2,
@@ -182,7 +182,7 @@ async function confirmBooking() {
               </div>
               <div>
                 <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Phone</label>
-                <input v-model="guestForm.guest_phone" type="tel" required class="input" placeholder="+1 555 0000" />
+                <input v-model="guestForm.guest_phone" type="tel" required class="input" placeholder="+251 911 000 000" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Special Requests</label>

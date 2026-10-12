@@ -47,7 +47,7 @@ async function submit() {
           </div>
           <div>
             <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Phone</label>
-            <input v-model="form.phone" type="tel" required class="input" placeholder="+1 555 000 0000" />
+            <input v-model="form.phone" type="tel" required class="input" placeholder="+251 911 000 000" />
           </div>
         </div>
         <div>

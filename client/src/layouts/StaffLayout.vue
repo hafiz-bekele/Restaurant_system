@@ -2,6 +2,7 @@
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { ChefHat, UtensilsCrossed, CreditCard, Truck, CalendarCheck, LogOut, User } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
+import { APP_NAME } from '../config'
 
 const auth   = useAuthStore()
 const router = useRouter()
@@ -34,7 +35,7 @@ async function handleLogout() {
       <div class="flex items-center gap-6">
         <RouterLink to="/" class="flex items-center gap-2 font-heading font-bold text-lg text-primary-600 dark:text-primary-400">
           <ChefHat :size="24" />
-          <span>Staff Portal</span>
+          <span class="hidden sm:inline">{{ APP_NAME }}</span>
         </RouterLink>
 
         <!-- Navigation Tabs -->

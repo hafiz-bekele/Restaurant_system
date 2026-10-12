@@ -1,8 +1,14 @@
 <script setup>
 import { useQuery } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
+import { useAuthStore } from '../../stores/auth'
 import { ShoppingBag, TrendingUp, BarChart2, Star, Clock, User, ArrowRight, CheckCircle, AlertCircle } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
+import { computed } from 'vue'
+
+const auth = useAuthStore()
+const dashTitle    = computed(() => auth.hasRole('manager') ? 'Operations Dashboard' : 'Admin Dashboard')
+const dashSubtitle = computed(() => auth.hasRole('manager') ? 'Live orders, shift revenue, and today\'s operations' : 'Overview of live customer orders, revenue, and restaurant operations')
 
 const today = new Date().toISOString().split('T')[0]
 const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
@@ -39,8 +45,8 @@ function statusBadgeClass(status) {
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       <div>
-        <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white">Admin Dashboard</h1>
-        <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Overview of live customer orders, revenue, and restaurant operations</p>
+        <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white">{{ dashTitle }}</h1>
+        <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ dashSubtitle }}</p>
       </div>
       <RouterLink to="/admin/orders" class="btn-secondary text-xs py-1.5 px-3 self-start sm:self-auto gap-1.5">
         <span>View Full Order Dispatch</span>

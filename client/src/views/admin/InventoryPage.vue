@@ -291,7 +291,7 @@ async function createSupplier() {
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Phone</label>
-                  <input v-model="supForm.phone" type="tel" class="input" placeholder="+1 555 0000" />
+                  <input v-model="supForm.phone" type="tel" class="input" placeholder="+251 911 000 000" />
                 </div>
               </div>
               <div>

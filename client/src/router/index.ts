@@ -1,20 +1,31 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    auth?: boolean
+    guest?: boolean
+    role?: string
+    customerOnly?: boolean
+  }
+}
+
 const routes = [
-  // Public
+  // Public info pages — anyone can view
   { path: '/',               name: 'home',            component: () => import('../views/HomePage.vue') },
-  { path: '/menu',           name: 'menu',            component: () => import('../views/menu/MenuPage.vue') },
-  { path: '/menu/:slug',     name: 'dish',            component: () => import('../views/menu/DishPage.vue') },
-  { path: '/cart',           name: 'cart',            component: () => import('../views/cart/CartPage.vue') },
-  { path: '/checkout',       name: 'checkout',        component: () => import('../views/cart/CheckoutPage.vue') },
-  { path: '/reservations',   name: 'reservations',    component: () => import('../views/reservation/ReservationPage.vue') },
-  { path: '/rooms',          name: 'rooms',           component: () => import('../views/guest/RoomsPage.vue') },
-  { path: '/complaints/new', name: 'complaint.new',   component: () => import('../views/guest/ComplaintPage.vue') },
-  { path: '/complaints/:ticket', name: 'complaint.show', component: () => import('../views/guest/ComplaintPage.vue') },
-  { path: '/qr/:token',      name: 'qr.landing',      component: () => import('../views/guest/QrLandingPage.vue') },
   { path: '/about',          name: 'about',           component: () => import('../views/static/AboutPage.vue') },
   { path: '/contact',        name: 'contact',         component: () => import('../views/static/ContactPage.vue') },
+
+  // Customer-only ordering & booking — blocked for all staff/admin roles
+  { path: '/menu',           name: 'menu',            component: () => import('../views/menu/MenuPage.vue'),              meta: { customerOnly: true } },
+  { path: '/menu/:slug',     name: 'dish',            component: () => import('../views/menu/DishPage.vue'),              meta: { customerOnly: true } },
+  { path: '/cart',           name: 'cart',            component: () => import('../views/cart/CartPage.vue'),              meta: { customerOnly: true } },
+  { path: '/checkout',       name: 'checkout',        component: () => import('../views/cart/CheckoutPage.vue'),          meta: { customerOnly: true } },
+  { path: '/reservations',   name: 'reservations',    component: () => import('../views/reservation/ReservationPage.vue'), meta: { customerOnly: true } },
+  { path: '/rooms',          name: 'rooms',           component: () => import('../views/guest/RoomsPage.vue'),            meta: { customerOnly: true } },
+  { path: '/complaints/new', name: 'complaint.new',   component: () => import('../views/guest/ComplaintPage.vue'),        meta: { customerOnly: true } },
+  { path: '/complaints/:ticket', name: 'complaint.show', component: () => import('../views/guest/ComplaintPage.vue') },
+  { path: '/qr/:token',      name: 'qr.landing',      component: () => import('../views/guest/QrLandingPage.vue') },
 
   // Auth
   { path: '/login',     name: 'login',    component: () => import('../views/auth/LoginPage.vue'),    meta: { guest: true } },
@@ -107,6 +118,19 @@ router.beforeEach(async (to) => {
   // Staff portals: accessible to all staff roles (including manager)
   if (to.meta.role === 'staff' && !auth.isStaff) {
     return auth.isAuthenticated ? { name: 'home' } : { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  // Customer-only pages: block all staff and admin roles
+  // Unauthenticated guests (not logged in) are allowed through
+  if (to.meta.customerOnly && auth.isAuthenticated && auth.isStaff) {
+    // Redirect staff to their correct home
+    if (auth.isAdmin)              return { name: 'admin' }
+    if (auth.hasRole('kitchen'))   return { path: '/staff/kitchen' }
+    if (auth.hasRole('waiter'))    return { path: '/staff/waiter' }
+    if (auth.hasRole('cashier'))   return { path: '/staff/cashier' }
+    if (auth.hasRole('reception')) return { path: '/staff/reception' }
+    if (auth.hasRole('delivery'))  return { path: '/staff/delivery' }
+    return { name: 'home' }
   }
 })
 

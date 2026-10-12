@@ -22,13 +22,23 @@ function toggleLanguage() {
   localStorage.setItem('locale', locale.value)
 }
 
-const navLinks = computed(() => [
-  { name: locale.value === 'am' ? 'መነሻ' : 'Home',         to: '/' },
-  { name: locale.value === 'am' ? 'ምናሌ' : 'Menu',         to: '/menu' },
-  { name: locale.value === 'am' ? 'ቦታ ማስያዝ' : 'Reservations', to: '/reservations' },
-  { name: locale.value === 'am' ? 'የሆቴል ክፍሎች' : 'Hotel Suites', to: '/rooms' },
-  { name: locale.value === 'am' ? 'ስለ እኛ' : 'About',        to: '/about' },
-])
+const navLinks = computed(() => {
+  // Staff and admin only see Home and About — they cannot place orders or book rooms
+  if (auth.isStaff) {
+    return [
+      { name: locale.value === 'am' ? 'መነሻ' : 'Home',   to: '/' },
+      { name: locale.value === 'am' ? 'ስለ እኛ' : 'About', to: '/about' },
+    ]
+  }
+  // Guests and customers see the full customer nav
+  return [
+    { name: locale.value === 'am' ? 'መነሻ' : 'Home',          to: '/' },
+    { name: locale.value === 'am' ? 'ምናሌ' : 'Menu',          to: '/menu' },
+    { name: locale.value === 'am' ? 'ቦታ ማስያዝ' : 'Reservations', to: '/reservations' },
+    { name: locale.value === 'am' ? 'የሆቴል ክፍሎች' : 'Hotel Suites', to: '/rooms' },
+    { name: locale.value === 'am' ? 'ስለ እኛ' : 'About',        to: '/about' },
+  ]
+})
 
 const staffHomeLink = computed(() => {
   if (auth.hasRole('kitchen')) return '/staff/kitchen'
@@ -84,8 +94,8 @@ async function handleLogout() {
           <Sun  v-else              :size="20" />
         </button>
 
-        <!-- Cart -->
-        <button @click="cart.toggleDrawer" class="btn-ghost p-2 rounded-xl relative" aria-label="Open cart">
+        <!-- Cart — only for guests and customers, not staff/admin -->
+        <button v-if="!auth.isStaff" @click="cart.toggleDrawer" class="btn-ghost p-2 rounded-xl relative" aria-label="Open cart">
           <ShoppingCart :size="20" />
           <span v-if="cart.itemCount" class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-[10px] font-bold text-white">
             {{ cart.itemCount > 9 ? '9+' : cart.itemCount }}
@@ -112,7 +122,7 @@ async function handleLogout() {
             <RouterLink to="/profile"  @click="userMenuOpen = false" class="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800">
               <User :size="16" /> Profile
             </RouterLink>
-            <RouterLink to="/orders"   @click="userMenuOpen = false" class="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800">
+            <RouterLink v-if="!auth.isStaff" to="/orders" @click="userMenuOpen = false" class="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800">
               My Orders
             </RouterLink>
             <RouterLink v-if="auth.isAdmin" to="/admin" @click="userMenuOpen = false" class="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800">

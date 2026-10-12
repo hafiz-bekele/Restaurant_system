@@ -22,7 +22,7 @@ const todayStr = new Date().toISOString().split('T')[0]
 const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
 const form = ref({
-  hotel_id:       Number(route.query.hotel_id || 0) || undefined,
+  hotel_id:       Number(route.query.hotel_id) || 1,
   check_in_date:  todayStr,
   check_out_date: tomorrowStr,
   capacity:       2,
@@ -44,8 +44,9 @@ async function search() {
     const { data } = await guestApi.availableRooms(form.value)
     rooms.value = data.data
     searched.value = true
-  } catch {
-    ui.toast('Failed to search rooms', 'error')
+  } catch (e) {
+    const msg = e.response?.data?.message ?? 'Failed to search rooms'
+    ui.toast(msg, 'error')
   } finally {
     loading.value = false
   }

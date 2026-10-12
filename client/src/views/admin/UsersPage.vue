@@ -535,7 +535,7 @@ function roleBadgeClass(role) {
         </div>
 
         <!-- Modal Body -->
-        <div class="space-y-4 flex-1 overflow-y-auto pr-1">
+        <div class="space-y-4 flex-1 overflow-y-auto p-1 pr-2">
           <!-- Role & Presets Row -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-warm-100/70 dark:bg-warm-900/50 border border-warm-200 dark:border-warm-800">
             <div>
@@ -601,37 +601,45 @@ function roleBadgeClass(role) {
             <div
               v-for="group in filteredPermissionGroups"
               :key="group.category"
-              class="border border-warm-200 dark:border-warm-800 rounded-2xl p-3.5 bg-white dark:bg-warm-850"
+              class="border border-warm-200 dark:border-warm-700 rounded-2xl p-4 bg-white dark:bg-gray-900"
             >
-              <h4 class="font-bold text-xs uppercase tracking-wider text-warm-700 dark:text-warm-300 mb-2.5 flex items-center justify-between">
+              <h4 class="font-bold text-xs uppercase tracking-wider text-warm-600 dark:text-warm-400 mb-3 flex items-center justify-between">
                 <span>{{ group.category }}</span>
-                <span class="text-[10px] text-warm-400 font-normal">
+                <span :class="['text-[10px] font-semibold px-2 py-0.5 rounded-full', group.permissions.filter(p => isPermChecked(p.id)).length > 0 ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'text-warm-400 bg-warm-100 dark:bg-warm-800']">
                   {{ group.permissions.filter(p => isPermChecked(p.id)).length }}/{{ group.permissions.length }} enabled
                 </span>
               </h4>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <label
+                <div
                   v-for="p in group.permissions"
                   :key="p.id"
                   @click="togglePermission(p.id)"
                   :class="[
-                    'flex items-start gap-2.5 p-2 rounded-xl border cursor-pointer transition-all text-xs select-none',
+                    'flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all select-none',
                     isPermChecked(p.id)
-                      ? 'border-primary-500/80 bg-primary-50/50 dark:bg-primary-950/30'
-                      : 'border-warm-100 dark:border-warm-800 hover:bg-warm-50 dark:hover:bg-warm-800/40'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 shadow-sm'
+                      : 'border-warm-200 dark:border-warm-700 hover:border-primary-300 hover:bg-warm-50 dark:hover:bg-warm-800/60'
                   ]"
                 >
-                  <input
-                    type="checkbox"
-                    :checked="isPermChecked(p.id)"
-                    class="mt-0.5 rounded text-primary-600 focus:ring-primary-500 pointer-events-none"
-                  />
-                  <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-warm-900 dark:text-white leading-tight">{{ p.label }}</p>
-                    <p class="text-[10px] text-warm-400 leading-tight mt-0.5">{{ p.desc }}</p>
+                  <!-- Custom checkbox indicator -->
+                  <div :class="[
+                    'w-4 h-4 rounded shrink-0 mt-0.5 border-2 flex items-center justify-center transition-all',
+                    isPermChecked(p.id)
+                      ? 'bg-primary-500 border-primary-500'
+                      : 'border-warm-300 dark:border-warm-600 bg-white dark:bg-warm-900'
+                  ]">
+                    <svg v-if="isPermChecked(p.id)" class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8" aria-hidden="true">
+                      <path d="M1 4l2.5 2.5L9 1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                   </div>
-                </label>
+                  <div class="flex-1 min-w-0">
+                    <p :class="['text-xs font-semibold leading-tight', isPermChecked(p.id) ? 'text-primary-700 dark:text-primary-300' : 'text-warm-900 dark:text-warm-100']">
+                      {{ p.label }}
+                    </p>
+                    <p class="text-[11px] text-warm-500 dark:text-warm-400 leading-tight mt-0.5">{{ p.desc }}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

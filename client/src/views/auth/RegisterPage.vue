@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useUiStore }   from '../../stores/ui'
-import { ChefHat, User, Mail, Lock } from '@lucide/vue'
+import { ChefHat, User, Mail, Lock, ArrowLeft } from '@lucide/vue'
+import ThemeToggle from '../../components/ui/ThemeToggle.vue'
 import { APP_NAME } from '../../config'
 
 const auth   = useAuthStore()
@@ -31,13 +32,31 @@ async function submit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-warm-50 dark:bg-gray-950 flex items-center justify-center p-4">
-    <div class="card w-full max-w-md p-8">
-      <div class="text-center mb-8">
-        <RouterLink to="/" class="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-heading font-bold text-2xl">
-          <ChefHat :size="28" /> {{ APP_NAME }}
+  <div class="min-h-screen bg-warm-50 dark:bg-gray-950 flex flex-col justify-between p-4 sm:p-6 transition-colors duration-200">
+    <!-- Top Header Bar with Storefront Link & Theme Toggle -->
+    <header class="w-full max-w-4xl mx-auto flex items-center justify-between py-2 shrink-0">
+      <RouterLink
+        to="/"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold text-warm-600 dark:text-warm-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+      >
+        <ArrowLeft :size="16" />
+        <span>Return to {{ APP_NAME }}</span>
+      </RouterLink>
+
+      <div class="flex items-center gap-2">
+        <ThemeToggle variant="segmented" />
+      </div>
+    </header>
+
+    <div class="card w-full max-w-md mx-auto p-6 sm:p-8 my-auto shadow-card border border-warm-100 dark:border-warm-800">
+      <div class="text-center mb-6">
+        <RouterLink to="/" class="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-heading font-bold text-2xl group">
+          <div class="p-2 rounded-xl bg-primary-50 dark:bg-primary-950/40 group-hover:scale-105 transition-transform">
+            <ChefHat :size="26" />
+          </div>
+          <span>{{ APP_NAME }}</span>
         </RouterLink>
-        <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mt-4">Create Account</h1>
+        <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mt-3">Create Account</h1>
         <p class="text-warm-500 dark:text-warm-400 mt-1 text-sm">Join us for the best dining experience</p>
       </div>
 
@@ -74,6 +93,11 @@ async function submit() {
         Already have an account?
         <RouterLink to="/login" class="text-primary-600 dark:text-primary-400 font-semibold hover:underline">Sign in</RouterLink>
       </p>
+    </div>
+
+    <!-- Bottom subfooter -->
+    <div class="py-2 text-center text-xs text-warm-400 shrink-0">
+      &copy; {{ new Date().getFullYear() }} {{ APP_NAME }}. All rights reserved.
     </div>
   </div>
 </template>

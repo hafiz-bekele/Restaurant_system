@@ -21,6 +21,11 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
   config.headers['X-Session-Id'] = sessionId
 
+  // Let axios set multipart/form-data boundary automatically for FormData payloads
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
+
   return config
 })
 
@@ -159,10 +164,10 @@ export const staffApi = {
 // Admin
 export const adminApi = {
   // Dishes
-  dishes:       (params?: Record<string, any>)  => api.get('/admin/dishes', { params }),
-  createDish:   (data: Record<string, any>)     => api.post('/admin/dishes', data),
-  updateDish:   (id: number | string, data: Record<string, any>) => api.put(`/admin/dishes/${id}`, data),
-  deleteDish:   (id: number | string)           => api.delete(`/admin/dishes/${id}`),
+  dishes:       (params?: Record<string, any>)                    => api.get('/admin/dishes', { params }),
+  createDish:   (data: FormData | Record<string, any>)            => api.post('/admin/dishes', data),
+  updateDish:   (id: number | string, data: FormData | Record<string, any>) => api.post(`/admin/dishes/${id}?_method=PUT`, data),
+  deleteDish:   (id: number | string)                             => api.delete(`/admin/dishes/${id}`),
 
   // Orders
   orders:       (params?: Record<string, any>)  => api.get('/admin/orders', { params }),
@@ -238,10 +243,10 @@ export const adminApi = {
   deleteHotel:        (id: number | string)          => api.delete(`/admin/hotels/${id}`),
 
   // Rooms + bookings
-  adminRooms:         (params?: Record<string, any>) => api.get('/admin/rooms', { params }),
-  createRoom:         (data: Record<string, any>)    => api.post('/admin/rooms', data),
-  updateRoom:         (id: number | string, data: Record<string, any>) => api.patch(`/admin/rooms/${id}`, data),
-  deleteRoom:         (id: number | string)          => api.delete(`/admin/rooms/${id}`),
+  adminRooms:         (params?: Record<string, any>)              => api.get('/admin/rooms', { params }),
+  createRoom:         (data: FormData | Record<string, any>)      => api.post('/admin/rooms', data),
+  updateRoom:         (id: number | string, data: FormData | Record<string, any>) => api.post(`/admin/rooms/${id}?_method=PATCH`, data),
+  deleteRoom:         (id: number | string)                       => api.delete(`/admin/rooms/${id}`),
   roomBookings:       (params?: Record<string, any>) => api.get('/admin/room-bookings', { params }),
   updateBooking:      (id: number | string, data: Record<string, any>) => api.patch(`/admin/room-bookings/${id}`, data),
 

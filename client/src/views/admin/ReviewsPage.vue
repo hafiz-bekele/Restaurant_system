@@ -198,7 +198,7 @@ function getInitials(name) {
           v-model="search"
           type="text"
           placeholder="Search customer, dish, comment..."
-          class="input-text w-full pl-10 pr-4 py-2 text-xs rounded-xl"
+          class="input w-full pl-10 pr-4 py-2 text-xs rounded-xl"
         />
       </div>
 
@@ -207,7 +207,7 @@ function getInitials(name) {
         <!-- Status Filter -->
         <select
           v-model="selectedStatus"
-          class="input-text text-xs py-2 px-3 rounded-xl bg-white dark:bg-warm-800 border-warm-200 dark:border-warm-700"
+          class="input text-xs py-2 px-3 rounded-xl"
         >
           <option value="">All Statuses</option>
           <option value="approved">Approved Only</option>
@@ -217,7 +217,7 @@ function getInitials(name) {
         <!-- Rating Filter -->
         <select
           v-model="selectedRating"
-          class="input-text text-xs py-2 px-3 rounded-xl bg-white dark:bg-warm-800 border-warm-200 dark:border-warm-700"
+          class="input text-xs py-2 px-3 rounded-xl"
         >
           <option value="">All Ratings</option>
           <option value="5">5 Stars</option>

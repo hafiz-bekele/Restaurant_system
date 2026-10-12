@@ -24,10 +24,15 @@ async function submit() {
     const user = await auth.login({ email: email.value, password: password.value })
     ui.toast(`Welcome back, ${user.name}!`, 'success')
 
-      <!-- Redirect comment removed -->
+    // Honour an explicit redirect first (e.g. from a protected route)
     if (route.query.redirect) {
-      router.push(route.query.redirect)
-    } else if (auth.isAdmin) {
+      router.push(String(route.query.redirect))
+      return
+    }
+
+    // Role-based home destination
+    if (auth.isAdmin) {
+      // super-admin, admin, manager all go to /admin
       router.push('/admin')
     } else if (auth.hasRole('kitchen')) {
       router.push('/staff/kitchen')
@@ -39,13 +44,12 @@ async function submit() {
       router.push('/staff/reception')
     } else if (auth.hasRole('delivery')) {
       router.push('/staff/delivery')
-    } else if (auth.hasRole('customer')) {
-      router.push('/menu')
     } else {
-      router.push('/')
+      // customer or unknown role → public menu
+      router.push('/menu')
     }
   } catch (e) {
-    error.value = e.response?.data?.message ?? 'Invalid credentials'
+    error.value = e.response?.data?.message ?? 'Invalid email or password'
   } finally {
     loading.value = false
   }

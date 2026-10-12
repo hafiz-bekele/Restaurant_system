@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
+import api from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Plus, Trash2, X, QrCode, RefreshCw } from '@lucide/vue'
 
@@ -60,8 +61,18 @@ async function deleteTable(table) {
   ui.toast('Table deleted')
 }
 
-function downloadQr(table) {
-  window.open(`/api/v1/admin/tables/${table.id}/qr`, '_blank')
+async function downloadQr(table) {
+  try {
+    const res = await api.get(`/admin/tables/${table.id}/qr`, { responseType: 'blob' })
+    const url  = URL.createObjectURL(res.data)
+    const link = document.createElement('a')
+    link.href     = url
+    link.download = `table-${table.name}-qr.png`
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    ui.toast('Failed to download QR code', 'error')
+  }
 }
 
 const statusColors = { available: 'badge-green', occupied: 'badge-red', reserved: 'badge-orange', inactive: 'badge' }

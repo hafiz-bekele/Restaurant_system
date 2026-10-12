@@ -318,7 +318,7 @@ function getInitials(name) {
                   rows="3"
                   maxlength="1000"
                   placeholder="How was the flavor balance? Was it cooked to perfection? Would you order it again?"
-                  class="input-text w-full resize-none text-sm p-3.5 rounded-2xl"
+                  class="input w-full resize-none text-sm p-3.5 rounded-2xl"
                 ></textarea>
                 <div class="text-right text-xs text-warm-400 mt-1">
                   {{ newComment.length }}/1000 characters

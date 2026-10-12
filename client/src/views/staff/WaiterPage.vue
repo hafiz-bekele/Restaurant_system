@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { staffApi, adminApi } from '../../services/api'
+import { staffApi, menuApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { UtensilsCrossed, CheckCircle, Clock, Bell, RefreshCw, AlertCircle, Sparkles, Plus, X, Search, Trash2 } from '@lucide/vue'
 
@@ -103,7 +103,7 @@ async function openTakeOrder(table = null) {
   if (!dishesList.value.length) {
     loadingDishes.value = true
     try {
-      const res = await adminApi.dishes()
+      const res = await menuApi.dishes()
       dishesList.value = (res.data.data ?? []).filter(d => d.is_available)
     } finally {
       loadingDishes.value = false

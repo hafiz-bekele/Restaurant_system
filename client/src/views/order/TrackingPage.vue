@@ -332,7 +332,7 @@ onUnmounted(() => {
                     v-model="commentValues[item.dish_id]"
                     rows="2"
                     placeholder="Taste, temperature, portion size..."
-                    class="input-text w-full text-xs p-2.5 rounded-xl resize-none"
+                    class="input w-full text-xs p-2.5 rounded-xl resize-none"
                   ></textarea>
                 </div>
 

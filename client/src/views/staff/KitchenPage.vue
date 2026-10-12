@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { staffApi, adminApi } from '../../services/api'
+import { staffApi, menuApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Clock, ChefHat, CheckCircle, Volume2, VolumeX, AlertTriangle, Flame, Utensils, X, ToggleLeft, ToggleRight, Search } from '@lucide/vue'
 
@@ -19,7 +19,7 @@ async function openStockModal() {
   showStockModal.value = true
   loadingDishes.value = true
   try {
-    const { data } = await adminApi.dishes()
+    const { data } = await menuApi.dishes()
     dishes.value = data.data ?? []
   } catch {
     ui.toast('Failed to load menu items', 'error')

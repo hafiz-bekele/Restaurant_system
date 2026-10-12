@@ -25,7 +25,7 @@ const form = ref({
   notes: '',
   address: {
     line1: '',
-    city: 'Downtown',
+    city:  '',
   },
 })
 
@@ -101,7 +101,7 @@ async function placeOrder() {
 
     // Handle Chapa Gateway Payment (Telebirr, CBE Birr, Card)
     if (form.value.payment_method === 'chapa') {
-      ui.toast('Connecting to Chapa Gateway (Telebirr / CBE Birr / Cards)...', 'info')
+      ui.toast('Connecting to Chapa Gateway (Telebirr / CBE Birr / Cards)...', 'success')
       try {
         const { data: chapaRes } = await paymentApi.createChapaIntent(newOrder.ulid)
         const checkoutUrl = chapaRes.data?.checkout_url

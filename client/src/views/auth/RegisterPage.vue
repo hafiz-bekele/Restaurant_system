@@ -4,6 +4,7 @@ import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useUiStore }   from '../../stores/ui'
 import { ChefHat, User, Mail, Lock } from '@lucide/vue'
+import { APP_NAME } from '../../config'
 
 const auth   = useAuthStore()
 const ui     = useUiStore()
@@ -34,7 +35,7 @@ async function submit() {
     <div class="card w-full max-w-md p-8">
       <div class="text-center mb-8">
         <RouterLink to="/" class="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-heading font-bold text-2xl">
-          <ChefHat :size="28" /> Restaurant
+          <ChefHat :size="28" /> {{ APP_NAME }}
         </RouterLink>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mt-4">Create Account</h1>
         <p class="text-warm-500 dark:text-warm-400 mt-1 text-sm">Join us for the best dining experience</p>
@@ -51,7 +52,7 @@ async function submit() {
         </div>
         <div>
           <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Phone (optional)</label>
-          <input v-model="form.phone" type="tel" class="input" placeholder="+1 555 000 0000" autocomplete="tel" />
+          <input v-model="form.phone" type="tel" class="input" placeholder="+251 911 000 000" autocomplete="tel" />
         </div>
         <div>
           <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Password</label>

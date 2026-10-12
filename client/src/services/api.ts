@@ -159,6 +159,8 @@ export const staffApi = {
   checkIn:                (id: number | string) => api.post(`/reception/reservations/${id}/check-in`),
   noShow:                 (id: number | string) => api.post(`/reception/reservations/${id}/no-show`),
   releaseTable:           (id: number | string) => api.post(`/reception/tables/${id}/release`),
+  roomBookings:           (params?: Record<string, any>) => api.get('/reception/room-bookings', { params }),
+  updateRoomBooking:      (id: number | string, data: Record<string, any>) => api.patch(`/reception/room-bookings/${id}`, data),
 }
 
 // Admin

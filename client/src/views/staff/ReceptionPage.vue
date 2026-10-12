@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { staffApi, adminApi } from '../../services/api'
+import { staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { CalendarCheck, Grid3x3, Unlock, UserCheck, X, Plus, AlertCircle, BedDouble, CheckCircle, Clock } from '@lucide/vue'
 
@@ -34,7 +34,7 @@ async function fetchDashboard() {
 async function fetchRoomBookings() {
   loadingRooms.value = true
   try {
-    const res = await adminApi.roomBookings({ status: roomStatusFilter.value || undefined })
+    const res = await staffApi.roomBookings({ status: roomStatusFilter.value || undefined })
     roomBookings.value = res.data.data ?? []
   } catch {
     ui.toast('Failed to load room bookings', 'error')
@@ -85,7 +85,7 @@ async function submitWalkIn() {
 
 async function updateRoomBookingStatus(bookingId, status) {
   try {
-    await adminApi.updateBooking(bookingId, { status })
+    await staffApi.updateRoomBooking(bookingId, { status })
     ui.toast(`Room booking updated to ${status}`, 'success')
     await fetchRoomBookings()
   } catch {

@@ -79,7 +79,8 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  if (!auth.user && auth.token) {
+  // Always resolve the user before evaluating role guards
+  if (auth.token && !auth.user) {
     await auth.fetchUser()
   }
 
@@ -88,15 +89,24 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guest && auth.isAuthenticated) {
+    // Redirect to appropriate home based on role
+    if (auth.isAdmin)              return { name: 'admin' }
+    if (auth.hasRole('kitchen'))   return { path: '/staff/kitchen' }
+    if (auth.hasRole('waiter'))    return { path: '/staff/waiter' }
+    if (auth.hasRole('cashier'))   return { path: '/staff/cashier' }
+    if (auth.hasRole('reception')) return { path: '/staff/reception' }
+    if (auth.hasRole('delivery'))  return { path: '/staff/delivery' }
     return { name: 'home' }
   }
 
+  // Admin panel: accessible to super-admin, admin, and manager
   if (to.meta.role === 'admin' && !auth.isAdmin) {
-    return { name: 'home' }
+    return auth.isAuthenticated ? { name: 'home' } : { name: 'login', query: { redirect: to.fullPath } }
   }
 
+  // Staff portals: accessible to all staff roles (including manager)
   if (to.meta.role === 'staff' && !auth.isStaff) {
-    return { name: 'home' }
+    return auth.isAuthenticated ? { name: 'home' } : { name: 'login', query: { redirect: to.fullPath } }
   }
 })
 

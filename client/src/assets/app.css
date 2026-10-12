@@ -62,6 +62,9 @@
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-warm-700 hover:bg-warm-100 dark:text-warm-300 dark:hover:bg-warm-800;
   }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed bg-warm-100 text-warm-700 hover:bg-warm-200 dark:bg-warm-800 dark:text-warm-200 dark:hover:bg-warm-700;
+  }
 
   .card {
     @apply rounded-2xl bg-white dark:bg-gray-900 shadow-card border border-warm-100 dark:border-warm-800;

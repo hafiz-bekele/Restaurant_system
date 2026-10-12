@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Plus, Trash2, X, Key, Shield, ShieldCheck, Check, Search, Sliders, Users, AlertCircle, CheckCircle, RefreshCw } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 const qc = useQueryClient()
@@ -332,9 +333,7 @@ function roleBadgeClass(role) {
       </div>
 
       <!-- Loading Skeleton -->
-      <div v-if="isLoading" class="space-y-3">
-        <div v-for="i in 5" :key="i" class="skeleton h-16 rounded-2xl"></div>
-      </div>
+      <TableSkeleton v-if="isLoading" :rows="6" :cols="5" />
 
       <!-- Staff Table -->
       <div v-else class="card overflow-x-auto shadow-sm">

@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Calendar, Search } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 const qc = useQueryClient()
@@ -71,9 +72,7 @@ function formatDate(dt) {
       </div>
     </div>
 
-    <div v-if="isLoading" class="space-y-3">
-      <div v-for="i in 5" :key="i" class="skeleton h-16 rounded-xl"></div>
-    </div>
+    <TableSkeleton v-if="isLoading" :rows="6" :cols="7" />
 
     <div v-else class="card overflow-x-auto">
       <table class="w-full text-sm">

@@ -2,6 +2,8 @@
 import { ref, onMounted } from 'vue'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import ThemeToggle from '../../components/ui/ThemeToggle.vue'
+import { Palette, Sun, Moon } from '@lucide/vue'
 
 const ui      = useUiStore()
 const loading = ref(true)
@@ -35,10 +37,37 @@ async function save() {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 max-w-2xl">
     <div>
       <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white">Settings</h1>
-      <p class="text-sm text-warm-500 dark:text-warm-400 mt-0.5">Configure restaurant name, tax rates, and currency</p>
+      <p class="text-sm text-warm-500 dark:text-warm-400 mt-0.5">Configure restaurant name, tax rates, currency, and dashboard appearance</p>
+    </div>
+
+    <!-- Appearance Card -->
+    <div class="card p-6 space-y-4">
+      <div class="flex items-center gap-2.5">
+        <div class="p-2 rounded-xl bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400">
+          <Palette :size="18" />
+        </div>
+        <div>
+          <h2 class="font-heading font-bold text-base text-warm-900 dark:text-white">Admin Theme &amp; Display</h2>
+          <p class="text-xs text-warm-500 dark:text-warm-400">Select your preferred admin interface theme</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between p-4 rounded-xl bg-warm-50 dark:bg-warm-800/50 border border-warm-100 dark:border-warm-700/60">
+        <div class="space-y-0.5">
+          <p class="text-sm font-semibold text-warm-900 dark:text-white flex items-center gap-2">
+            <Sun v-if="!ui.darkMode" :size="15" class="text-amber-500" />
+            <Moon v-else :size="15" class="text-primary-400" />
+            System Appearance
+          </p>
+          <p class="text-xs text-warm-500 dark:text-warm-400">
+            {{ ui.darkMode ? 'Dark mode enabled' : 'Light mode enabled' }}
+          </p>
+        </div>
+        <ThemeToggle variant="segmented" />
+      </div>
     </div>
 
     <div v-if="loading" class="space-y-4">
@@ -50,12 +79,17 @@ async function save() {
       <button @click="error = false; loading = true; onMounted()" class="btn-outline">Retry</button>
     </div>
 
-    <form v-else @submit.prevent="save" class="card p-8 max-w-xl space-y-5">
+    <form v-else @submit.prevent="save" class="card p-6 sm:p-8 space-y-5">
+      <div>
+        <h2 class="font-heading font-bold text-base text-warm-900 dark:text-white mb-1">Financial &amp; Business Rules</h2>
+        <p class="text-xs text-warm-500 dark:text-warm-400 mb-4">Core restaurant defaults for billing and receipts</p>
+      </div>
+
       <div>
         <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Restaurant / Brand Name</label>
         <input v-model="settings.restaurant_name" type="text" class="input" placeholder="e.g. Taste & Stay" />
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Tax Rate</label>
           <div class="relative">
@@ -71,7 +105,7 @@ async function save() {
           </div>
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Currency Code</label>
           <input v-model="settings.currency" type="text" class="input" placeholder="USD" maxlength="4" />
@@ -89,3 +123,4 @@ async function save() {
     </form>
   </div>
 </template>
+

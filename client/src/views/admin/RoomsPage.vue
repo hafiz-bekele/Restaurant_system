@@ -7,6 +7,8 @@ import {
   Plus, Trash2, Pencil, X, BedDouble, Upload, Link,
   ImageOff, Users, DollarSign, RefreshCw, Search, CheckCircle,
 } from '@lucide/vue'
+import RoomCardSkeleton from '../../components/ui/RoomCardSkeleton.vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 const qc = useQueryClient()
@@ -243,14 +245,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
 
       <!-- Skeleton -->
       <div v-if="roomsLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        <div v-for="i in 6" :key="i" class="card overflow-hidden">
-          <div class="skeleton aspect-[4/3]"></div>
-          <div class="p-4 space-y-2">
-            <div class="skeleton h-4 w-2/3 rounded"></div>
-            <div class="skeleton h-3 w-full rounded"></div>
-            <div class="skeleton h-3 w-1/3 rounded"></div>
-          </div>
-        </div>
+        <RoomCardSkeleton v-for="i in 8" :key="i" />
       </div>
 
       <!-- Room cards grid -->
@@ -348,9 +343,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
       </div>
 
       <!-- Skeleton -->
-      <div v-if="bookingsLoading" class="space-y-3">
-        <div v-for="i in 5" :key="i" class="skeleton h-16 rounded-xl"></div>
-      </div>
+      <TableSkeleton v-if="bookingsLoading" :rows="5" :cols="6" />
 
       <!-- Bookings table -->
       <div v-else-if="bookings().length" class="card overflow-x-auto shadow-sm">

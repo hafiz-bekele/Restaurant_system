@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/vue-query'
 import { RouterLink } from 'vue-router'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
+import OrderCardSkeleton from '../../components/ui/OrderCardSkeleton.vue'
 import { orderApi } from '../../services/api'
 import { ShoppingBag } from '@lucide/vue'
 
@@ -13,10 +14,10 @@ const orders = () => data.value?.data ?? []
 </script>
 <template>
   <DefaultLayout>
-    <div class="page-container py-10">
+    <div class="page-container py-10 max-w-3xl">
       <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-8">My Orders</h1>
       <div v-if="isLoading" class="space-y-4">
-        <div v-for="i in 3" :key="i" class="skeleton h-20 rounded-2xl"></div>
+        <OrderCardSkeleton v-for="i in 4" :key="i" />
       </div>
       <div v-else-if="orders().length" class="space-y-4">
         <RouterLink v-for="order in orders()" :key="order.ulid" :to="`/orders/${order.ulid}/track`" class="card p-5 flex items-center justify-between hover:shadow-float transition-all group">

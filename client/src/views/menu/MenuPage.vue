@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { Search, SlidersHorizontal } from '@lucide/vue'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import DishCard from '../../components/menu/DishCard.vue'
+import DishCardSkeleton from '../../components/ui/DishCardSkeleton.vue'
 import { menuApi } from '../../services/api'
 
 const route  = useRoute()
@@ -77,13 +78,7 @@ const dishes = computed(() => dishData.value?.data ?? [])
 
       <!-- Skeleton -->
       <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <div v-for="i in 8" :key="i" class="card overflow-hidden">
-          <div class="skeleton aspect-[4/3]"></div>
-          <div class="p-4 space-y-2">
-            <div class="skeleton h-5 w-3/4"></div>
-            <div class="skeleton h-4 w-full"></div>
-          </div>
-        </div>
+        <DishCardSkeleton v-for="i in 8" :key="i" />
       </div>
 
       <!-- Grid -->

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { guestApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
+import RoomCardSkeleton from '../../components/ui/RoomCardSkeleton.vue'
 import { BedDouble, Users, CalendarCheck, CheckCircle, X } from '@lucide/vue'
 
 const route  = useRoute()
@@ -125,8 +126,13 @@ async function confirmBooking() {
           </div>
         </div>
 
+        <!-- Loading Skeleton -->
+        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <RoomCardSkeleton v-for="i in 6" :key="i" />
+        </div>
+
         <!-- Results -->
-        <div v-if="searched">
+        <div v-else-if="searched">
           <p v-if="!rooms.length" class="text-center py-12 text-warm-400">No rooms available for the selected dates.</p>
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div v-for="room in rooms" :key="room.id" class="card overflow-hidden hover:shadow-float transition-all hover:-translate-y-1">

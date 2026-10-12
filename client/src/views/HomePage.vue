@@ -11,6 +11,7 @@ import {
 import DefaultLayout from '../layouts/DefaultLayout.vue'
 import { menuApi, guestApi } from '../services/api'
 import DishCard from '../components/menu/DishCard.vue'
+import DishCardSkeleton from '../components/ui/DishCardSkeleton.vue'
 
 // ── Data queries ─────────────────────────────────────────────────────────────
 const { data: categoriesData } = useQuery({
@@ -287,14 +288,7 @@ const highlights = [
         </div>
 
         <div v-if="featuredLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div v-for="i in 4" :key="i" class="card overflow-hidden">
-            <div class="skeleton aspect-[4/3]"></div>
-            <div class="p-4 space-y-2">
-              <div class="skeleton h-5 w-3/4 rounded-lg"></div>
-              <div class="skeleton h-4 w-full rounded-lg"></div>
-              <div class="skeleton h-4 w-1/2 rounded-lg"></div>
-            </div>
-          </div>
+          <DishCardSkeleton v-for="i in 4" :key="i" />
         </div>
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

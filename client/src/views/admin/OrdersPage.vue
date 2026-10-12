@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi, staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { ShoppingBag, UserCheck, Utensils, RefreshCw, X, Search, Plus, Trash2, CheckCircle } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 const qc = useQueryClient()
@@ -213,9 +214,7 @@ async function submitNewOrder() {
     </div>
 
     <!-- Loading Skeleton -->
-    <div v-if="isLoading" class="space-y-3">
-      <div v-for="i in 5" :key="i" class="skeleton h-16 rounded-2xl"></div>
-    </div>
+    <TableSkeleton v-if="isLoading" :rows="6" :cols="7" />
 
     <!-- Orders Table -->
     <div v-else class="card overflow-x-auto shadow-sm">

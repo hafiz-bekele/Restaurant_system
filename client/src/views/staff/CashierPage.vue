@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { CreditCard, DollarSign, Printer, CheckCircle, RefreshCw, AlertCircle, ShoppingBag, BedDouble, Receipt } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 import { APP_NAME } from '../../config'
 
 const ui = useUiStore()
@@ -153,9 +154,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-if="loading" class="space-y-3">
-        <div v-for="i in 5" :key="i" class="skeleton h-16 rounded-xl"></div>
-      </div>
+      <TableSkeleton v-if="loading" :rows="5" :cols="6" />
 
       <div v-else-if="filteredOrders.length" class="overflow-x-auto">
         <table class="w-full text-sm">

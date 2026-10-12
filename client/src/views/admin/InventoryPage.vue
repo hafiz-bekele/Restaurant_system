@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Plus, X, AlertTriangle, Package, Truck } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 const qc = useQueryClient()
@@ -116,9 +117,7 @@ async function createSupplier() {
         </label>
       </div>
 
-      <div v-if="ingLoading" class="space-y-3">
-        <div v-for="i in 5" :key="i" class="skeleton h-14 rounded-xl"></div>
-      </div>
+      <TableSkeleton v-if="ingLoading" :rows="6" :cols="7" />
 
       <div v-else class="card overflow-x-auto">
         <table class="w-full text-sm">
@@ -158,9 +157,7 @@ async function createSupplier() {
 
     <!-- Suppliers tab -->
     <div v-else>
-      <div v-if="!suppliersData" class="space-y-3">
-        <div v-for="i in 4" :key="i" class="skeleton h-14 rounded-xl"></div>
-      </div>
+      <TableSkeleton v-if="!suppliersData" :rows="5" :cols="4" />
       <div v-else class="card overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-warm-50 dark:bg-warm-800">

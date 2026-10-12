@@ -129,8 +129,32 @@ onUnmounted(() => {
     <div class="page-container py-12 max-w-2xl">
       <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-8">Order Tracking</h1>
 
-      <div v-if="loading" class="card p-8 space-y-4">
-        <div v-for="i in 3" :key="i" class="skeleton h-6 w-full"></div>
+      <!-- Order Tracking Loading Skeleton -->
+      <div v-if="loading" class="card p-8 space-y-8">
+        <div class="flex items-center justify-between">
+          <div class="space-y-2">
+            <div class="skeleton h-3.5 w-24 rounded"></div>
+            <div class="skeleton h-6 w-40 rounded-lg"></div>
+          </div>
+          <div class="skeleton h-7 w-28 !rounded-full"></div>
+        </div>
+
+        <!-- Progress step bar skeleton -->
+        <div class="flex items-center justify-between px-2 sm:px-4 py-4 border-y border-warm-100 dark:border-warm-800">
+          <div v-for="i in 4" :key="i" class="flex flex-col items-center gap-2">
+            <div class="skeleton w-10 h-10 !rounded-full"></div>
+            <div class="skeleton h-3 w-14 rounded"></div>
+          </div>
+        </div>
+
+        <!-- Order Items Skeleton -->
+        <div class="space-y-3 pt-2">
+          <div class="skeleton h-4 w-28 rounded"></div>
+          <div v-for="i in 3" :key="i" class="flex items-center justify-between">
+            <div class="skeleton h-4 w-44 rounded"></div>
+            <div class="skeleton h-4 w-16 rounded"></div>
+          </div>
+        </div>
       </div>
 
       <div v-else-if="order" class="space-y-6">

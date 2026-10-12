@@ -53,10 +53,13 @@ onMounted(async () => {
 <template>
   <DefaultLayout>
     <div class="page-container py-32 flex flex-col items-center justify-center text-center gap-6">
-      <!-- Loading spinner -->
+      <!-- Loading Skeleton -->
       <template v-if="loading">
-        <Loader :size="48" class="text-primary-500 animate-spin" />
-        <p class="text-warm-600 dark:text-warm-300 text-lg">Scanning QR code…</p>
+        <div class="card p-8 max-w-sm w-full space-y-4 text-center">
+          <div class="skeleton w-24 h-24 mx-auto !rounded-2xl"></div>
+          <div class="skeleton h-5 w-44 mx-auto rounded-lg"></div>
+          <div class="skeleton h-3.5 w-32 mx-auto rounded"></div>
+        </div>
       </template>
 
       <!-- Error state -->

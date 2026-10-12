@@ -296,8 +296,18 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
-        <div v-for="i in 10" :key="i" class="skeleton h-32 rounded-2xl"></div>
+      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div v-for="i in 10" :key="i" class="card p-4 space-y-3 border border-warm-100 dark:border-warm-800">
+          <div class="flex items-center justify-between">
+            <div class="skeleton h-4 w-16 rounded-md"></div>
+            <div class="skeleton h-4 w-12 !rounded-full"></div>
+          </div>
+          <div class="skeleton h-7 w-14 rounded-lg"></div>
+          <div class="flex items-center justify-between pt-2 border-t border-warm-100 dark:border-warm-800">
+            <div class="skeleton h-3 w-14 rounded"></div>
+            <div class="skeleton h-3 w-10 rounded"></div>
+          </div>
+        </div>
       </div>
 
       <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">

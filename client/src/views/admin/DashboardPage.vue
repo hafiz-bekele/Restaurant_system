@@ -5,6 +5,8 @@ import { useAuthStore } from '../../stores/auth'
 import { ShoppingBag, TrendingUp, BarChart2, Star, Clock, User, ArrowRight, CheckCircle, AlertCircle } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 import { computed } from 'vue'
+import StatCardSkeleton from '../../components/ui/StatCardSkeleton.vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const auth = useAuthStore()
 const dashTitle    = computed(() => auth.hasRole('manager') ? 'Operations Dashboard' : 'Admin Dashboard')
@@ -56,7 +58,7 @@ function statusBadgeClass(status) {
 
     <!-- Stat cards -->
     <div v-if="isReportLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div v-for="i in 4" :key="i" class="card p-5 skeleton h-28"></div>
+      <StatCardSkeleton v-for="i in 4" :key="i" />
     </div>
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -110,8 +112,8 @@ function statusBadgeClass(status) {
         </RouterLink>
       </div>
 
-      <div v-if="isOrdersLoading" class="space-y-2">
-        <div v-for="i in 3" :key="i" class="skeleton h-14 rounded-xl"></div>
+      <div v-if="isOrdersLoading">
+        <TableSkeleton :rows="4" :cols="6" :showHeader="true" />
       </div>
 
       <div v-else-if="!recentOrders().length" class="text-center py-10 text-warm-400 text-sm">

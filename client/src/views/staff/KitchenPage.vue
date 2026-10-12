@@ -188,7 +188,18 @@ function getSlaStatus(order) {
 
     <div v-if="loading" class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div v-for="col in 3" :key="col" class="space-y-3">
-        <div v-for="i in 2" :key="i" class="skeleton h-44 rounded-2xl"></div>
+        <div class="skeleton h-8 w-32 !rounded-full mb-3"></div>
+        <div v-for="i in 2" :key="i" class="card p-4 space-y-3 border border-warm-100 dark:border-warm-800">
+          <div class="flex items-center justify-between">
+            <div class="skeleton h-4 w-20 rounded"></div>
+            <div class="skeleton h-5 w-16 !rounded-full"></div>
+          </div>
+          <div class="space-y-2 py-1">
+            <div class="skeleton h-3.5 w-full rounded"></div>
+            <div class="skeleton h-3.5 w-4/5 rounded"></div>
+          </div>
+          <div class="skeleton h-9 w-full rounded-xl"></div>
+        </div>
       </div>
     </div>
 

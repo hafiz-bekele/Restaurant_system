@@ -149,11 +149,36 @@ function getInitials(name) {
     <div class="page-container py-10 max-w-5xl">
       <!-- Loading Skeleton -->
       <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div class="skeleton aspect-square rounded-2xl"></div>
         <div class="space-y-4">
-          <div class="skeleton h-8 w-3/4"></div>
-          <div class="skeleton h-4 w-full"></div>
-          <div class="skeleton h-4 w-2/3"></div>
+          <div class="skeleton aspect-square !rounded-3xl"></div>
+          <div class="grid grid-cols-4 gap-3">
+            <div v-for="i in 4" :key="i" class="skeleton aspect-square !rounded-xl"></div>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <div class="space-y-3">
+            <div class="skeleton h-9 w-4/5 rounded-xl"></div>
+            <div class="flex items-center gap-3">
+              <div class="skeleton h-5 w-20 !rounded-full"></div>
+              <div class="skeleton h-5 w-16 !rounded-full"></div>
+            </div>
+            <div class="skeleton h-8 w-24 rounded-lg pt-2"></div>
+          </div>
+          <div class="space-y-2 py-2">
+            <div class="skeleton h-4 w-full rounded"></div>
+            <div class="skeleton h-4 w-5/6 rounded"></div>
+            <div class="skeleton h-4 w-3/4 rounded"></div>
+          </div>
+          <div class="space-y-3 pt-4 border-t border-warm-100 dark:border-warm-800">
+            <div class="skeleton h-4 w-28 rounded"></div>
+            <div class="flex gap-2">
+              <div v-for="i in 3" :key="i" class="skeleton h-10 w-24 !rounded-xl"></div>
+            </div>
+          </div>
+          <div class="flex gap-4 pt-4">
+            <div class="skeleton h-12 w-32 !rounded-xl"></div>
+            <div class="skeleton h-12 flex-1 !rounded-xl"></div>
+          </div>
         </div>
       </div>
 

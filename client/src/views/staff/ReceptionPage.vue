@@ -3,6 +3,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { CalendarCheck, Grid3x3, Unlock, UserCheck, X, Plus, AlertCircle, BedDouble, CheckCircle, Clock } from '@lucide/vue'
+import StatCardSkeleton from '../../components/ui/StatCardSkeleton.vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 
@@ -154,8 +156,30 @@ onUnmounted(() => clearInterval(interval))
 
     <!-- TAB 1: TABLE FLOOR PLAN & RESERVATIONS -->
     <div v-if="activeTab === 'tables'">
-      <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div v-for="i in 4" :key="i" class="skeleton h-24 rounded-2xl"></div>
+      <div v-if="loading" class="space-y-6 mb-8">
+        <StatCardSkeleton :count="4" :columns="4" />
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="space-y-4">
+            <div class="skeleton h-5 w-44 rounded-lg"></div>
+            <div v-for="i in 3" :key="i" class="card p-4 space-y-3 border border-warm-100 dark:border-warm-800">
+              <div class="skeleton h-4 w-32 rounded"></div>
+              <div class="skeleton h-3 w-40 rounded"></div>
+              <div class="skeleton h-7 w-full rounded-lg"></div>
+            </div>
+          </div>
+          <div class="lg:col-span-2 space-y-4">
+            <div class="skeleton h-5 w-36 rounded-lg"></div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div v-for="i in 8" :key="i" class="card p-3 space-y-2 border border-warm-100 dark:border-warm-800">
+                <div class="flex items-center justify-between">
+                  <div class="skeleton h-4 w-14 rounded"></div>
+                  <div class="skeleton h-4 w-12 !rounded-full"></div>
+                </div>
+                <div class="skeleton h-3 w-20 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <template v-else-if="data">

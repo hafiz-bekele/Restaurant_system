@@ -506,5 +506,48 @@ function getInitials(name) {
         </section>
       </div>
     </div>
+
+    <!-- Sticky Mobile Floating Add-to-Cart Bar -->
+    <div
+      v-if="dish"
+      class="md:hidden fixed bottom-14 left-0 right-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-warm-200 dark:border-warm-800 p-3 shadow-2xl flex items-center justify-between gap-3"
+    >
+      <div class="min-w-0">
+        <p class="text-xs text-warm-500 font-medium truncate">{{ dish.name }}</p>
+        <p class="font-heading font-extrabold text-base text-primary-600 dark:text-primary-400">
+          ${{ (Number(dish.price) * qty).toFixed(2) }}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center bg-warm-100 dark:bg-warm-800 rounded-xl p-1 border border-warm-200 dark:border-warm-700">
+          <button
+            type="button"
+            @click="qty = Math.max(1, qty - 1)"
+            class="p-1 rounded-lg text-warm-600 dark:text-warm-300 hover:bg-warm-200 dark:hover:bg-warm-700 transition-colors"
+            aria-label="Decrease quantity"
+          >
+            <Minus :size="14" />
+          </button>
+          <span class="w-6 text-center text-xs font-bold text-warm-900 dark:text-white">{{ qty }}</span>
+          <button
+            type="button"
+            @click="qty++"
+            class="p-1 rounded-lg text-warm-600 dark:text-warm-300 hover:bg-warm-200 dark:hover:bg-warm-700 transition-colors"
+            aria-label="Increase quantity"
+          >
+            <Plus :size="14" />
+          </button>
+        </div>
+
+        <button
+          @click="addToCart"
+          :disabled="loading"
+          class="btn-primary py-2.5 px-4 text-xs font-semibold shadow-md whitespace-nowrap"
+        >
+          {{ loading ? '...' : 'Add to Cart' }}
+        </button>
+      </div>
+    </div>
   </DefaultLayout>
 </template>

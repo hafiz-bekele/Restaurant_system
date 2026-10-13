@@ -146,11 +146,40 @@ async function placeOrder() {
         <RouterLink to="/login?redirect=/checkout" class="btn-primary text-xs px-4 py-2 shrink-0">Sign In to Continue</RouterLink>
       </div>
 
+      <!-- Checkout Loading Skeleton -->
+      <div v-if="cart.loading && !cart.cart?.items?.length" class="card p-8 space-y-6 border border-warm-100 dark:border-warm-800">
+        <div class="space-y-2">
+          <div class="skeleton h-4 w-24 rounded"></div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="skeleton h-12 rounded-xl"></div>
+            <div class="skeleton h-12 rounded-xl"></div>
+            <div class="skeleton h-12 rounded-xl"></div>
+          </div>
+        </div>
+        <div class="space-y-3 pt-4 border-t border-warm-100 dark:border-warm-800">
+          <div class="skeleton h-4 w-32 rounded"></div>
+          <div class="skeleton h-11 w-full rounded-xl"></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="skeleton h-11 rounded-xl"></div>
+            <div class="skeleton h-11 rounded-xl"></div>
+          </div>
+        </div>
+        <div class="space-y-3 pt-4 border-t border-warm-100 dark:border-warm-800">
+          <div class="skeleton h-4 w-40 rounded"></div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="skeleton h-16 rounded-xl"></div>
+            <div class="skeleton h-16 rounded-xl"></div>
+            <div class="skeleton h-16 rounded-xl"></div>
+          </div>
+        </div>
+        <div class="skeleton h-12 w-full rounded-xl mt-6"></div>
+      </div>
+
       <!-- Empty Cart Alert -->
-      <div v-if="!cart.cart?.items?.length" class="card p-10 text-center">
-        <ShoppingBag :size="48" class="mx-auto text-warm-300 mb-4" />
+      <div v-else-if="!cart.cart?.items?.length" class="card p-10 text-center border border-warm-100 dark:border-warm-800">
+        <ShoppingBag :size="48" class="mx-auto text-warm-300 dark:text-warm-700 mb-4" />
         <h2 class="font-heading text-xl font-bold text-warm-900 dark:text-white mb-2">Your Cart is Empty</h2>
-        <p class="text-warm-500 mb-6">Add delicious dishes from our menu before checking out.</p>
+        <p class="text-warm-500 dark:text-warm-400 mb-6">Add delicious dishes from our menu before checking out.</p>
         <RouterLink to="/menu" class="btn-primary">Browse Menu</RouterLink>
       </div>
 

@@ -296,9 +296,7 @@ onUnmounted(() => clearInterval(interval))
         <button @click="fetchRoomBookings" class="btn-ghost text-xs py-1.5 px-3">Refresh</button>
       </div>
 
-      <div v-if="loadingRooms" class="space-y-3">
-        <div v-for="i in 4" :key="i" class="skeleton h-16 rounded-2xl"></div>
-      </div>
+      <TableSkeleton v-if="loadingRooms" :rows="5" :columns="7" />
 
       <div v-else-if="roomBookings.length === 0" class="card text-center py-12">
         <BedDouble :size="40" class="mx-auto text-warm-400 mb-2" />

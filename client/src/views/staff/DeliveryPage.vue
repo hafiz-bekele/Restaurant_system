@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Truck } from '@lucide/vue'
+import OrderCardSkeleton from '../../components/ui/OrderCardSkeleton.vue'
 
 const ui = useUiStore()
 const qc = useQueryClient()
@@ -22,7 +23,9 @@ async function updateStatus(id, status) {
 <template>
   <div>
     <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mb-6 flex items-center gap-2"><Truck :size="22" class="text-primary-500" /> Deliveries</h1>
-    <div v-if="isLoading" class="space-y-3"><div v-for="i in 3" :key="i" class="skeleton h-20 rounded-2xl"></div></div>
+    <div v-if="isLoading" class="space-y-3">
+      <OrderCardSkeleton v-for="i in 4" :key="i" />
+    </div>
     <div v-else-if="(data ?? []).length" class="space-y-4">
       <div v-for="order in data" :key="order.ulid" class="card p-5 flex items-center justify-between">
         <div>

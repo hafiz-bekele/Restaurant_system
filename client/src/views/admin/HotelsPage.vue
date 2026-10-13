@@ -122,7 +122,29 @@ async function deleteHotel(hotel) {
 
     <!-- Hotels Grid -->
     <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="i in 3" :key="i" class="skeleton h-56 rounded-2xl"></div>
+      <div v-for="i in 3" :key="i" class="card p-6 flex flex-col justify-between border border-warm-100 dark:border-warm-800 space-y-4">
+        <div>
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <div class="skeleton w-12 h-12 rounded-xl"></div>
+              <div class="space-y-1.5">
+                <div class="skeleton h-5 w-32 rounded"></div>
+                <div class="skeleton h-3 w-24 rounded"></div>
+              </div>
+            </div>
+            <div class="skeleton h-5 w-14 !rounded-full"></div>
+          </div>
+          <div class="space-y-2 mt-4">
+            <div class="skeleton h-3.5 w-40 rounded"></div>
+            <div class="skeleton h-3.5 w-48 rounded"></div>
+            <div class="skeleton h-3.5 w-36 rounded"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-4 border-t border-warm-100 dark:border-warm-800">
+          <div class="skeleton h-8 flex-1 rounded-xl"></div>
+          <div class="skeleton h-8 w-8 rounded-xl"></div>
+        </div>
+      </div>
     </div>
 
     <div v-else-if="hotels().length === 0" class="card text-center py-12">

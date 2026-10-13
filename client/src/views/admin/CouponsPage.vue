@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Plus, Trash2, X, Tag } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 const qc = useQueryClient()
@@ -72,9 +73,7 @@ function typeLabel(type) {
       <button @click="openModal" class="btn-primary gap-2"><Plus :size="16" /> New Coupon</button>
     </div>
 
-    <div v-if="isLoading" class="space-y-3">
-      <div v-for="i in 4" :key="i" class="skeleton h-14 rounded-xl"></div>
-    </div>
+    <TableSkeleton v-if="isLoading" :rows="5" :columns="7" />
 
     <div v-else class="card overflow-x-auto">
       <table class="w-full text-sm">

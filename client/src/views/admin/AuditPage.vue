@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { Shield, Search } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const action  = ref('')
 const userId  = ref('')
@@ -49,9 +50,7 @@ function formatDate(dt) {
       <input v-model="userId" type="number" placeholder="User ID" class="input w-32" />
     </div>
 
-    <div v-if="isLoading" class="space-y-3">
-      <div v-for="i in 8" :key="i" class="skeleton h-12 rounded-xl"></div>
-    </div>
+    <TableSkeleton v-if="isLoading" :rows="8" :columns="4" />
 
     <div v-else class="card overflow-x-auto">
       <table class="w-full text-sm">

@@ -6,6 +6,7 @@ import {
   Star, Search, CheckCircle, EyeOff, Trash2,
   RefreshCw, MessageSquare, ThumbsUp, Filter, AlertCircle
 } from '@lucide/vue'
+import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const ui = useUiStore()
 
@@ -231,9 +232,7 @@ function getInitials(name) {
 
     <!-- Reviews Table / List -->
     <div class="card overflow-hidden border border-warm-200/80 dark:border-warm-800 rounded-3xl shadow-sm">
-      <div v-if="loading && reviews.length === 0" class="p-8 space-y-4">
-        <div v-for="i in 4" :key="i" class="skeleton h-14 w-full rounded-xl"></div>
-      </div>
+      <TableSkeleton v-if="loading && reviews.length === 0" :rows="5" :columns="7" />
 
       <div v-else-if="reviews.length > 0" class="overflow-x-auto">
         <table class="w-full text-left text-xs text-warm-600 dark:text-warm-300">

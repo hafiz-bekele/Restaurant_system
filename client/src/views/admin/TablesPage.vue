@@ -97,7 +97,20 @@ const statusColors = { available: 'badge-green', occupied: 'badge-red', reserved
     </div>
 
     <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div v-for="i in 8" :key="i" class="skeleton h-36 rounded-2xl"></div>
+      <div v-for="i in 8" :key="i" class="card p-4 space-y-3 border border-warm-100 dark:border-warm-800">
+        <div class="flex items-start justify-between">
+          <div class="space-y-1.5">
+            <div class="skeleton h-4 w-20 rounded"></div>
+            <div class="skeleton h-3 w-28 rounded"></div>
+          </div>
+          <div class="skeleton h-5 w-14 !rounded-full"></div>
+        </div>
+        <div class="flex items-center gap-2 pt-2 border-t border-warm-100 dark:border-warm-800">
+          <div class="skeleton h-6 w-6 rounded-lg"></div>
+          <div class="skeleton h-6 w-6 rounded-lg"></div>
+          <div class="skeleton h-6 w-6 rounded-lg ml-auto"></div>
+        </div>
+      </div>
     </div>
 
     <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

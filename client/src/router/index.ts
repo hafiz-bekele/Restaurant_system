@@ -5,6 +5,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     auth?: boolean
     guest?: boolean
+    staffOnly?: boolean
     role?: string
     customerOnly?: boolean
   }
@@ -16,28 +17,29 @@ const routes = [
   { path: '/about',          name: 'about',           component: () => import('../views/static/AboutPage.vue') },
   { path: '/contact',        name: 'contact',         component: () => import('../views/static/ContactPage.vue') },
 
-  // Customer-only ordering & booking — blocked for all staff/admin roles
-  { path: '/menu',           name: 'menu',            component: () => import('../views/menu/MenuPage.vue'),              meta: { customerOnly: true } },
-  { path: '/menu/:slug',     name: 'dish',            component: () => import('../views/menu/DishPage.vue'),              meta: { customerOnly: true } },
-  { path: '/cart',           name: 'cart',            component: () => import('../views/cart/CartPage.vue'),              meta: { customerOnly: true } },
-  { path: '/checkout',       name: 'checkout',        component: () => import('../views/cart/CheckoutPage.vue'),          meta: { customerOnly: true } },
+  // Customer ordering & booking — open to everyone, blocked only for staff/admin
+  { path: '/menu',           name: 'menu',            component: () => import('../views/menu/MenuPage.vue'),               meta: { customerOnly: true } },
+  { path: '/menu/:slug',     name: 'dish',            component: () => import('../views/menu/DishPage.vue'),               meta: { customerOnly: true } },
+  { path: '/cart',           name: 'cart',            component: () => import('../views/cart/CartPage.vue'),               meta: { customerOnly: true } },
+  { path: '/checkout',       name: 'checkout',        component: () => import('../views/cart/CheckoutPage.vue'),           meta: { customerOnly: true } },
   { path: '/reservations',   name: 'reservations',    component: () => import('../views/reservation/ReservationPage.vue'), meta: { customerOnly: true } },
-  { path: '/rooms',          name: 'rooms',           component: () => import('../views/guest/RoomsPage.vue'),            meta: { customerOnly: true } },
-  { path: '/complaints/new', name: 'complaint.new',   component: () => import('../views/guest/ComplaintPage.vue'),        meta: { customerOnly: true } },
+  { path: '/rooms',          name: 'rooms',           component: () => import('../views/guest/RoomsPage.vue'),             meta: { customerOnly: true } },
+  { path: '/complaints/new', name: 'complaint.new',   component: () => import('../views/guest/ComplaintPage.vue'),         meta: { customerOnly: true } },
   { path: '/complaints/:ticket', name: 'complaint.show', component: () => import('../views/guest/ComplaintPage.vue') },
   { path: '/qr/:token',      name: 'qr.landing',      component: () => import('../views/guest/QrLandingPage.vue') },
 
-  // Auth
-  { path: '/login',     name: 'login',    component: () => import('../views/auth/LoginPage.vue'),    meta: { guest: true } },
-  { path: '/register',  name: 'register', component: () => import('../views/auth/RegisterPage.vue'), meta: { guest: true } },
+  // Auth — only staff/admin need to log in; guests browse freely
+  // Login/register pages redirect staff/admin to their panels if already logged in
+  { path: '/login',     name: 'login',    component: () => import('../views/auth/LoginPage.vue'),    meta: { staffOnly: true } },
+  { path: '/register',  name: 'register', component: () => import('../views/auth/RegisterPage.vue') },
 
-  // Order tracking (public with ulid)
+  // Order tracking — public
   { path: '/orders/:ulid/track', name: 'order.track', component: () => import('../views/order/TrackingPage.vue') },
 
-  // Auth-required
-  { path: '/orders',        name: 'orders',    component: () => import('../views/order/OrdersPage.vue'),        meta: { auth: true } },
-  { path: '/profile',       name: 'profile',   component: () => import('../views/profile/ProfilePage.vue'),     meta: { auth: true } },
-  { path: '/favorites',     name: 'favorites', component: () => import('../views/profile/FavoritesPage.vue'),   meta: { auth: true } },
+  // These pages are useful for logged-in customers but not required
+  { path: '/orders',    name: 'orders',    component: () => import('../views/order/OrdersPage.vue') },
+  { path: '/profile',   name: 'profile',   component: () => import('../views/profile/ProfilePage.vue'),   meta: { auth: true } },
+  { path: '/favorites', name: 'favorites', component: () => import('../views/profile/FavoritesPage.vue'), meta: { auth: true } },
 
   // Staff
   {
@@ -99,8 +101,18 @@ router.beforeEach(async (to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
+  // Login page — if staff/admin already logged in, redirect to their panel
+  if (to.meta.staffOnly && auth.isAuthenticated) {
+    if (auth.isAdmin)              return { name: 'admin' }
+    if (auth.hasRole('kitchen'))   return { path: '/staff/kitchen' }
+    if (auth.hasRole('waiter'))    return { path: '/staff/waiter' }
+    if (auth.hasRole('cashier'))   return { path: '/staff/cashier' }
+    if (auth.hasRole('reception')) return { path: '/staff/reception' }
+    if (auth.hasRole('delivery'))  return { path: '/staff/delivery' }
+  }
+
+  // Keep old guest redirect for any remaining guest meta routes
   if (to.meta.guest && auth.isAuthenticated) {
-    // Redirect to appropriate home based on role
     if (auth.isAdmin)              return { name: 'admin' }
     if (auth.hasRole('kitchen'))   return { path: '/staff/kitchen' }
     if (auth.hasRole('waiter'))    return { path: '/staff/waiter' }

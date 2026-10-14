@@ -186,19 +186,19 @@ onUnmounted(() => clearInterval(interval))
         <!-- Summary stats -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-warm-900 dark:text-white">{{ data.summary.total_tables }}</p>
+            <p class="text-2xl font-heading font-bold text-warm-900 dark:text-white">{{ data.summary?.total_tables ?? 0 }}</p>
             <p class="text-xs text-warm-500 mt-1">Total Tables</p>
           </div>
           <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-green-500">{{ data.summary.available_tables }}</p>
+            <p class="text-2xl font-heading font-bold text-green-500">{{ data.summary?.available_tables ?? 0 }}</p>
             <p class="text-xs text-warm-500 mt-1">Available Now</p>
           </div>
           <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-red-500">{{ data.summary.occupied_tables }}</p>
+            <p class="text-2xl font-heading font-bold text-red-500">{{ data.summary?.occupied_tables ?? 0 }}</p>
             <p class="text-xs text-warm-500 mt-1">Occupied</p>
           </div>
           <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-primary-500">{{ data.summary.today_reservations }}</p>
+            <p class="text-2xl font-heading font-bold text-primary-500">{{ data.summary?.today_reservations ?? 0 }}</p>
             <p class="text-xs text-warm-500 mt-1">Today's Bookings</p>
           </div>
         </div>
@@ -208,14 +208,14 @@ onUnmounted(() => clearInterval(interval))
           <div class="lg:col-span-1 space-y-4">
             <h2 class="font-heading font-semibold text-warm-900 dark:text-white flex items-center justify-between text-base">
               <span>Today's Dining Reservations</span>
-              <span class="badge badge-orange text-xs">{{ data.reservations.length }}</span>
+              <span class="badge badge-orange text-xs">{{ data.reservations?.length ?? 0 }}</span>
             </h2>
 
-            <div v-if="!data.reservations.length" class="card p-6 text-center text-warm-400 text-sm">
+            <div v-if="!data.reservations?.length" class="card p-6 text-center text-warm-400 text-sm">
               No reservations scheduled for today
             </div>
 
-            <div v-for="res in data.reservations" :key="res.id" class="card p-4 space-y-3">
+            <div v-for="res in (data.reservations ?? [])" :key="res.id" class="card p-4 space-y-3">
               <div class="flex items-start justify-between">
                 <div>
                   <p class="font-semibold text-warm-900 dark:text-white text-sm">{{ res.name }}</p>
@@ -248,7 +248,7 @@ onUnmounted(() => clearInterval(interval))
 
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               <div
-                v-for="table in data.tables"
+                v-for="table in (data.tables ?? [])"
                 :key="table.id"
                 :class="[
                   'card p-3 flex flex-col justify-between transition-all border-2',

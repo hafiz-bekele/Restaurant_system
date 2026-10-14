@@ -3,12 +3,16 @@ import { RouterView } from 'vue-router'
 import { useUiStore } from './stores/ui'
 import ToastContainer from './components/ui/ToastContainer.vue'
 
-const ui = useUiStore()
+// ui store manages the `dark` class on <html> via syncDocumentTheme()
+// We just reference it here to ensure the store is initialized early
+useUiStore()
 </script>
 
 <template>
-  <div :class="{ dark: ui.darkMode }" class="min-h-screen bg-warm-50 dark:bg-gray-950 transition-colors duration-300">
-    <RouterView />
-    <ToastContainer />
-  </div>
+  <RouterView v-slot="{ Component, route }">
+    <Transition name="page" mode="out-in">
+      <component :is="Component" :key="route.path" />
+    </Transition>
+  </RouterView>
+  <ToastContainer />
 </template>

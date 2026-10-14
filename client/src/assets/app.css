@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* ── Tailwind v4: enable class-based dark mode on <html> ─────────────────── */
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary-50:  #fff7ed;
   --color-primary-100: #ffedd5;
@@ -21,22 +24,54 @@
   --color-warm-600: #57534e;
   --color-warm-700: #44403c;
   --color-warm-800: #292524;
+  --color-warm-850: #211e1c;
   --color-warm-900: #1c1917;
+  --color-warm-950: #0c0a09;
 
   --font-heading: 'Poppins', system-ui, sans-serif;
   --font-body:    'Inter',   system-ui, sans-serif;
 
   --radius-card:  1rem;
   --shadow-card:  0 4px 24px -4px rgb(0 0 0 / 0.08);
-  --shadow-float: 0 8px 40px -8px rgb(0 0 0 / 0.14);
+  --shadow-float: 0 8px 40px -8px rgb(0 0 0 / 0.18);
 }
+
+/* ── Smooth theme switching ───────────────────────────────────────────────── */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+/* Don't animate things that shouldn't be slow */
+button, a, input, select, textarea, [class*="transition"] {
+  transition: none;
+}
+button   { transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease; }
+a        { transition: color 0.15s ease, opacity 0.15s ease; }
+input, select, textarea { transition: border-color 0.15s ease, box-shadow 0.15s ease; }
 
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; font-family: var(--font-body); }
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent; /* removes blue flash on mobile tap */
+    text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh; /* dynamic viewport on mobile */
+    overscroll-behavior-y: none;
+  }
 
   h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
+
+  /* Minimum tap target size for accessibility on mobile */
+  button, [role="button"], a, label[for], select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Exception: badges, small inline labels don't need full tap targets */
+  .badge, .badge *, [class*="badge"] { min-height: unset; min-width: unset; }
 
   :focus-visible {
     outline: 2px solid var(--color-primary-500);
@@ -44,44 +79,76 @@
     border-radius: 4px;
   }
 
+  /* Custom scrollbar — desktop only */
+  @media (min-width: 768px) {
+    ::-webkit-scrollbar              { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track        { background: transparent; }
+    ::-webkit-scrollbar-thumb        { background: var(--color-warm-300); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover  { background: var(--color-warm-400); }
+    .dark ::-webkit-scrollbar-thumb  { background: var(--color-warm-700); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed;
-  }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed bg-primary-500 text-white hover:bg-primary-600 active:scale-95 shadow-md;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
+           focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed
+           bg-primary-500 text-white hover:bg-primary-600 active:scale-95 shadow-md;
+    transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease !important;
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed border-2 border-primary-500 text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
+           focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed
+           border-2 border-primary-500 text-primary-600 hover:bg-primary-50
+           dark:text-primary-400 dark:hover:bg-primary-900/20;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-warm-700 hover:bg-warm-100 dark:text-warm-300 dark:hover:bg-warm-800;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
+           focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed
+           text-warm-700 hover:bg-warm-100 dark:text-warm-300 dark:hover:bg-warm-800;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed bg-warm-100 text-warm-700 hover:bg-warm-200 dark:bg-warm-800 dark:text-warm-200 dark:hover:bg-warm-700;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
+           focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed
+           bg-warm-100 text-warm-700 hover:bg-warm-200
+           dark:bg-warm-800 dark:text-warm-200 dark:hover:bg-warm-700;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
   }
 
+  /* ── Card ────────────────────────────────────────────────────────────── */
   .card {
     @apply rounded-2xl bg-white dark:bg-gray-900 shadow-card border border-warm-100 dark:border-warm-800;
   }
 
+  /* ── Input ───────────────────────────────────────────────────────────── */
   .input {
-    @apply w-full rounded-xl border border-warm-300 dark:border-warm-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-warm-900 dark:text-warm-100 placeholder-warm-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all duration-200;
+    @apply w-full rounded-xl border border-warm-300 dark:border-warm-700
+           bg-white dark:bg-gray-900 px-4 py-2.5 text-sm
+           text-warm-900 dark:text-warm-100 placeholder-warm-400
+           focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
+           outline-none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
   }
 
-  .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
-  }
-  .badge-green  { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400; }
+  /* ── Badges ──────────────────────────────────────────────────────────── */
+  .badge        { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .badge-green  { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-green-100  text-green-700  dark:bg-green-900/30  dark:text-green-400; }
   .badge-orange { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400; }
-  .badge-red    { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400; }
-  .badge-blue   { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400; }
+  .badge-red    { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-400; }
+  .badge-blue   { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100   text-blue-700   dark:bg-blue-900/30   dark:text-blue-400; }
 
+  /* ── Skeleton shimmer ────────────────────────────────────────────────── */
   .skeleton {
     @apply rounded-xl;
     position: relative;
@@ -89,38 +156,64 @@
     background-color: var(--color-warm-200);
     background-image: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.45) 50%,
-      rgba(255, 255, 255, 0) 100%
+      rgba(255,255,255,0)     0%,
+      rgba(255,255,255,0.55) 50%,
+      rgba(255,255,255,0)   100%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.8s infinite ease-in-out;
+    animation: shimmer 1.6s infinite ease-in-out;
   }
-
-  :is(.dark, .dark *) .skeleton {
+  :is(.dark) .skeleton {
     background-color: #1f2937;
     background-image: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0) 100%
+      rgba(255,255,255,0)    0%,
+      rgba(255,255,255,0.07) 50%,
+      rgba(255,255,255,0)   100%
     );
   }
 
+  /* ── Glass ───────────────────────────────────────────────────────────── */
   .glass {
     @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-white/20 dark:border-white/10;
   }
 
+  /* ── Page container ──────────────────────────────────────────────────── */
   .page-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+
+  /* ── Scrollbar hide ──────────────────────────────────────────────────── */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* ── Page-level route transition ─────────────────────────────────────── */
+  .page-enter-active,
+  .page-leave-active {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .page-enter-from { opacity: 0; transform: translateY(6px); }
+  .page-leave-to   { opacity: 0; transform: translateY(-4px); }
 }
 
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.22s ease forwards;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 600px; }
 }

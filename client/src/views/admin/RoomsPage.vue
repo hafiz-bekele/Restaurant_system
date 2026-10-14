@@ -149,8 +149,19 @@ function closeModal() {
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 async function save() {
-  if (!form.value.room_number || !form.value.price_per_night) {
-    ui.toast('Room number and price are required', 'error')
+  const roomNum = String(form.value.room_number ?? '').trim()
+  const price   = Number(form.value.price_per_night)
+
+  if (!roomNum) {
+    ui.toast('Room number is required', 'error')
+    return
+  }
+  if (!form.value.price_per_night && form.value.price_per_night !== 0) {
+    ui.toast('Price per night is required', 'error')
+    return
+  }
+  if (price < 0) {
+    ui.toast('Price cannot be negative', 'error')
     return
   }
   saving.value = true
@@ -526,7 +537,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
                   </label>
                   <div class="relative">
                     <DollarSign :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
-                    <input v-model="form.price_per_night" type="number" min="0" step="0.01" required class="input pl-8 text-sm" placeholder="0.00" />
+                    <input v-model.number="form.price_per_night" type="number" min="0" step="0.01" required class="input pl-8 text-sm" placeholder="0.00" />
                   </div>
                 </div>
               </div>

@@ -3,7 +3,6 @@ import { RouterLink, useRoute } from 'vue-router'
 import { Home, Utensils, ShoppingBag, Calendar, User } from '@lucide/vue'
 import Navbar from '../components/common/Navbar.vue'
 import CartDrawer from '../components/cart/CartDrawer.vue'
-import ThemeToggle from '../components/ui/ThemeToggle.vue'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 import { APP_NAME } from '../config'
@@ -48,15 +47,9 @@ const route = useRoute()
         </div>
       </div>
 
-      <!-- Footer Bottom Bar with Theme Toggle -->
-      <div class="page-container mt-10 pt-6 border-t border-warm-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-warm-500">
-        <div>
-          &copy; {{ new Date().getFullYear() }} {{ APP_NAME }}. All rights reserved.
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-xs text-warm-400 font-medium">Appearance:</span>
-          <ThemeToggle variant="segmented" />
-        </div>
+      <!-- Footer bottom bar -->
+      <div class="page-container mt-10 pt-6 border-t border-warm-800 flex items-center justify-center text-xs text-warm-500">
+        &copy; {{ new Date().getFullYear() }} {{ APP_NAME }}. All rights reserved.
       </div>
     </footer>
 

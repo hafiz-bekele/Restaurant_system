@@ -22,9 +22,11 @@ function syncDocumentTheme(isDark: boolean) {
   if (isDark) {
     root.classList.add('dark')
     root.style.colorScheme = 'dark'
+    document.body.style.backgroundColor = '#030712' // gray-950
   } else {
     root.classList.remove('dark')
     root.style.colorScheme = 'light'
+    document.body.style.backgroundColor = '#fafaf9' // warm-50
   }
 }
 

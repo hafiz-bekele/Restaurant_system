@@ -140,8 +140,19 @@ function closeModal() {
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 async function save() {
-  if (!form.value.name || !form.value.price) {
-    ui.toast('Name and price are required', 'error')
+  const name  = String(form.value.name ?? '').trim()
+  const price = Number(form.value.price)
+
+  if (!name) {
+    ui.toast('Dish name is required', 'error')
+    return
+  }
+  if (form.value.price === '' || form.value.price === null || form.value.price === undefined) {
+    ui.toast('Price is required', 'error')
+    return
+  }
+  if (price < 0) {
+    ui.toast('Price cannot be negative', 'error')
     return
   }
   saving.value = true
@@ -410,7 +421,7 @@ async function deleteDish(dish) {
                   </label>
                   <div class="relative">
                     <DollarSign :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
-                    <input v-model="form.price" type="number" min="0" step="0.01" required class="input pl-8 text-sm" placeholder="0.00" />
+                    <input v-model.number="form.price" type="number" min="0" step="0.01" required class="input pl-8 text-sm" placeholder="0.00" />
                   </div>
                 </div>
                 <div>

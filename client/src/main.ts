@@ -1,6 +1,20 @@
 import './bootstrap'
 import './assets/app.css'
 
+// Apply dark mode before Vue mounts — prevents white flash on dark mode reload
+;(function () {
+  const saved = localStorage.getItem('darkMode')
+  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
+  const isDark = saved !== null ? saved === 'true' : prefersDark
+  if (isDark) {
+    document.documentElement.classList.add('dark')
+    document.documentElement.style.colorScheme = 'dark'
+    document.body.style.backgroundColor = '#030712'
+  } else {
+    document.body.style.backgroundColor = '#fafaf9'
+  }
+})()
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPersistedState from 'pinia-plugin-persistedstate'

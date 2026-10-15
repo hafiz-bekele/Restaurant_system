@@ -1,17 +1,56 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import { useCartStore } from '../../stores/cart'
-import { ShoppingBag, Trash2, Plus, Minus } from '@lucide/vue'
+import { useUiStore } from '../../stores/ui'
+import { ShoppingBag, Trash2, Plus, Minus, Tag, ShieldCheck, Sparkles, ArrowRight, Check } from '@lucide/vue'
 
 const cart = useCartStore()
+const ui = useUiStore()
+const couponInput = ref('')
+const applyingCoupon = ref(false)
+
 onMounted(() => cart.fetchCart())
+
+async function handleApplyCoupon(code) {
+  const targetCode = code || couponInput.value.trim()
+  if (!targetCode) return
+  applyingCoupon.value = true
+  try {
+    await cart.applyCoupon(targetCode)
+    ui.toast(`Coupon ${targetCode.toUpperCase()} applied!`, 'success')
+    couponInput.value = ''
+  } catch (err) {
+    ui.toast(err.response?.data?.message || 'Invalid coupon code', 'error')
+  } finally {
+    applyingCoupon.value = false
+  }
+}
 </script>
+
 <template>
   <DefaultLayout>
     <div class="page-container py-10">
+      <!-- Top Guest Banner -->
+      <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-primary-500/10 via-amber-500/10 to-transparent border border-primary-500/20 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary-500/15 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+            <Sparkles :size="20" />
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-warm-900 dark:text-white">Frictionless Guest Checkout Active</h4>
+            <p class="text-xs text-warm-600 dark:text-warm-400">Order and pay in seconds without having to log in or register.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800">
+          <ShieldCheck :size="16" />
+          <span>Telebirr &bull; CBE &bull; Chapa &bull; Cash</span>
+        </div>
+      </div>
+
       <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-8">Shopping Cart</h1>
+
       <!-- Loading skeleton -->
       <div v-if="cart.loading && !cart.cart?.items?.length" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-4">
@@ -55,7 +94,7 @@ onMounted(() => cart.fetchCart())
             <div v-else class="w-20 h-20 rounded-xl bg-warm-100 dark:bg-warm-800 shrink-0"></div>
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-warm-900 dark:text-white truncate">{{ item.dish?.name }}</p>
-              <p class="text-sm text-primary-600 dark:text-primary-400 font-bold">${{ Number(item.line_total).toFixed(2) }}</p>
+              <p class="text-sm text-primary-600 dark:text-primary-400 font-bold font-mono">ETB {{ Number(item.line_total).toFixed(2) }}</p>
               <div class="flex items-center gap-2 mt-2">
                 <button
                   @click="cart.updateItem(item.id, item.quantity - 1)"
@@ -82,16 +121,74 @@ onMounted(() => cart.fetchCart())
               </div>
             </div>
           </div>
+
+          <!-- Coupon Promotion Box -->
+          <div class="card p-4 border border-warm-200 dark:border-warm-700 bg-warm-50/50 dark:bg-warm-800/40 space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 flex items-center gap-1.5">
+                <Tag :size="14" class="text-primary-500" /> Have a Promo Code?
+              </label>
+              <button
+                type="button"
+                @click="handleApplyCoupon('WELCOME10')"
+                class="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline"
+              >
+                Use WELCOME10 (10% Off)
+              </button>
+            </div>
+            <div class="flex gap-2">
+              <input
+                v-model="couponInput"
+                type="text"
+                placeholder="Enter coupon code..."
+                class="input text-xs uppercase font-mono tracking-wider flex-1"
+                @keydown.enter.prevent="handleApplyCoupon()"
+              />
+              <button
+                type="button"
+                @click="handleApplyCoupon()"
+                :disabled="applyingCoupon"
+                class="btn-secondary text-xs px-4"
+              >
+                {{ applyingCoupon ? 'Applying...' : 'Apply' }}
+              </button>
+            </div>
+          </div>
         </div>
+
+        <!-- Order Summary Card -->
         <div class="card p-6 h-fit space-y-4 border border-warm-100 dark:border-warm-800">
           <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">Order Summary</h2>
           <div class="space-y-2 text-sm">
-            <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>Subtotal</span><span>${{ Number(cart.totals.subtotal).toFixed(2) }}</span></div>
-            <div v-if="cart.totals.discount > 0" class="flex justify-between text-green-600"><span>Discount</span><span>-${{ Number(cart.totals.discount).toFixed(2) }}</span></div>
-            <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>Tax</span><span>${{ Number(cart.totals.tax).toFixed(2) }}</span></div>
-            <div class="flex justify-between font-bold text-warm-900 dark:text-white pt-2 border-t border-warm-100 dark:border-warm-800"><span>Total</span><span>${{ Number(cart.totals.total).toFixed(2) }}</span></div>
+            <div class="flex justify-between text-warm-600 dark:text-warm-400">
+              <span>Subtotal</span>
+              <span class="font-mono">ETB {{ Number(cart.totals.subtotal).toFixed(2) }}</span>
+            </div>
+            <div v-if="cart.totals.discount > 0" class="flex justify-between text-emerald-600 font-semibold">
+              <span>Promo Discount</span>
+              <span class="font-mono">-ETB {{ Number(cart.totals.discount).toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between text-warm-600 dark:text-warm-400">
+              <span>VAT (15%)</span>
+              <span class="font-mono">ETB {{ Number(cart.totals.tax).toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between font-bold text-warm-900 dark:text-white pt-2 border-t border-warm-100 dark:border-warm-800 text-base">
+              <span>Grand Total</span>
+              <span class="font-mono text-primary-600 text-lg">ETB {{ Number(cart.totals.total).toFixed(2) }}</span>
+            </div>
           </div>
-          <RouterLink to="/checkout" class="btn-primary w-full justify-center py-3">Proceed to Checkout</RouterLink>
+
+          <RouterLink
+            to="/checkout"
+            class="btn-primary w-full justify-center py-3.5 text-sm font-bold gap-2 shadow-lg shadow-primary-500/20"
+          >
+            <span>Proceed to Guest Checkout</span>
+            <ArrowRight :size="16" />
+          </RouterLink>
+
+          <p class="text-[11px] text-center text-warm-500">
+            No password or registration required. Instant checkout & tracking.
+          </p>
         </div>
       </div>
     </div>

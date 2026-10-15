@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { staffApi, menuApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
-import { Clock, ChefHat, CheckCircle, Volume2, VolumeX, AlertTriangle, Flame, Utensils, X, ToggleLeft, ToggleRight, Search } from '@lucide/vue'
+import { Clock, ChefHat, CheckCircle, Volume2, VolumeX, AlertTriangle, Flame, Utensils, X, ToggleLeft, ToggleRight, Search, User, Phone, MessageSquare } from '@lucide/vue'
 
 const ui     = useUiStore()
 const orders = ref([])
@@ -229,8 +229,23 @@ function getSlaStatus(order) {
 
             <div class="text-xs text-warm-500 mb-2">
               <span v-if="order.table" class="font-medium text-warm-800 dark:text-warm-200">Table {{ order.table.name }}</span>
-              <span v-else-if="order.type === 'delivery'" class="text-primary-600 dark:text-primary-400">Delivery</span>
-              <span v-else>Takeout</span>
+              <span v-else-if="order.type === 'delivery'" class="text-primary-600 dark:text-primary-400 font-semibold">Delivery</span>
+              <span v-else class="text-warm-700 dark:text-warm-300">Takeout / Dine</span>
+
+              <!-- Guest Diner Contact Badge -->
+              <div v-if="order.address_snapshot?.customer_name" class="mt-1 flex items-center gap-1.5 text-[11px] text-warm-700 dark:text-warm-300 font-medium bg-warm-100/70 dark:bg-warm-800/80 px-2 py-0.5 rounded-md">
+                <User :size="11" class="text-primary-500" />
+                <span class="truncate">{{ order.address_snapshot.customer_name }}</span>
+                <span v-if="order.address_snapshot.customer_phone" class="text-warm-400 font-mono text-[10px]">
+                  &bull; {{ order.address_snapshot.customer_phone }}
+                </span>
+              </div>
+
+              <!-- Special Request Notes -->
+              <div v-if="order.notes" class="mt-1.5 text-[11px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 p-2 rounded-lg border border-amber-200 dark:border-amber-900 font-medium flex items-start gap-1">
+                <MessageSquare :size="12" class="mt-0.5 shrink-0 text-amber-600" />
+                <span>{{ order.notes }}</span>
+              </div>
             </div>
 
             <ul class="space-y-1 mb-4 bg-warm-50 dark:bg-warm-800/40 p-2.5 rounded-xl text-xs">

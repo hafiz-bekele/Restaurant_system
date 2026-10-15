@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { staffApi, menuApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
-import { UtensilsCrossed, CheckCircle, Clock, Bell, RefreshCw, AlertCircle, Sparkles, Plus, X, Search, Trash2 } from '@lucide/vue'
+import { UtensilsCrossed, CheckCircle, Clock, Bell, RefreshCw, AlertCircle, Sparkles, Plus, X, Search, Trash2, User, Phone, MessageSquare } from '@lucide/vue'
 
 const ui = useUiStore()
 
@@ -227,9 +227,24 @@ onUnmounted(() => {
               <span class="badge badge-green text-xs">Ready</span>
             </div>
 
-            <p class="text-sm font-semibold text-primary-600 dark:text-primary-400 mb-2">
+            <p class="text-sm font-semibold text-primary-600 dark:text-primary-400 mb-1">
               {{ order.table ? `Table: ${order.table.name} (${order.table.area || 'Floor'})` : `Type: ${order.type}` }}
             </p>
+
+            <!-- Guest customer info badge -->
+            <div v-if="order.address_snapshot?.customer_name" class="mb-2 flex items-center gap-1.5 text-xs text-warm-700 dark:text-warm-300 font-medium bg-warm-100/70 dark:bg-warm-800/80 px-2 py-0.5 rounded-md">
+              <User :size="12" class="text-primary-500 shrink-0" />
+              <span class="truncate">{{ order.address_snapshot.customer_name }}</span>
+              <span v-if="order.address_snapshot.customer_phone" class="text-warm-400 font-mono text-[10px]">
+                ({{ order.address_snapshot.customer_phone }})
+              </span>
+            </div>
+
+            <!-- Notes -->
+            <div v-if="order.notes" class="mb-2 text-[11px] bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 p-1.5 rounded-lg border border-amber-200 dark:border-amber-900/40 flex items-start gap-1">
+              <MessageSquare :size="11" class="mt-0.5 shrink-0 text-amber-600" />
+              <span>{{ order.notes }}</span>
+            </div>
 
             <ul class="text-xs space-y-1 mb-4 bg-warm-50 dark:bg-warm-800/40 p-2.5 rounded-xl">
               <li v-for="item in order.items" :key="item.id" class="text-warm-800 dark:text-warm-200">

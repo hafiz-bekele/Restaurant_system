@@ -297,22 +297,22 @@ class MenuSeeder extends Seeder
 
         // 6. Hotel & Rooms
         $hotel = Hotel::firstOrCreate(
-            ['slug' => 'restaurant-boutique-suites'],
+            ['slug' => 'taste-and-stay-boutique-suites'],
             [
-                'name' => 'Restaurant & Boutique Suites',
-                'slug' => 'restaurant-boutique-suites',
-                'address' => '100 Gourmet Boulevard',
-                'phone' => '+1 (555) 123-4567',
-                'email' => 'hospitality@restaurant.com',
-                'currency' => 'USD',
+                'name' => 'Taste & Stay Bistro & Boutique Suites',
+                'slug' => 'taste-and-stay-boutique-suites',
+                'address' => 'Bole Medhanialem, Next to Edna Mall, Addis Ababa, Ethiopia',
+                'phone' => '+251 91 123 4567',
+                'email' => 'hospitality@tasteandstay.et',
+                'currency' => 'ETB',
                 'is_active' => true,
             ]
         );
 
         $rooms = [
-            ['hotel_id' => $hotel->id, 'room_number' => '101', 'type' => 'Deluxe King',       'capacity' => 2, 'price_per_night' => 120.00, 'status' => 'available', 'is_active' => true, 'qr_token' => Str::random(32), 'amenities' => ['King Bed', 'Balcony', 'Room Dining', 'High-Speed Wi-Fi']],
-            ['hotel_id' => $hotel->id, 'room_number' => '201', 'type' => 'Executive Suite',    'capacity' => 4, 'price_per_night' => 195.00, 'status' => 'available', 'is_active' => true, 'qr_token' => Str::random(32), 'amenities' => ['Living Room', 'Mini Bar', 'Ocean View', 'Jacuzzi']],
-            ['hotel_id' => $hotel->id, 'room_number' => '301', 'type' => 'Presidential Penthouse','capacity' => 6, 'price_per_night' => 380.00, 'status' => 'available', 'is_active' => true, 'qr_token' => Str::random(32), 'amenities' => ['Private Terrace', 'Chef Service', 'Sauna', 'Panoramic View']],
+            ['hotel_id' => $hotel->id, 'room_number' => '101', 'type' => 'Deluxe Queen Suite',   'capacity' => 2, 'price_per_night' => 2800.00, 'status' => 'available', 'is_active' => true, 'qr_token' => Str::random(32), 'amenities' => ['Queen Bed', 'Balcony', 'Room Dining', 'High-Speed Wi-Fi', 'City View']],
+            ['hotel_id' => $hotel->id, 'room_number' => '201', 'type' => 'Executive Balcony Suite','capacity' => 4, 'price_per_night' => 4500.00, 'status' => 'available', 'is_active' => true, 'qr_token' => Str::random(32), 'amenities' => ['Living Room', 'Mini Bar', 'Bole Skyline View', 'Jacuzzi', 'Espresso Bar']],
+            ['hotel_id' => $hotel->id, 'room_number' => '301', 'type' => 'Presidential Sky Suite',  'capacity' => 6, 'price_per_night' => 8500.00, 'status' => 'available', 'is_active' => true, 'qr_token' => Str::random(32), 'amenities' => ['Private Terrace', 'Personal Chef Service', 'Steam Shower', 'Panoramic Terrace View']],
         ];
 
         foreach ($rooms as $r) {

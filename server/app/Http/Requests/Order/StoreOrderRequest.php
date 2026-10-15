@@ -23,6 +23,9 @@ class StoreOrderRequest extends FormRequest
             'tip'              => ['nullable', 'numeric', 'min:0'],
             'notes'            => ['nullable', 'string', 'max:500'],
             'scheduled_at'     => ['nullable', 'date', 'after:now'],
+            'customer_name'    => ['nullable', 'string', 'max:100'],
+            'customer_phone'   => ['nullable', 'string', 'max:50'],
+            'customer_email'   => ['nullable', 'email', 'max:100'],
         ];
     }
 }

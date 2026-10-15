@@ -34,8 +34,22 @@ class OrderService
         $totals = $this->cartService->calculateTotals($cart, $deliveryFee);
 
         return DB::transaction(function () use ($cart, $data, $idempotencyKey, $totals) {
+            $user = $cart->user_id ? null : (auth('sanctum')->user());
+            $userId = $cart->user_id ?? $user?->id;
+
+            $addressSnapshot = $data['address'] ?? [];
+            if (!empty($data['customer_name'])) {
+                $addressSnapshot['customer_name'] = $data['customer_name'];
+            }
+            if (!empty($data['customer_phone'])) {
+                $addressSnapshot['customer_phone'] = $data['customer_phone'];
+            }
+            if (!empty($data['customer_email'])) {
+                $addressSnapshot['customer_email'] = $data['customer_email'];
+            }
+
             $order = Order::create([
-                'user_id' => $cart->user_id,
+                'user_id' => $userId,
                 'table_id' => $data['table_id'] ?? null,
                 'delivery_zone_id' => $data['delivery_zone_id'] ?? null,
                 'type' => $data['type'],
@@ -49,13 +63,11 @@ class OrderService
                 'total' => $totals['total'] + ($data['tip'] ?? 0),
                 'payment_method' => $data['payment_method'],
                 'coupon_code' => $cart->coupon_code,
-                'address_snapshot' => $data['address'] ?? null,
+                'address_snapshot' => !empty($addressSnapshot) ? $addressSnapshot : null,
                 'notes' => $data['notes'] ?? null,
                 'scheduled_at' => $data['scheduled_at'] ?? null,
                 'idempotency_key' => $idempotencyKey,
-                'payment_status' => $data['payment_method'] === 'cash'
-                    ? PaymentStatus::Pending
-                    : PaymentStatus::Pending,
+                'payment_status' => PaymentStatus::Pending,
             ]);
 
             // Snapshot order items from cart
@@ -84,7 +96,7 @@ class OrderService
             // Record initial status history
             OrderStatusHistory::create([
                 'order_id' => $order->id,
-                'user_id' => $cart->user_id,
+                'user_id' => $userId,
                 'status' => OrderStatus::Pending,
                 'note' => 'Order placed',
             ]);
@@ -96,7 +108,7 @@ class OrderService
                 if ($coupon) {
                     CouponUsage::create([
                         'coupon_id' => $coupon->id,
-                        'user_id' => $cart->user_id,
+                        'user_id' => $userId,
                         'order_id' => $order->id,
                         'used_at' => now(),
                     ]);

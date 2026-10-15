@@ -94,20 +94,20 @@ Route::prefix('v1')->group(function () {
     Route::post('webhooks/chapa', [PaymentController::class, 'chapaWebhook']);
     Route::post('payments/chapa/verify', [PaymentController::class, 'verifyChapa']);
 
+    // ── Orders & Payments (Public / Guest Accessible — no login/register required) ──
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::get('orders/{order}', [OrderController::class, 'show']);
+    Route::get('orders/{order}/track', [OrderController::class, 'track']);
+    Route::post('payments/intent', [PaymentController::class, 'createIntent']);
+    Route::post('payments/chapa', [PaymentController::class, 'createChapaIntent']);
+    Route::post('payments/room-charge', [PaymentController::class, 'roomCharge']);
+
     // ── Authenticated routes ───────────────────────────────────────────────────
     Route::middleware('auth:sanctum')->group(function () {
 
-        // Orders
+        // Orders (customer order history & cancellation)
         Route::get('orders', [OrderController::class, 'index']);
-        Route::post('orders', [OrderController::class, 'store']);
-        Route::get('orders/{order}', [OrderController::class, 'show']);
         Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
-        Route::get('orders/{order}/track', [OrderController::class, 'track']);
-
-        // Payments
-        Route::post('payments/intent', [PaymentController::class, 'createIntent']);
-        Route::post('payments/chapa', [PaymentController::class, 'createChapaIntent']);
-        Route::post('payments/room-charge', [PaymentController::class, 'roomCharge']);
 
         // Profile
         Route::get('profile', [ProfileController::class, 'show']);

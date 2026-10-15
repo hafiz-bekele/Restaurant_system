@@ -34,8 +34,10 @@ class OrderController extends Controller
     {
         $data = $request->validated();
 
+        $user = $request->user() ?? auth('sanctum')->user();
+
         $cart = $this->cartService->getOrCreate(
-            $request->user()?->id,
+            $user?->id,
             $request->header('X-Session-Id')
         );
 
@@ -55,9 +57,12 @@ class OrderController extends Controller
         );
     }
 
-    public function show(Order $order): JsonResponse
+    public function show(Order $order, Request $request): JsonResponse
     {
-        $this->authorize('view', $order);
+        $user = $request->user() ?? auth('sanctum')->user();
+        if ($order->user_id && (! $user || ($user->id !== $order->user_id && ! $user->hasAnyRole(['admin', 'super-admin', 'manager', 'kitchen', 'waiter', 'cashier', 'delivery', 'reception'])))) {
+            $this->authorize('view', $order);
+        }
 
         return $this->success(new OrderResource($order->load('items', 'statusHistory', 'payment')));
     }

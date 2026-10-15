@@ -195,6 +195,7 @@ Route::prefix('v1')->group(function () {
             Route::post('users', [AdminUserController::class, 'store']);
             Route::get('users/{user}', [AdminUserController::class, 'show']);
             Route::patch('users/{user}', [AdminUserController::class, 'update']);
+            Route::patch('users/{user}/duty', [AdminUserController::class, 'toggleDuty']);
             Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
 
             // Tables — static segments BEFORE {table} wildcard

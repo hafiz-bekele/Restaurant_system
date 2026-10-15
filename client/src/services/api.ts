@@ -193,6 +193,7 @@ export const adminApi = {
   createUser:      (data: Record<string, any>)   => api.post('/admin/users', data),
   showUser:        (id: number | string)         => api.get(`/admin/users/${id}`),
   updateUser:      (id: number | string, data: Record<string, any>) => api.patch(`/admin/users/${id}`, data),
+  toggleUserDuty:  (id: number | string)         => api.patch(`/admin/users/${id}/duty`),
   deleteUser:      (id: number | string)         => api.delete(`/admin/users/${id}`),
   roles:           ()                            => api.get('/admin/users/roles'),
   permissions:     ()                            => api.get('/admin/users/permissions'),

@@ -23,7 +23,8 @@ class UpdateUserRequest extends FormRequest
             'permissions'   => ['sometimes', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
             'on_duty'       => ['sometimes', 'boolean'],
-            'section'       => ['nullable', 'string', 'max:50'],
+            'section'       => ['nullable', 'string', 'max:100'],
+            'hotel_id'      => ['nullable', 'integer', 'exists:hotels,id'],
         ];
     }
 }

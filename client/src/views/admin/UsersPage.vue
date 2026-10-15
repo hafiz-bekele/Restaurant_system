@@ -12,10 +12,50 @@ const qc = useQueryClient()
 const activeTab = ref('directory') // 'directory' | 'matrix'
 const search = ref('')
 const roleFilter = ref('')
+const dutyFilter = ref('') // '' | '1' | '0'
 const showModal = ref(false)
 const showPermissionsModal = ref(false)
 const saving = ref(false)
 const permSearch = ref('')
+
+// Work section / Station / Desk presets per operational role
+const sectionPresets = {
+  waiter: [
+    'Indoor Dining (Tables 1-12)',
+    'Garden Patio (Tables 13-24)',
+    'Sky Terrace & Lounge',
+    'VIP Dining Suite',
+    'Private Banquet Room',
+  ],
+  reception: [
+    'Main Lobby Reception Desk',
+    'Boutique Suites Concierge',
+    'Night Audit & Reservations Desk',
+    'Executive Check-In Lounge',
+  ],
+  manager: [
+    'General Operations Manager',
+    'Food & Beverage (F&B) Director',
+    'Front Office & Floor Manager',
+    'Night Shift Duty Manager',
+  ],
+  kitchen: [
+    'Executive Head Chef Station',
+    'Hot Line & Charcoal Grill',
+    'Traditional Buna & Stew Station',
+    'Pastry & Cold Prep Station',
+  ],
+  cashier: [
+    'Main Dining POS Terminal',
+    'Sky Terrace POS Register',
+    'Delivery & Takeout Counter',
+  ],
+  delivery: [
+    'Bole & Airport Zone Driver',
+    'Kazanchis & Downtown Driver',
+    'Express Hotel Courier',
+  ]
+}
 
 // Selected user for editing permissions
 const selectedUser = ref(null)
@@ -33,6 +73,8 @@ const newUserForm = ref({
   phone: '',
   password: '',
   role: 'waiter',
+  section: 'Indoor Dining (Tables 1-12)',
+  on_duty: true,
 })
 
 // Permission definitions with descriptions
@@ -139,19 +181,45 @@ const { data: rolesData } = useQuery({
 })
 
 const { data: usersData, isLoading } = useQuery({
-  queryKey: ['admin', 'users', search, roleFilter],
+  queryKey: ['admin', 'users', search, roleFilter, dutyFilter],
   queryFn:  () => adminApi.users({
     search:  search.value  || undefined,
     role:    roleFilter.value || undefined,
+    on_duty: dutyFilter.value !== '' ? dutyFilter.value : undefined,
   }).then(r => r.data),
   keepPreviousData: true,
 })
 
 const users = () => usersData.value?.data ?? []
 
-function openNewUserModal() {
-  newUserForm.value = { name: '', email: '', phone: '', password: '', role: 'waiter' }
+function openNewUserModal(defaultRole = 'waiter') {
+  newUserForm.value = {
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    role: defaultRole,
+    section: sectionPresets[defaultRole]?.[0] || 'Main Floor',
+    on_duty: true,
+  }
   showModal.value = true
+}
+
+function handleRoleChange(newRole) {
+  newUserForm.value.role = newRole
+  if (sectionPresets[newRole]?.length) {
+    newUserForm.value.section = sectionPresets[newRole][0]
+  }
+}
+
+async function toggleUserDuty(user) {
+  try {
+    await adminApi.toggleUserDuty(user.id)
+    qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    ui.toast(`${user.name} is now ${!user.on_duty ? 'ON DUTY' : 'OFF SHIFT'}`, 'success')
+  } catch {
+    ui.toast('Failed to toggle duty status', 'error')
+  }
 }
 
 async function createUser() {
@@ -159,7 +227,7 @@ async function createUser() {
   try {
     await adminApi.createUser(newUserForm.value)
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
-    ui.toast('New staff account onboarded successfully', 'success')
+    ui.toast(`Staff member ${newUserForm.value.name} onboarded as ${newUserForm.value.role}!`, 'success')
     showModal.value = false
   } catch (e) {
     const errors = e.response?.data?.errors
@@ -312,24 +380,77 @@ function roleBadgeClass(role) {
 
     <!-- TAB 1: Staff Directory & Access -->
     <div v-if="activeTab === 'directory'" class="space-y-4">
-      <!-- Search & Filters -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="relative">
-            <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
-            <input
-              v-model="search"
-              type="search"
-              placeholder="Search staff name or email…"
-              class="input pl-9 w-60 sm:w-72 text-xs"
-            />
+      <!-- Search & Quick Filters -->
+      <div class="space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="relative">
+              <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
+              <input
+                v-model="search"
+                type="search"
+                placeholder="Search staff by name, email, section…"
+                class="input pl-9 w-60 sm:w-72 text-xs"
+              />
+            </div>
+            <select v-model="roleFilter" class="input w-auto text-xs py-2">
+              <option value="">All Roles</option>
+              <option v-for="r in (rolesData ?? [])" :key="r.id" :value="r.name">{{ r.name }}</option>
+            </select>
+            <select v-model="dutyFilter" class="input w-auto text-xs py-2">
+              <option value="">All Shift States</option>
+              <option value="1">🟢 On Duty Only</option>
+              <option value="0">⚪ Off Shift Only</option>
+            </select>
           </div>
-          <select v-model="roleFilter" class="input w-auto text-xs py-2">
-            <option value="">All Roles</option>
-            <option v-for="r in (rolesData ?? [])" :key="r.id" :value="r.name">{{ r.name }}</option>
-          </select>
+          <p class="text-xs text-warm-500 font-medium">{{ users().length }} staff members found</p>
         </div>
-        <p class="text-xs text-warm-500">{{ users().length }} staff members registered</p>
+
+        <!-- Quick Role Switcher Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <button
+            type="button"
+            @click="roleFilter = ''"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === '' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+          >
+            All Staff
+          </button>
+          <button
+            type="button"
+            @click="roleFilter = 'manager'"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'manager' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+          >
+            Managers
+          </button>
+          <button
+            type="button"
+            @click="roleFilter = 'reception'"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'reception' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+          >
+            Receptionists
+          </button>
+          <button
+            type="button"
+            @click="roleFilter = 'waiter'"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'waiter' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+          >
+            Floor Waiters
+          </button>
+          <button
+            type="button"
+            @click="roleFilter = 'kitchen'"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'kitchen' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+          >
+            Kitchen Chefs
+          </button>
+          <button
+            type="button"
+            @click="roleFilter = 'cashier'"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'cashier' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+          >
+            Cashiers
+          </button>
+        </div>
       </div>
 
       <!-- Loading Skeleton -->
@@ -397,15 +518,31 @@ function roleBadgeClass(role) {
               </td>
 
               <!-- Shift / Section -->
-              <td class="px-5 py-3.5 text-xs text-warm-600 dark:text-warm-400">
-                <div v-if="user.roles?.includes('waiter')" class="flex items-center gap-1.5">
-                  <span :class="['w-2 h-2 rounded-full', user.on_duty ? 'bg-emerald-500' : 'bg-warm-400']"></span>
-                  <span>{{ user.on_duty ? 'On Duty' : 'Off Shift' }}</span>
-                  <span v-if="user.section" class="text-[10px] bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded text-warm-600 dark:text-warm-300">
-                    {{ user.section }}
-                  </span>
+              <td class="px-5 py-3.5 text-xs">
+                <div class="space-y-1.5">
+                  <button
+                    @click="toggleUserDuty(user)"
+                    type="button"
+                    :class="[
+                      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all hover:scale-105 active:scale-95 cursor-pointer',
+                      user.on_duty
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                        : 'bg-warm-100 dark:bg-warm-800 text-warm-500 border-warm-200 dark:border-warm-700'
+                    ]"
+                    :title="`Click to toggle duty shift status for ${user.name}`"
+                  >
+                    <span :class="['w-2 h-2 rounded-full', user.on_duty ? 'bg-emerald-500 animate-pulse' : 'bg-warm-400']"></span>
+                    <span>{{ user.on_duty ? 'On Duty' : 'Off Shift' }}</span>
+                  </button>
+
+                  <div v-if="user.section" class="text-[11px] font-medium text-warm-700 dark:text-warm-300 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0"></span>
+                    <span class="truncate max-w-[180px]">{{ user.section }}</span>
+                  </div>
+                  <div v-else class="text-[10px] text-warm-400 italic">
+                    General / Unassigned
+                  </div>
                 </div>
-                <span v-else class="text-warm-400 text-[11px]">—</span>
               </td>
 
               <!-- Status -->
@@ -566,16 +703,41 @@ function roleBadgeClass(role) {
             </div>
           </div>
 
-          <!-- Waiter Shift Details (if role is Waiter) -->
-          <div v-if="editForm.role === 'waiter'" class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div class="flex items-center gap-3">
-              <label class="font-bold text-amber-900 dark:text-amber-200 cursor-pointer flex items-center gap-2">
+          <!-- Work Section / Station / Desk & Shift Duty Details -->
+          <div class="p-3.5 rounded-2xl bg-warm-50 dark:bg-warm-800/40 border border-warm-200 dark:border-warm-700 space-y-2 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+              <label class="font-bold text-warm-900 dark:text-warm-100 cursor-pointer flex items-center gap-2">
                 <input v-model="editForm.on_duty" type="checkbox" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500" />
-                <span>Waiter is On Duty (Available for Auto-Assignment)</span>
+                <span>Staff Member is Currently On Duty (Active Shift)</span>
               </label>
+
+              <div>
+                <input
+                  v-model="editForm.section"
+                  type="text"
+                  placeholder="Assigned Station / Desk / Section"
+                  class="input text-xs"
+                />
+              </div>
             </div>
-            <div>
-              <input v-model="editForm.section" type="text" placeholder="Assigned Section (e.g. Indoor, Terrace, VIP)" class="input text-xs" />
+
+            <!-- Quick Station presets for the role -->
+            <div v-if="sectionPresets[editForm.role]?.length" class="flex flex-wrap items-center gap-1 pt-1">
+              <span class="text-[10px] text-warm-400 font-semibold uppercase tracking-wider mr-1">Station Presets:</span>
+              <button
+                v-for="preset in sectionPresets[editForm.role]"
+                :key="preset"
+                type="button"
+                @click="editForm.section = preset"
+                :class="[
+                  'text-[10px] px-2 py-0.5 rounded-lg border transition-colors',
+                  editForm.section === preset
+                    ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-400 text-primary-700 dark:text-primary-300 font-bold'
+                    : 'bg-white dark:bg-warm-850 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:bg-warm-100'
+                ]"
+              >
+                {{ preset }}
+              </button>
             </div>
           </div>
 
@@ -698,9 +860,77 @@ function roleBadgeClass(role) {
               </div>
               <div>
                 <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Initial Role *</label>
-                <select v-model="newUserForm.role" class="input text-xs">
+                <select
+                  :value="newUserForm.role"
+                  @change="e => handleRoleChange(e.target.value)"
+                  class="input text-xs font-medium"
+                >
                   <option v-for="r in (rolesData ?? [])" :key="r.id" :value="r.name">{{ r.name }}</option>
                 </select>
+
+                <!-- Role Operational Scope Guidance -->
+                <div class="mt-1.5 p-2 rounded-xl bg-warm-50 dark:bg-warm-800/50 border border-warm-200 dark:border-warm-700 text-[11px] text-warm-600 dark:text-warm-300">
+                  <span v-if="newUserForm.role === 'manager'" class="font-medium text-blue-600 dark:text-blue-400">
+                    👑 Operations Manager: Full floor oversight, KDS, POS billing, order cancellations & table reassignment.
+                  </span>
+                  <span v-else-if="newUserForm.role === 'reception'" class="font-medium text-indigo-600 dark:text-indigo-400">
+                    🛎️ Front Desk Reception: Table floor plan seating, suite bookings, guest check-in & reservations.
+                  </span>
+                  <span v-else-if="newUserForm.role === 'waiter'" class="font-medium text-amber-600 dark:text-amber-400">
+                    🍽️ Floor Waiter: Ring up table orders, monitor kitchen cooking, deliver dishes to tables.
+                  </span>
+                  <span v-else-if="newUserForm.role === 'kitchen'" class="font-medium text-orange-600 dark:text-orange-400">
+                    👨‍🍳 Kitchen Chef: Kitchen Display System (KDS), ticket timing alerts, 86 stock controls.
+                  </span>
+                  <span v-else-if="newUserForm.role === 'cashier'" class="font-medium text-green-600 dark:text-green-400">
+                    💳 Cashier POS: Settle dining bills, thermal receipts, split payments & daily shift balance.
+                  </span>
+                  <span v-else class="text-warm-500">
+                    Assign initial operational role and department scope.
+                  </span>
+                </div>
+              </div>
+
+              <!-- Work Section / Desk / Station Assignment -->
+              <div>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
+                  Assigned Section / Station / Desk
+                </label>
+                <input
+                  v-model="newUserForm.section"
+                  type="text"
+                  class="input text-xs"
+                  placeholder="e.g. Indoor Tables 1-12, Main Lobby Desk..."
+                />
+                <!-- Quick clickable station presets -->
+                <div v-if="sectionPresets[newUserForm.role]?.length" class="mt-1.5 flex flex-wrap gap-1">
+                  <button
+                    v-for="preset in sectionPresets[newUserForm.role]"
+                    :key="preset"
+                    type="button"
+                    @click="newUserForm.section = preset"
+                    :class="[
+                      'text-[10px] px-2 py-0.5 rounded-lg border transition-colors',
+                      newUserForm.section === preset
+                        ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-400 text-primary-700 dark:text-primary-300 font-bold'
+                        : 'bg-warm-100 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
+                    ]"
+                  >
+                    {{ preset }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Shift Duty Status Checkbox -->
+              <div class="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+                  <input
+                    v-model="newUserForm.on_duty"
+                    type="checkbox"
+                    class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <span>Staff Member is On Duty (Available for Shifts & Orders)</span>
+                </label>
               </div>
 
               <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">

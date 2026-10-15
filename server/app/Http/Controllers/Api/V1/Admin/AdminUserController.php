@@ -22,14 +22,19 @@ class AdminUserController extends Controller
             ->when($request->filled('role'), fn ($q) => $q->role($request->role))
             ->when($request->filled('search'), fn ($q) => $q->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('email', 'like', "%{$request->search}%");
+                  ->orWhere('email', 'like', "%{$request->search}%")
+                  ->orWhere('phone', 'like', "%{$request->search}%")
+                  ->orWhere('section', 'like', "%{$request->search}%");
             }))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('on_duty'), fn ($q) => $q->where('on_duty', filter_var($request->on_duty, FILTER_VALIDATE_BOOLEAN)))
+            ->when($request->filled('section'), fn ($q) => $q->where('section', 'like', "%{$request->section}%"))
             ->latest()
-            ->paginate(20);
+            ->paginate(30);
 
         return $this->paginated($users->through(fn ($u) => [
             'id'                 => $u->id,
+            'hotel_id'           => $u->hotel_id,
             'name'               => $u->name,
             'email'              => $u->email,
             'phone'              => $u->phone,
@@ -47,6 +52,8 @@ class AdminUserController extends Controller
     public function store(StoreUserRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $authUser = $request->user();
+        $hotelId = $data['hotel_id'] ?? $authUser?->hotel_id ?? 1;
 
         $user = User::create([
             'name'     => $data['name'],
@@ -54,17 +61,53 @@ class AdminUserController extends Controller
             'phone'    => $data['phone'] ?? null,
             'password' => Hash::make($data['password']),
             'status'   => UserStatus::Active,
+            'hotel_id' => $hotelId,
+            'section'  => $data['section'] ?? null,
+            'on_duty'  => isset($data['on_duty']) ? (bool) $data['on_duty'] : false,
         ]);
 
         $user->assignRole($data['role']);
-        ActivityLog::record('user.created', $user, ['name' => $user->name, 'role' => $data['role']]);
+
+        if (!empty($data['permissions'])) {
+            $user->syncPermissions($data['permissions']);
+        }
+
+        ActivityLog::record('user.created', $user, [
+            'name'    => $user->name,
+            'role'    => $data['role'],
+            'section' => $user->section,
+            'on_duty' => (bool) $user->on_duty,
+        ]);
 
         return $this->success([
-            'id'    => $user->id,
-            'name'  => $user->name,
-            'email' => $user->email,
-            'roles' => $user->getRoleNames(),
-        ], 'User created', 201);
+            'id'                 => $user->id,
+            'hotel_id'           => $user->hotel_id,
+            'name'               => $user->name,
+            'email'              => $user->email,
+            'roles'              => $user->getRoleNames(),
+            'section'            => $user->section,
+            'on_duty'            => (bool) $user->on_duty,
+            'permissions'        => $user->getAllPermissions()->pluck('name'),
+            'direct_permissions' => $user->getDirectPermissions()->pluck('name'),
+        ], 'Staff account onboarded and role assigned successfully', 201);
+    }
+
+    public function toggleDuty(User $user): JsonResponse
+    {
+        $user->update(['on_duty' => ! $user->on_duty]);
+
+        ActivityLog::record('user.duty_toggled', $user, [
+            'name'    => $user->name,
+            'on_duty' => (bool) $user->on_duty,
+            'section' => $user->section,
+        ]);
+
+        return $this->success([
+            'id'      => $user->id,
+            'name'    => $user->name,
+            'on_duty' => (bool) $user->on_duty,
+            'section' => $user->section,
+        ], "Duty status changed to " . ($user->on_duty ? 'ON DUTY' : 'OFF SHIFT'));
     }
 
     public function show(User $user): JsonResponse

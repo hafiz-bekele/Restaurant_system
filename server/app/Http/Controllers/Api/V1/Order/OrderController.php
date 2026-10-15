@@ -79,17 +79,26 @@ class OrderController extends Controller
     public function track(Order $order): JsonResponse
     {
         return $this->success([
-            'id'             => $order->id,
-            'ulid'           => $order->ulid,
-            'order_number'   => $order->order_number,
-            'status'         => $order->status->value,
-            'status_label'   => $order->status->label(),
-            'status_history' => $order->statusHistory()->latest()->get(),
-            'estimated_time' => $order->deliveryZone?->eta_minutes,
-            'total'          => (float) $order->total,
-            'payment_method' => $order->payment_method,
-            'payment_status' => $order->payment_status?->value ?? 'pending',
-            'items'          => $order->items()->with('dish:id,name,image,slug')->get(),
+            'id'               => $order->id,
+            'ulid'             => $order->ulid,
+            'order_number'     => $order->order_number ?? ('#' . substr($order->ulid, -8)),
+            'type'             => $order->type?->value ?? 'dine_in',
+            'status'           => $order->status->value,
+            'status_label'     => $order->status->label(),
+            'status_history'   => $order->statusHistory()->latest()->get(),
+            'estimated_time'   => $order->deliveryZone?->eta_minutes,
+            'subtotal'         => (float) $order->subtotal,
+            'tax'              => (float) $order->tax,
+            'service_charge'   => (float) $order->service_charge,
+            'delivery_fee'     => (float) $order->delivery_fee,
+            'discount'         => (float) $order->discount,
+            'total'            => (float) $order->total,
+            'payment_method'   => $order->payment_method,
+            'payment_status'   => $order->payment_status?->value ?? 'pending',
+            'address_snapshot' => $order->address_snapshot,
+            'notes'            => $order->notes,
+            'created_at'       => $order->created_at?->toIso8601String(),
+            'items'            => $order->items()->with('dish:id,name,image,slug')->get(),
         ]);
     }
 }

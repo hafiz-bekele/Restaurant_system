@@ -6,7 +6,8 @@ import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import {
   CheckCircle, Clock, ChefHat, Truck, Package, ShieldCheck,
-  RefreshCw, Smartphone, ExternalLink, Star, MessageSquare, Check, Send
+  RefreshCw, Smartphone, ExternalLink, Star, MessageSquare, Check, Send,
+  Printer, ReceiptText, X, QrCode, MapPin, Phone, User
 } from '@lucide/vue'
 
 const route = useRoute()
@@ -15,6 +16,11 @@ const order = ref(null)
 const loading = ref(true)
 const paying = ref(false)
 const verifying = ref(false)
+const showReceiptModal = ref(false)
+
+function printReceipt() {
+  window.print()
+}
 
 // Review system state
 const activeRatingDishId = ref(null)
@@ -160,16 +166,26 @@ onUnmounted(() => {
       <div v-else-if="order" class="space-y-6">
         <!-- Main Tracking Progress Card -->
         <div class="card p-8">
-          <div class="flex items-center justify-between mb-8">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
             <div>
               <p class="text-xs text-warm-500 font-semibold uppercase tracking-wider">Order Reference</p>
               <p class="font-mono font-bold text-warm-900 dark:text-white text-base">
                 {{ order.order_number || order.ulid }}
               </p>
             </div>
-            <span :class="['badge font-bold uppercase text-xs', order.status === 'delivered' ? 'badge-green' : order.status === 'cancelled' ? 'badge-red' : 'badge-orange']">
-              {{ order.status_label }}
-            </span>
+            <div class="flex items-center gap-2.5">
+              <button
+                @click="showReceiptModal = true"
+                class="btn-secondary text-xs py-2 px-3.5 rounded-xl gap-2 shadow-sm border border-warm-200 dark:border-warm-700 hover:border-primary-400 transition-colors"
+                title="View and print official tax invoice & order receipt"
+              >
+                <Printer :size="15" class="text-primary-600 dark:text-primary-400" />
+                <span>View / Print Receipt</span>
+              </button>
+              <span :class="['badge font-bold uppercase text-xs', order.status === 'delivered' ? 'badge-green' : order.status === 'cancelled' ? 'badge-red' : 'badge-orange']">
+                {{ order.status_label }}
+              </span>
+            </div>
           </div>
 
           <!-- Progress steps -->
@@ -384,5 +400,206 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- ──────────────── Print & View Receipt Modal ──────────────── -->
+    <Teleport to="body">
+      <div
+        v-if="showReceiptModal && order"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-warm-950/70 backdrop-blur-sm overflow-y-auto"
+        @click.self="showReceiptModal = false"
+      >
+        <div class="relative w-full max-w-lg my-8 bg-white text-warm-900 rounded-3xl shadow-2xl border border-warm-200 overflow-hidden printable-receipt">
+          <!-- Non-printable top action bar -->
+          <div class="no-print bg-warm-900 text-white px-6 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <ReceiptText :size="18" class="text-primary-400" />
+              <span class="font-bold text-sm tracking-wide">Guest Receipt & Tax Invoice</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                @click="printReceipt"
+                class="bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              >
+                <Printer :size="13" />
+                <span>Print / Save PDF</span>
+              </button>
+              <button
+                @click="showReceiptModal = false"
+                class="p-1 rounded-lg hover:bg-warm-800 text-warm-400 hover:text-white transition-colors"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Printable Receipt Sheet Content -->
+          <div class="p-6 sm:p-8 space-y-6">
+            <!-- Restaurant Header -->
+            <div class="text-center pb-5 border-b border-dashed border-warm-300">
+              <h2 class="font-heading font-black text-2xl text-warm-900 tracking-tight">
+                Taste & Stay Bistro
+              </h2>
+              <p class="text-xs uppercase tracking-widest text-warm-500 font-semibold mt-0.5">
+                Boutique Suites & Fine Dining
+              </p>
+              <div class="text-[11px] text-warm-600 space-y-0.5 mt-2">
+                <p>Bole Medhanialem, Next to Edna Mall &bull; Addis Ababa, Ethiopia</p>
+                <p>Tel: +251 91 123 4567 / +251 11 661 2345 &bull; TIN: 0048192014</p>
+              </div>
+            </div>
+
+            <!-- Invoice & Customer Meta Grid -->
+            <div class="grid grid-cols-2 gap-3 text-xs bg-warm-50 p-3.5 rounded-2xl border border-warm-200">
+              <div>
+                <p class="text-warm-400 uppercase text-[10px] font-bold">Order Ref</p>
+                <p class="font-mono font-bold text-warm-900">{{ order.order_number || order.ulid }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-warm-400 uppercase text-[10px] font-bold">Date & Time</p>
+                <p class="font-medium text-warm-800">
+                  {{ order.created_at ? new Date(order.created_at).toLocaleString() : new Date().toLocaleString() }}
+                </p>
+              </div>
+              <div>
+                <p class="text-warm-400 uppercase text-[10px] font-bold">Customer</p>
+                <p class="font-semibold text-warm-900">
+                  {{ order.address_snapshot?.customer_name || 'Guest Diner' }}
+                </p>
+                <p v-if="order.address_snapshot?.customer_phone" class="text-warm-600 text-[11px]">
+                  {{ order.address_snapshot.customer_phone }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="text-warm-400 uppercase text-[10px] font-bold">Order Type</p>
+                <span class="inline-block uppercase font-bold text-[10px] px-2 py-0.5 rounded bg-primary-100 text-primary-800 mt-0.5">
+                  {{ order.type || 'Dine-In' }}
+                </span>
+                <p v-if="order.address_snapshot?.delivery_address" class="text-warm-600 text-[11px] mt-0.5 truncate max-w-[180px] ml-auto">
+                  {{ order.address_snapshot.delivery_address }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Itemized Table -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-[11px] font-bold text-warm-500 uppercase tracking-wider border-b border-warm-200 pb-1.5">
+                <span class="flex-1">Item Description</span>
+                <span class="w-12 text-center">Qty</span>
+                <span class="w-20 text-right">Price</span>
+                <span class="w-20 text-right">Total</span>
+              </div>
+              <div class="divide-y divide-warm-100 text-xs">
+                <div
+                  v-for="item in order.items"
+                  :key="item.id"
+                  class="py-2 flex items-center justify-between"
+                >
+                  <div class="flex-1 pr-2">
+                    <p class="font-semibold text-warm-900 leading-snug">{{ item.dish?.name || 'Dish Item' }}</p>
+                  </div>
+                  <span class="w-12 text-center font-medium text-warm-700">{{ item.quantity }}</span>
+                  <span class="w-20 text-right text-warm-600 font-mono">
+                    ETB {{ Number(item.unit_price).toFixed(2) }}
+                  </span>
+                  <span class="w-20 text-right font-bold text-warm-900 font-mono">
+                    ETB {{ (item.quantity * item.unit_price).toFixed(2) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Financial Totals Section -->
+            <div class="border-t-2 border-warm-900 pt-3 space-y-1.5 text-xs">
+              <div class="flex justify-between text-warm-600">
+                <span>Subtotal</span>
+                <span class="font-mono">ETB {{ Number(order.subtotal || order.total).toFixed(2) }}</span>
+              </div>
+              <div v-if="order.discount" class="flex justify-between text-emerald-600 font-medium">
+                <span>Discount Applied</span>
+                <span class="font-mono">-ETB {{ Number(order.discount).toFixed(2) }}</span>
+              </div>
+              <div v-if="order.tax" class="flex justify-between text-warm-600">
+                <span>VAT (15%)</span>
+                <span class="font-mono">ETB {{ Number(order.tax).toFixed(2) }}</span>
+              </div>
+              <div v-if="order.service_charge" class="flex justify-between text-warm-600">
+                <span>Service Charge (10%)</span>
+                <span class="font-mono">ETB {{ Number(order.service_charge).toFixed(2) }}</span>
+              </div>
+              <div v-if="order.delivery_fee" class="flex justify-between text-warm-600">
+                <span>Delivery Fee</span>
+                <span class="font-mono">ETB {{ Number(order.delivery_fee).toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between items-center text-base font-black text-warm-900 border-t border-dashed border-warm-300 pt-2 mt-2">
+                <span>Grand Total</span>
+                <span class="font-mono text-lg text-primary-600">
+                  ETB {{ Number(order.total).toFixed(2) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Payment & Verification Footer -->
+            <div class="pt-3 border-t border-warm-200 flex items-center justify-between text-xs">
+              <div>
+                <p class="text-[10px] text-warm-400 uppercase font-bold">Payment Method & Status</p>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="font-bold text-warm-800 uppercase">{{ order.payment_method || 'CASH' }}</span>
+                  <span
+                    :class="[
+                      'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
+                      order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    ]"
+                  >
+                    {{ order.payment_status || 'PENDING' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Barcode / QR Simulation -->
+              <div class="text-right">
+                <div class="inline-flex flex-col items-center">
+                  <div class="font-mono tracking-widest text-[10px] text-warm-400">||| | |||| | || |||</div>
+                  <span class="text-[9px] text-warm-500 font-mono uppercase">EXPEDITE VERIFIED</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thank you note -->
+            <div class="text-center text-[11px] text-warm-500 pt-2 border-t border-dashed border-warm-200">
+              <p class="font-medium text-warm-700">Thank you for dining with Taste & Stay!</p>
+              <p>Experience Ethiopian Hospitality & Boutique Living &bull; www.tasteandstay.et</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </DefaultLayout>
 </template>
+
+<style scoped>
+@media print {
+  /* Hide standard page elements */
+  :deep(header),
+  :deep(footer),
+  :deep(nav),
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .printable-receipt {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+</style>

@@ -4,7 +4,7 @@ import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useUiStore }   from '../../stores/ui'
 import { APP_NAME } from '../../config'
-import { ChefHat, Mail, Lock, Eye, EyeOff, ArrowLeft } from '@lucide/vue'
+import { ChefHat, Mail, Lock, Eye, EyeOff, ArrowLeft, User, Sparkles, LogOut, Check } from '@lucide/vue'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
 
 const auth   = useAuthStore()
@@ -17,6 +17,24 @@ const password = ref('')
 const showPw   = ref(false)
 const loading  = ref(false)
 const error    = ref('')
+
+const demoAccounts = [
+  { label: 'Admin',     email: 'admin@restaurant.com',     pass: 'password', role: 'Full Admin' },
+  { label: 'Kitchen',   email: 'kitchen@restaurant.com',   pass: 'password', role: 'Head Chef' },
+  { label: 'Waiter',    email: 'waiter@restaurant.com',    pass: 'password', role: 'Server' },
+  { label: 'Reception', email: 'reception@restaurant.com', pass: 'password', role: 'Front Desk' },
+]
+
+function fillDemo(acc) {
+  email.value    = acc.email
+  password.value = acc.pass
+  ui.toast(`Selected demo ${acc.label} credentials`, 'info')
+}
+
+async function handleSignOut() {
+  await auth.logout()
+  ui.toast('Signed out successfully', 'success')
+}
 
 async function submit() {
   error.value   = ''
@@ -33,7 +51,6 @@ async function submit() {
 
     // Role-based home destination
     if (auth.isAdmin) {
-      // super-admin, admin, manager all go to /admin
       router.push('/admin')
     } else if (auth.hasRole('kitchen')) {
       router.push('/staff/kitchen')
@@ -46,7 +63,6 @@ async function submit() {
     } else if (auth.hasRole('delivery')) {
       router.push('/staff/delivery')
     } else {
-      // customer or unknown role → public menu
       router.push('/menu')
     }
   } catch (e) {
@@ -75,6 +91,32 @@ async function submit() {
     </header>
 
     <div class="card w-full max-w-md mx-auto p-6 sm:p-8 my-auto shadow-card border border-warm-100 dark:border-warm-800">
+
+      <!-- Already logged in notification banner -->
+      <div v-if="auth.isAuthenticated" class="mb-6 p-4 rounded-2xl bg-primary-50 dark:bg-primary-950/40 border border-primary-200 dark:border-primary-800/60">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-bold text-xs uppercase tracking-wider text-primary-600 dark:text-primary-400">Currently Logged In</p>
+            <p class="text-sm font-semibold text-warm-900 dark:text-white mt-0.5">{{ auth.user?.name }}</p>
+            <p class="text-xs text-warm-500 dark:text-warm-400 capitalize">{{ auth.user?.roles?.[0] ?? 'Customer' }} ({{ auth.user?.email }})</p>
+          </div>
+          <button
+            @click="handleSignOut"
+            class="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 shrink-0 font-medium"
+          >
+            <LogOut :size="13" /> Sign Out
+          </button>
+        </div>
+        <div class="mt-3 pt-3 border-t border-primary-100 dark:border-primary-900/50 flex gap-2">
+          <RouterLink
+            :to="auth.isAdmin ? '/admin' : (auth.isStaff ? '/staff/kitchen' : '/menu')"
+            class="btn-primary !py-1.5 !px-3.5 text-xs font-semibold w-full justify-center"
+          >
+            Go to {{ auth.isAdmin ? 'Admin Dashboard' : (auth.isStaff ? 'Staff Portal' : 'Main Menu') }} &rarr;
+          </RouterLink>
+        </div>
+      </div>
+
       <div class="text-center mb-6">
         <RouterLink to="/" class="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-heading font-bold text-2xl group">
           <div class="p-2 rounded-xl bg-primary-50 dark:bg-primary-950/40 group-hover:scale-105 transition-transform">
@@ -84,6 +126,25 @@ async function submit() {
         </RouterLink>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mt-3">Sign In</h1>
         <p class="text-warm-500 dark:text-warm-400 mt-1 text-sm">Access your staff dashboard or customer account</p>
+      </div>
+
+      <!-- Quick Demo Account Fillers -->
+      <div class="mb-5 p-3 rounded-2xl bg-warm-100/70 dark:bg-white/5 border border-warm-200/80 dark:border-white/10">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-warm-700 dark:text-warm-300 mb-2">
+          <Sparkles :size="13" class="text-primary-500" />
+          <span>Quick Demo Login (Click to Fill):</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          <button
+            v-for="acc in demoAccounts"
+            :key="acc.label"
+            type="button"
+            @click="fillDemo(acc)"
+            class="text-[11px] font-semibold px-2 py-1.5 rounded-lg bg-white dark:bg-warm-800 text-warm-800 dark:text-warm-200 border border-warm-200 dark:border-warm-700 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors shadow-2xs text-center"
+          >
+            {{ acc.label }}
+          </button>
+        </div>
       </div>
 
       <form @submit.prevent="submit" class="space-y-4" novalidate>

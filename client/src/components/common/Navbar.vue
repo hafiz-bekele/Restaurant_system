@@ -5,7 +5,7 @@ import {
   ChefHat, ShoppingCart, Sun, Moon, Menu, X,
   LayoutDashboard, LogOut, ChevronDown,
   UtensilsCrossed, CalendarDays, BedDouble, Info,
-  Home, ShieldCheck, Gauge,
+  Home, ShieldCheck, Gauge, User, LogIn, Package, Heart,
 } from '@lucide/vue'
 import { useAuthStore } from '../../stores/auth'
 import { useCartStore } from '../../stores/cart'
@@ -225,6 +225,87 @@ async function handleLogout() {
           </div>
         </template>
 
+        <!-- Customer logged in ──────────────────────────────── -->
+        <template v-else-if="auth.isAuthenticated">
+          <div class="relative hidden sm:block">
+            <button
+              @click="userMenuOpen = !userMenuOpen"
+              :class="[
+                'flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-xl transition-all',
+                userMenuOpen ? 'bg-warm-100 dark:bg-white/10' : 'hover:bg-warm-100 dark:hover:bg-white/8',
+              ]"
+            >
+              <div class="w-7 h-7 rounded-full bg-primary-500 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                {{ auth.user?.name?.[0]?.toUpperCase() ?? 'U' }}
+              </div>
+              <span class="text-sm font-medium text-warm-800 dark:text-warm-200 max-w-[80px] truncate">
+                {{ auth.user?.name?.split(' ')[0] ?? 'Account' }}
+              </span>
+              <ChevronDown :size="14" :class="['text-warm-400 transition-transform duration-200', userMenuOpen ? 'rotate-180' : '']" />
+            </button>
+
+            <!-- Dropdown -->
+            <Transition
+              enter-from-class="opacity-0 scale-95 -translate-y-1"
+              enter-active-class="transition-all duration-150 origin-top-right"
+              leave-to-class="opacity-0 scale-95 -translate-y-1"
+              leave-active-class="transition-all duration-100 origin-top-right"
+            >
+              <div
+                v-if="userMenuOpen"
+                class="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#1c1f2e] border border-warm-100 dark:border-white/8 shadow-float z-50 overflow-hidden"
+              >
+                <div class="px-4 py-3 border-b border-warm-100 dark:border-white/6">
+                  <p class="text-sm font-semibold text-warm-900 dark:text-white truncate">{{ auth.user?.name }}</p>
+                  <p class="text-xs text-warm-500 dark:text-warm-400 truncate">{{ auth.user?.email }}</p>
+                </div>
+                <div class="py-1.5">
+                  <RouterLink
+                    to="/profile"
+                    @click="userMenuOpen = false"
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-white/5"
+                  >
+                    <User :size="15" class="text-warm-400" /> My Profile
+                  </RouterLink>
+                  <RouterLink
+                    to="/orders"
+                    @click="userMenuOpen = false"
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-white/5"
+                  >
+                    <Package :size="15" class="text-warm-400" /> My Orders
+                  </RouterLink>
+                  <RouterLink
+                    to="/favorites"
+                    @click="userMenuOpen = false"
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-white/5"
+                  >
+                    <Heart :size="15" class="text-warm-400" /> Favourites
+                  </RouterLink>
+                </div>
+                <div class="border-t border-warm-100 dark:border-white/6 py-1.5">
+                  <button
+                    @click="handleLogout"
+                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+                  >
+                    <LogOut :size="15" class="text-red-500" /> Sign Out
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
+        </template>
+
+        <!-- Guest: Not Authenticated ────────────────────────── -->
+        <template v-else>
+          <RouterLink
+            to="/login"
+            class="hidden sm:inline-flex items-center gap-1.5 btn-primary !py-1.5 !px-3.5 text-xs font-semibold shadow-sm ml-1"
+          >
+            <LogIn :size="14" />
+            <span>Sign In</span>
+          </RouterLink>
+        </template>
+
         <!-- Mobile hamburger -->
         <button
           @click="mobileOpen = !mobileOpen"
@@ -310,6 +391,44 @@ async function handleLogout() {
               <LogOut :size="17" class="text-red-500" />
               Sign Out
             </button>
+          </div>
+        </template>
+
+        <!-- Customer mobile section -->
+        <template v-else-if="auth.isAuthenticated">
+          <div class="border-t border-warm-100 dark:border-white/6 pt-3 space-y-1">
+            <div class="px-3 py-2 flex items-center gap-3 bg-warm-50 dark:bg-white/4 rounded-xl">
+              <div class="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center font-bold text-xs">
+                {{ auth.user?.name?.[0]?.toUpperCase() ?? 'U' }}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-warm-900 dark:text-white truncate">{{ auth.user?.name }}</p>
+                <p class="text-xs text-warm-500 truncate">{{ auth.user?.email }}</p>
+              </div>
+            </div>
+            <RouterLink to="/profile" @click="mobileOpen = false" class="flex items-center gap-3 px-3 py-2 text-sm text-warm-700 dark:text-warm-300">
+              <User :size="17" class="text-warm-400" /> My Profile
+            </RouterLink>
+            <RouterLink to="/orders" @click="mobileOpen = false" class="flex items-center gap-3 px-3 py-2 text-sm text-warm-700 dark:text-warm-300">
+              <Package :size="17" class="text-warm-400" /> My Orders
+            </RouterLink>
+            <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+              <LogOut :size="17" class="text-red-500" /> Sign Out
+            </button>
+          </div>
+        </template>
+
+        <!-- Guest mobile sign in -->
+        <template v-else>
+          <div class="border-t border-warm-100 dark:border-white/6 pt-3">
+            <RouterLink
+              to="/login"
+              @click="mobileOpen = false"
+              class="w-full btn-primary justify-center py-2.5 text-sm font-semibold gap-2 shadow-sm"
+            >
+              <LogIn :size="16" />
+              <span>Sign In to Account</span>
+            </RouterLink>
           </div>
         </template>
       </div>

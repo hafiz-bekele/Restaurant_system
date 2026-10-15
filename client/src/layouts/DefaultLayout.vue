@@ -35,6 +35,7 @@ const route = useRoute()
             <li><RouterLink to="/rooms"        class="hover:text-primary-400 transition-colors">Hotel Suites</RouterLink></li>
             <li><RouterLink to="/about"        class="hover:text-primary-400 transition-colors">About Us</RouterLink></li>
             <li><RouterLink to="/contact"      class="hover:text-primary-400 transition-colors">Contact</RouterLink></li>
+            <li><RouterLink to="/login"        class="hover:text-primary-400 transition-colors text-primary-400 font-medium">Staff &amp; Guest Sign In</RouterLink></li>
           </ul>
         </div>
         <div>

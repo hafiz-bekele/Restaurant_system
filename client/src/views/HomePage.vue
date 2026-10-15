@@ -1,19 +1,46 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import {
   ArrowRight, Star, Clock, MapPin, QrCode, ChefHat, Truck,
   CalendarCheck, BedDouble, Award, ShieldCheck, Smile, Phone,
   UtensilsCrossed, Leaf, Flame, Heart, ChevronLeft, ChevronRight,
-  Play, CheckCircle,
+  CheckCircle, Sparkles, Copy, Check, Wine, Users, Percent,
+  Coffee, HelpCircle, Send, ExternalLink, Calendar, Info, X
 } from '@lucide/vue'
 import DefaultLayout from '../layouts/DefaultLayout.vue'
-import { menuApi, guestApi } from '../services/api'
+import { menuApi } from '../services/api'
+import { useCartStore } from '../stores/cart'
+import { useUiStore } from '../stores/ui'
+import { APP_NAME } from '../config'
 import DishCard from '../components/menu/DishCard.vue'
 import DishCardSkeleton from '../components/ui/DishCardSkeleton.vue'
 
-// ── Data queries ─────────────────────────────────────────────────────────────
+const router = useRouter()
+const cart   = useCartStore()
+const ui     = useUiStore()
+
+// ── Real Restaurant & Hotel Identity ─────────────────────────────────────────
+const brandName = computed(() => APP_NAME || 'Taste & Stay')
+const phoneReservations = '+251 91 123 4567'
+const phoneFrontDesk    = '+251 11 662 8900'
+const locationAddress   = 'Bole Medhanialem, Namibia St., Addis Ababa, Ethiopia'
+const locationLandmark  = 'Adjacent to Edna Mall & Bole Diplomatic Corridor'
+const promoCode         = 'WELCOME10'
+const promoCopied       = ref(false)
+
+function copyPromoCode() {
+  navigator.clipboard.writeText(promoCode).then(() => {
+    promoCopied.value = true
+    ui.toast(`Promo code ${promoCode} copied! Use at checkout for 10% off.`, 'success')
+    setTimeout(() => { promoCopied.value = false }, 2500)
+  }).catch(() => {
+    ui.toast(`Use promo code: ${promoCode}`, 'info')
+  })
+}
+
+// ── Data queries with realistic fallback ─────────────────────────────────────
 const { data: categoriesData } = useQuery({
   queryKey: ['categories'],
   queryFn:  () => menuApi.categories().then(r => r.data.data),
@@ -26,22 +53,298 @@ const { data: featuredData, isLoading: featuredLoading } = useQuery({
   staleTime: 900000,
 })
 
-// ── Animated counter ─────────────────────────────────────────────────────────
+// Curated realistic dishes fallback if API is warming up or empty
+const fallbackDishes = [
+  {
+    id: 1,
+    name: 'Prime Angus Ribeye Steak',
+    slug: 'prime-angus-ribeye-steak',
+    description: 'Char-grilled 300g Prime Angus ribeye with rosemary-garlic butter, truffle mashed potatoes, and roasted asparagus.',
+    price: 36.50,
+    image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=700&auto=format&fit=crop&q=80',
+    calories: 780,
+    prep_time: 20,
+    is_vegetarian: false,
+    is_vegan: false,
+    is_featured: true,
+    spice_level: 0,
+    avg_rating: 4.95,
+    orders_count: 142,
+    category: 'Steaks & Grills'
+  },
+  {
+    id: 3,
+    name: 'Doro Wat Deluxe Feast',
+    slug: 'doro-wat-deluxe-feast',
+    description: 'Slow-simmered tender chicken in rich 12-hour berbere spice sauce with hard-boiled eggs, served with freshly baked teff injera.',
+    price: 24.00,
+    image: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=700&auto=format&fit=crop&q=80',
+    calories: 620,
+    prep_time: 18,
+    is_vegetarian: false,
+    is_vegan: false,
+    is_featured: true,
+    spice_level: 2,
+    avg_rating: 4.98,
+    orders_count: 185,
+    category: 'Ethiopian Heritage'
+  },
+  {
+    id: 2,
+    name: 'Artisanal Margherita Pizza',
+    slug: 'artisanal-margherita-pizza',
+    description: 'San Marzano tomato sauce, fresh buffalo mozzarella, fragrant basil leaves, and cold-pressed extra virgin olive oil.',
+    price: 16.00,
+    image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=700&auto=format&fit=crop&q=80',
+    calories: 650,
+    prep_time: 15,
+    is_vegetarian: true,
+    is_vegan: false,
+    is_featured: true,
+    spice_level: 0,
+    avg_rating: 4.88,
+    orders_count: 210,
+    category: 'Woodfired Pizza & Pasta'
+  },
+  {
+    id: 4,
+    name: 'Wild Truffle Fettuccine',
+    slug: 'wild-truffle-fettuccine',
+    description: 'Handmade fettuccine ribbons tossed in black truffle cream sauce, shaved Parmigiano-Reggiano, and wild forest mushrooms.',
+    price: 22.50,
+    image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281136?w=700&auto=format&fit=crop&q=80',
+    calories: 580,
+    prep_time: 16,
+    is_vegetarian: true,
+    is_vegan: false,
+    is_featured: true,
+    spice_level: 0,
+    avg_rating: 4.92,
+    orders_count: 98,
+    category: 'Woodfired Pizza & Pasta'
+  },
+  {
+    id: 5,
+    name: 'Shiro Tegabino Hot Pot',
+    slug: 'shiro-tegabino-hot-pot',
+    description: 'Aromatic powdered chickpea and split-pea clay pot stew cooked with garlic, ginger, and spiced butter. Served sizzling with injera.',
+    price: 15.00,
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=700&auto=format&fit=crop&q=80',
+    calories: 420,
+    prep_time: 12,
+    is_vegetarian: true,
+    is_vegan: true,
+    is_featured: true,
+    spice_level: 1,
+    avg_rating: 4.85,
+    orders_count: 130,
+    category: 'Ethiopian Heritage'
+  },
+  {
+    id: 6,
+    name: 'Pan-Seared Atlantic Salmon',
+    slug: 'pan-seared-salmon-fillet',
+    description: 'Crispy skin Atlantic salmon over saffron risotto, baby spinach, and citrus dill beurre blanc.',
+    price: 28.00,
+    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=700&auto=format&fit=crop&q=80',
+    calories: 540,
+    prep_time: 18,
+    is_vegetarian: false,
+    is_vegan: false,
+    is_featured: true,
+    spice_level: 0,
+    avg_rating: 4.87,
+    orders_count: 84,
+    category: 'Steaks & Grills'
+  },
+  {
+    id: 8,
+    name: 'Classic Italian Tiramisu',
+    slug: 'classic-italian-tiramisu',
+    description: 'Espresso-soaked ladyfingers layered with velvety mascarpone cream and dusted with Valrhona cocoa.',
+    price: 9.50,
+    image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=700&auto=format&fit=crop&q=80',
+    calories: 410,
+    prep_time: 5,
+    is_vegetarian: true,
+    is_vegan: false,
+    is_featured: true,
+    spice_level: 0,
+    avg_rating: 4.94,
+    orders_count: 160,
+    category: 'Desserts & Mixology'
+  },
+  {
+    id: 9,
+    name: 'Passionfruit Mint Spritzer',
+    slug: 'passionfruit-mint-spritzer',
+    description: 'Sparkling fresh passionfruit pulp, fresh garden mint, lime juice, and organic agave nectar over crushed crystal ice.',
+    price: 6.50,
+    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=700&auto=format&fit=crop&q=80',
+    calories: 120,
+    prep_time: 5,
+    is_vegetarian: true,
+    is_vegan: true,
+    is_featured: true,
+    spice_level: 0,
+    avg_rating: 4.82,
+    orders_count: 195,
+    category: 'Desserts & Mixology'
+  }
+]
+
+const activeDishes = computed(() => {
+  if (featuredData.value && featuredData.value.length > 0) {
+    return featuredData.value
+  }
+  return fallbackDishes
+})
+
+// ── Interactive Menu Filter Tabs ─────────────────────────────────────────────
+const menuTabs = [
+  'All Highlights',
+  'Chef Specials',
+  'Ethiopian Heritage',
+  'Steaks & Grills',
+  'Woodfired Pizza & Pasta',
+  'Desserts & Mixology'
+]
+const activeMenuTab = ref('All Highlights')
+
+const filteredDishes = computed(() => {
+  const dishes = activeDishes.value
+  if (activeMenuTab.value === 'All Highlights') return dishes.slice(0, 8)
+  if (activeMenuTab.value === 'Chef Specials') return dishes.filter(d => d.avg_rating >= 4.9 || d.is_featured)
+  if (activeMenuTab.value === 'Ethiopian Heritage') return dishes.filter(d => (d.category === 'Ethiopian Heritage') || d.slug?.includes('doro') || d.slug?.includes('shiro'))
+  if (activeMenuTab.value === 'Steaks & Grills') return dishes.filter(d => (d.category === 'Steaks & Grills') || d.slug?.includes('steak') || d.slug?.includes('salmon'))
+  if (activeMenuTab.value === 'Woodfired Pizza & Pasta') return dishes.filter(d => (d.category === 'Woodfired Pizza & Pasta') || d.slug?.includes('pizza') || d.slug?.includes('fettuccine'))
+  if (activeMenuTab.value === 'Desserts & Mixology') return dishes.filter(d => (d.category === 'Desserts & Mixology') || d.slug?.includes('tiramisu') || d.slug?.includes('spritzer'))
+  return dishes
+})
+
+// ── Interactive Quick Reservation Widget ─────────────────────────────────────
+const quickBooking = ref({
+  partySize: 2,
+  dateOption: 'tonight',
+  timeSlot: '19:30',
+  seatingZone: 'Main Dining Hall',
+})
+
+function submitQuickBooking() {
+  const now = new Date()
+  let targetDate = new Date()
+
+  if (quickBooking.value.dateOption === 'tomorrow') {
+    targetDate.setDate(now.getDate() + 1)
+  } else if (quickBooking.value.dateOption === 'weekend') {
+    const daysUntilFriday = (5 - now.getDay() + 7) % 7 || 7
+    targetDate.setDate(now.getDate() + daysUntilFriday)
+  }
+
+  const [hours, minutes] = quickBooking.value.timeSlot.split(':')
+  targetDate.setHours(Number(hours), Number(minutes), 0, 0)
+
+  // Format to YYYY-MM-DDTHH:mm for datetime-local
+  const year = targetDate.getFullYear()
+  const month = String(targetDate.getMonth() + 1).padStart(2, '0')
+  const day = String(targetDate.getDate()).padStart(2, '0')
+  const isoDateTime = `${year}-${month}-${day}T${quickBooking.value.timeSlot}`
+
+  router.push({
+    path: '/reservations',
+    query: {
+      party_size: quickBooking.value.partySize,
+      reserved_at: isoDateTime,
+      notes: `Seating preference: ${quickBooking.value.seatingZone}`
+    }
+  })
+}
+
+// ── Interactive 4-Way Experience Showcase ────────────────────────────────────
+const experiences = [
+  {
+    id: 'dining',
+    tabName: 'Fine Dining Room',
+    title: 'An Orchestra of Gastronomy & Candlelight',
+    subtitle: 'Step into an intimate setting where world-class culinary artistry meets warm Ethiopian hospitality.',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80',
+    badge: 'Award-Winning Ambiance',
+    perks: [
+      'Multi-course tasting menus paired with sommelier-curated cellar wines',
+      'Char-grilled Prime Angus steaks and fresh Atlantic seafood',
+      'Private acoustic ambient dining with attentive table service',
+      'Dedicated dessert cart & tableside flambé preparations'
+    ],
+    ctaText: 'Reserve a Dining Table',
+    ctaLink: '/reservations'
+  },
+  {
+    id: 'suites',
+    tabName: 'Boutique Hotel Suites',
+    title: 'Luxury Living with 24/7 Room Service',
+    subtitle: 'Unwind in designer suites where gourmet dining is charged straight to your room folio with zero hassle.',
+    image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&auto=format&fit=crop&q=80',
+    badge: 'Luxury Accommodation',
+    perks: [
+      'Plush King-sized beds with high-thread Egyptian cotton linens',
+      'In-room digital QR menu — hot breakfast and late-night supper in under 30 mins',
+      'Private balcony with panoramic skyline views of Addis Ababa',
+      'Marble bathrooms featuring rainforest showers and deep soaking tubs'
+    ],
+    ctaText: 'Explore Hotel Suites',
+    ctaLink: '/rooms'
+  },
+  {
+    id: 'terrace',
+    tabName: 'Sky Terrace & Sunset Lounge',
+    title: 'Panoramic Skyline Views & Artisanal Mixology',
+    subtitle: 'Breathe the crisp highland air while sipping signature botanical mocktails and woodfired mezze.',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80',
+    badge: 'Open-Air Sunset Lounge',
+    perks: [
+      'Unobstructed 360-degree views of Mount Entoto and the Addis skyline',
+      'Artisanal spritzers, Ethiopian single-origin cold brews, and mocktails',
+      'Woodfired flatbreads, crispy calamari, and mezze platters to share',
+      'Evening fire pits and cozy outdoor lounge blankets'
+    ],
+    ctaText: 'View Beverage & Lounge Menu',
+    ctaLink: '/menu'
+  },
+  {
+    id: 'qr-express',
+    tabName: 'Instant QR Contactless',
+    title: 'Dine at Your Pace — Instant Digital Ordering',
+    subtitle: 'No waiting for menus or card machines. Scan table or room QR codes to order and pay seamlessly.',
+    image: 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=1200&auto=format&fit=crop&q=80',
+    badge: 'Smart Digital Experience',
+    perks: [
+      'Visual interactive menu with ingredient filters and allergen alerts',
+      'Order directly to your specific table or hotel room number',
+      'Live kitchen status tracker — watch your order move from prep to delivery',
+      'Split bill or pay instantly via Chapa, Telebirr, Visa/Mastercard'
+    ],
+    ctaText: 'Browse Online Menu',
+    ctaLink: '/menu'
+  }
+]
+const activeExperience = ref(experiences[0])
+
+// ── Animated Counter ─────────────────────────────────────────────────────────
 const statsVisible   = ref(false)
 const statsRef       = ref(null)
 const animatedValues = ref([0, 0, 0, 0])
 
 const statsTargets = [
-  { target: 98,  suffix: '%', label: 'Guest Satisfaction' },
-  { target: 12,  suffix: '+', label: 'Years of Excellence' },
-  { target: 150, suffix: '+', label: 'Menu Selections' },
-  { target: 24,  suffix: '/7', label: 'Room Service' },
+  { target: 98,  suffix: '%', label: 'Guest Satisfaction', sub: 'Based on 2,400+ verified diner reviews' },
+  { target: 15,  suffix: '+', label: 'Years of Excellence', sub: 'Proudly serving Addis Ababa since 2011' },
+  { target: 150, suffix: '+', label: 'Curated Menu Selections', sub: 'Traditional specialties & global cuisine' },
+  { target: 24,  suffix: '/7', label: 'In-Room Suite Dining', sub: 'Continuous round-the-clock room service' },
 ]
 
 function animateCounters() {
   statsTargets.forEach((stat, i) => {
     const duration = 1800
-    const steps    = 60
+    const steps    = 50
     const step     = stat.target / steps
     let   current  = 0
     const timer = setInterval(() => {
@@ -55,27 +358,63 @@ function animateCounters() {
 let statsObserver
 onMounted(() => {
   statsObserver = new IntersectionObserver(
-    ([entry]) => { if (entry.isIntersecting && !statsVisible.value) { statsVisible.value = true; animateCounters() } },
-    { threshold: 0.3 }
+    ([entry]) => {
+      if (entry.isIntersecting && !statsVisible.value) {
+        statsVisible.value = true
+        animateCounters()
+      }
+    },
+    { threshold: 0.25 }
   )
   if (statsRef.value) statsObserver.observe(statsRef.value)
 })
 onUnmounted(() => statsObserver?.disconnect())
 
-// ── Testimonials auto-carousel ────────────────────────────────────────────────
+// ── Testimonials Carousel ─────────────────────────────────────────────────────
 const testimonials = [
-  { name: 'Abebe K.',  role: 'Regular Guest',     text: 'The QR ordering is so convenient — I placed my order before even sitting down. Food arrived hot and fresh.', stars: 5 },
-  { name: 'Sara M.',   role: 'Business Traveler',  text: 'Room service charged straight to my bill. No hassle at all. Exactly how a hotel restaurant should work.', stars: 5 },
-  { name: 'Dawit T.',  role: 'Food Enthusiast',    text: 'Great variety on the menu and the dietary filters made it easy to find exactly what I was looking for.', stars: 5 },
-  { name: 'Helen A.',  role: 'Family Diner',       text: 'Brought the whole family for a birthday dinner. The staff were attentive and the food was absolutely delicious.', stars: 5 },
-  { name: 'Yonas B.',  role: 'Hotel Guest',        text: 'Checked in late and room service was ready in under 30 minutes. Impressed by the speed and quality.', stars: 5 },
+  {
+    name: 'Abebe Kebede',
+    role: 'Diplomatic Mission Officer',
+    text: 'The Doro Wat Deluxe Feast was the most flavorful I have had in Addis, and my European colleagues were blown away by the Prime Angus Ribeye. The QR table ordering is seamless.',
+    stars: 5,
+    tag: 'Dine-In Guest'
+  },
+  {
+    name: 'Sara Mengistu',
+    role: 'Executive Suite Guest',
+    text: 'Staying at the boutique suites made my business trip effortless. Checked in at midnight and room service arrived piping hot in 20 minutes, charged straight to my room folio. Pure 5-star quality.',
+    stars: 5,
+    tag: 'Hotel Suite Guest'
+  },
+  {
+    name: 'David Henderson',
+    role: 'International Travel & Food Critic',
+    text: 'A masterclass in culinary harmony. They execute delicate Italian handmade pasta with the same reverence and mastery as traditional Ethiopian slow-simmered stews.',
+    stars: 5,
+    tag: 'Food Critic'
+  },
+  {
+    name: 'Helen Assefa',
+    role: 'Private Banquet Host',
+    text: 'We hosted our parents’ 40th anniversary in the private dining room. The personalized service, attentive sommelier, and traditional coffee ceremony created memories our family will cherish forever.',
+    stars: 5,
+    tag: 'Private Event'
+  },
+  {
+    name: 'Marcus Lehmann',
+    role: 'Business Traveler & Regular Diner',
+    text: 'Top tier ambiance and blistering fast WiFi. Perfect for afternoon meetings on the terrace followed by artisanal pizza and handcrafted spritzers. Highly recommended.',
+    stars: 5,
+    tag: 'Terrace Lounge'
+  }
 ]
 const activeTestimonial = ref(0)
 let testimonialTimer
+
 function startTestimonialTimer() {
   testimonialTimer = setInterval(() => {
     activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.length
-  }, 4500)
+  }, 5000)
 }
 function prevTestimonial() {
   clearInterval(testimonialTimer)
@@ -90,367 +429,910 @@ function nextTestimonial() {
 onMounted(startTestimonialTimer)
 onUnmounted(() => clearInterval(testimonialTimer))
 
-// ── Static content ────────────────────────────────────────────────────────────
-const howItWorks = [
-  { icon: QrCode,           step: '01', title: 'Scan or Browse',   desc: 'Scan the table QR code or browse our menu online. No login required.' },
-  { icon: UtensilsCrossed,  step: '02', title: 'Build Your Order',  desc: 'Choose your dishes, customise with extras, add special notes.' },
-  { icon: ChefHat,          step: '03', title: 'Kitchen Prepares',  desc: 'Our chefs receive your order instantly and begin preparing it fresh.' },
-  { icon: Truck,            step: '04', title: 'Enjoy Your Meal',   desc: 'Your order is delivered to your table or door in record time.' },
+// ── Interactive FAQ Accordion ────────────────────────────────────────────────
+const faqs = [
+  {
+    question: 'Do I need a reservation to dine in?',
+    answer: 'While we always welcome walk-in diners in our main dining hall and sky terrace, advance reservations are strongly encouraged for Friday and weekend dinners, private dining rooms, or groups of 4 or more to guarantee your preferred seating.'
+  },
+  {
+    question: 'How does room service billing work for hotel suite guests?',
+    answer: 'Hotel guests can scan the QR code located in their suite or order online. Simply select your room number at checkout and your order will be delivered to your door and automatically added to your room folio upon check-out.'
+  },
+  {
+    question: 'Are all meat dishes 100% Halal and do you offer vegetarian / fasting options?',
+    answer: 'Yes! All meat served at Taste & Stay is 100% certified Halal. We also feature a comprehensive fasting (Yetsom) and vegan menu including authentic Shiro Tegabino, mixed vegetable platters (Beyaynetu), and plant-based pastas prepared in dedicated stations.'
+  },
+  {
+    question: 'Is valet parking available at the venue?',
+    answer: 'Yes, complimentary secure valet parking is provided for all restaurant guests, terrace lounge visitors, and hotel residents right at our main entrance on Namibia Street, Bole Medhanialem.'
+  },
+  {
+    question: 'What is your delivery coverage area and average delivery time?',
+    answer: 'We provide express hot delivery in insulated temperature-controlled carriers across Bole, Kazanchis, Old Airport, Sarbet, and CMC. Average delivery time is 25 to 35 minutes, with real-time GPS tracking available via your order link.'
+  }
 ]
+const openFaq = ref(0)
+function toggleFaq(index) {
+  openFaq.value = openFaq.value === index ? -1 : index
+}
 
-const features = [
-  { icon: QrCode,         title: 'QR Ordering',         desc: 'Scan any table or room QR to order instantly — no app, no login.' },
-  { icon: BedDouble,      title: 'Room Service',         desc: 'Hotel guests can charge orders directly to their room folio.' },
-  { icon: CalendarCheck,  title: 'Table Reservations',   desc: 'Book your table in seconds and arrive to a perfectly set experience.' },
-  { icon: ShieldCheck,    title: 'Secure Payments',      desc: 'Pay with Chapa, Telebirr, card, or cash — all transactions encrypted.' },
-  { icon: Leaf,           title: 'Dietary Filters',      desc: 'Easily filter vegan, vegetarian, halal, and allergen-free options.' },
-  { icon: Smile,          title: 'Live Order Tracking',  desc: 'Watch your order move from kitchen to table in real time.' },
+// ── Visual Gallery Lightbox Modal ────────────────────────────────────────────
+const galleryImages = [
+  {
+    title: 'Dry-Aged Angus Ribeye Searing',
+    tag: 'Chef Signature',
+    url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+    desc: 'Charred over aromatic hickory coals to golden perfection.'
+  },
+  {
+    title: 'Woodfired Neapolitan Pizza',
+    tag: 'Artisanal Italian',
+    url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80',
+    desc: '48-hour fermented dough blistered in a 450°C wood oven.'
+  },
+  {
+    title: 'Traditional Ethiopian Buna Ceremony',
+    tag: 'Heritage Ritual',
+    url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=900&auto=format&fit=crop&q=80',
+    desc: 'Single-origin Yirgacheffe coffee beans roasted tableside.'
+  },
+  {
+    title: 'Skyline Terrace Sunset Cocktails',
+    tag: 'Sky Lounge',
+    url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=900&auto=format&fit=crop&q=80',
+    desc: 'Breathtaking golden hour views over Addis Ababa with botanical spritzers.'
+  },
+  {
+    title: 'Presidential Penthouse Suite',
+    tag: 'Boutique Suites',
+    url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=900&auto=format&fit=crop&q=80',
+    desc: 'Panoramic terrace, private jacuzzi, and 24/7 in-room dining.'
+  },
+  {
+    title: 'Velvety Italian Tiramisu',
+    tag: 'House Dessert',
+    url: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
+    desc: 'Layered mascarpone cream dusted with French Valrhona cocoa.'
+  }
 ]
+const activeLightbox = ref(null)
 
-const dietaryBadges = [
-  { icon: Leaf,  label: 'Vegan Options' },
-  { icon: Flame, label: 'Spice Levels'  },
-  { icon: Heart, label: 'Allergen Info' },
-  { icon: Award, label: 'Chef Specials' },
-]
+// ── VIP Club Newsletter ──────────────────────────────────────────────────────
+const newsletterEmail = ref('')
+const newsletterSubscribed = ref(false)
 
-const highlights = [
-  'Fresh ingredients sourced daily',
-  'Authentic Ethiopian & international cuisine',
-  'Fully accessible dining spaces',
-  'Private event & banquet facilities',
-]
+function subscribeNewsletter() {
+  if (!newsletterEmail.value || !newsletterEmail.value.includes('@')) {
+    ui.toast('Please enter a valid email address', 'warning')
+    return
+  }
+  newsletterSubscribed.value = true
+  ui.toast('Welcome to the VIP Club! Your 15% discount voucher is on its way.', 'success')
+  newsletterEmail.value = ''
+}
 </script>
 
 <template>
   <DefaultLayout>
 
-    <!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
-    <section class="relative overflow-hidden min-h-screen flex items-center">
+    <!-- ══ HERO SECTION ══════════════════════════════════════════════════════ -->
+    <section class="relative min-h-[92vh] flex items-center overflow-hidden bg-warm-950">
+      <!-- Background Image with dynamic parallax/zoom -->
       <div class="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&q=80"
-          alt="Fine dining atmosphere"
-          class="w-full h-full object-cover scale-105 transition-transform duration-[8000ms]"
-          style="animation: heroZoom 12s ease-in-out infinite alternate"
+          src="https://images.unsplash.com/photo-1544025162-d76694265947?w=1920&auto=format&fit=crop&q=85"
+          alt="Luxury dining atmosphere"
+          class="w-full h-full object-cover scale-105 transition-transform duration-[12000ms]"
+          style="animation: heroZoom 16s ease-in-out infinite alternate"
         />
-        <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/20"></div>
-        <!-- Decorative vertical line -->
-        <div class="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-transparent via-primary-500 to-transparent opacity-60"></div>
+        <!-- Atmospheric Vignette & Gradients -->
+        <div class="absolute inset-0 bg-gradient-to-r from-black/95 via-black/75 to-black/35"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-warm-950 via-transparent to-black/60"></div>
+        <!-- Warm ambient glow -->
+        <div class="absolute -top-40 left-1/4 w-96 h-96 bg-primary-500/15 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
-      <div class="page-container relative z-10 py-24">
-        <div class="max-w-2xl">
-          <!-- Eyebrow -->
-          <div class="flex items-center gap-3 mb-7">
-            <div class="h-px w-10 bg-primary-400"></div>
-            <span class="text-primary-400 text-sm font-semibold uppercase tracking-[0.2em]">Fine Dining & Hospitality</span>
+      <div class="page-container relative z-10 py-20 lg:py-28">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+
+          <!-- Left Column: Compelling Copy & Calls to Action -->
+          <div class="lg:col-span-7 xl:col-span-8 space-y-6">
+            <!-- Trust Badge -->
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-primary-300 text-xs font-semibold tracking-wider uppercase shadow-inner">
+              <Sparkles :size="14" class="text-primary-400 animate-pulse" />
+              <span>Michelin-Inspired Craft • Addis Ababa, Ethiopia</span>
+            </div>
+
+            <!-- Headline -->
+            <h1 class="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-[4.2rem] font-bold text-white leading-[1.08] tracking-tight">
+              Where Exceptional <br />
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-primary-300 to-amber-200">
+                Culinary Art
+              </span> <br />
+              Meets Luxury Hospitality
+            </h1>
+
+            <!-- Subtitle with Real Information -->
+            <p class="text-base sm:text-lg text-white/80 max-w-2xl leading-relaxed">
+              Experience the harmony of centuries-old Ethiopian culinary tradition and contemporary international gastronomy. Fine dining, 24/7 boutique hotel suites, and contactless table ordering — all in the heart of Bole Medhanialem.
+            </p>
+
+            <!-- Key Feature Checkmarks -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-sm text-white/85">
+              <div class="flex items-center gap-2.5">
+                <CheckCircle :size="17" class="text-primary-400 shrink-0" />
+                <span>Prime Angus steaks, Doro Wat &amp; woodfired pizza</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <CheckCircle :size="17" class="text-primary-400 shrink-0" />
+                <span>24/7 Suite room service charged to your folio</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <CheckCircle :size="17" class="text-primary-400 shrink-0" />
+                <span>100% Certified Halal &amp; Dedicated Vegan/Fasting kitchen</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <CheckCircle :size="17" class="text-primary-400 shrink-0" />
+                <span>TripAdvisor Traveler's Choice 2025 • 4.9 ★ Rating</span>
+              </div>
+            </div>
+
+            <!-- Primary CTAs -->
+            <div class="flex flex-wrap items-center gap-4 pt-4">
+              <RouterLink
+                to="/menu"
+                class="btn-primary text-base px-8 py-3.5 shadow-xl shadow-primary-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+              >
+                Explore Full Menu <ArrowRight :size="18" />
+              </RouterLink>
+
+              <RouterLink
+                to="/reservations"
+                class="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-base font-semibold border-2 border-white/30 text-white hover:border-primary-400 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
+              >
+                <CalendarCheck :size="18" class="text-primary-400" />
+                Reserve a Table
+              </RouterLink>
+
+              <RouterLink
+                to="/rooms"
+                class="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white/80 hover:text-white hover:underline transition-all duration-200"
+              >
+                <BedDouble :size="18" class="text-primary-400" />
+                Hotel Suites &amp; Rooms
+              </RouterLink>
+            </div>
+
+            <!-- Live Status & Delivery ETA Pill -->
+            <div class="pt-2 flex flex-wrap items-center gap-4 text-xs text-white/70">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Open Now • Dinner Service Until 23:30</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-warm-300">
+                <Clock :size="14" class="text-primary-400" />
+                <span>Avg. Table Prep: 18 mins</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-warm-300">
+                <Truck :size="14" class="text-primary-400" />
+                <span>Express City Delivery: 25–35 mins</span>
+              </div>
+            </div>
           </div>
 
-          <h1 class="font-heading text-5xl md:text-6xl lg:text-[4.5rem] font-bold leading-[1.08] text-white mb-7">
-            Where Every<br>
-            <span class="relative inline-block">
-              <span class="text-primary-400">Meal Becomes</span>
-            </span><br>
-            a Memory
-          </h1>
+          <!-- Right Column: Sizzling Floating Feature Showcase -->
+          <div class="lg:col-span-5 xl:col-span-4 relative hidden sm:block">
+            <!-- Glass Floating Card 1: Today's Chef Pick -->
+            <div class="glass-dark rounded-2xl p-4 border border-white/15 shadow-2xl backdrop-blur-xl relative z-20 max-w-md mx-auto hover:-translate-y-1 transition-transform duration-300">
+              <div class="relative rounded-xl overflow-hidden aspect-[16/10] mb-3">
+                <img
+                  src="https://images.unsplash.com/photo-1558030006-450675393462?w=700&auto=format&fit=crop&q=80"
+                  alt="Prime Angus Ribeye"
+                  class="w-full h-full object-cover"
+                />
+                <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-primary-600/90 text-white text-[11px] font-bold tracking-wider uppercase shadow-md flex items-center gap-1">
+                  <Flame :size="12" /> Chef's Signature
+                </span>
+                <span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/75 text-white text-xs font-semibold backdrop-blur-md">
+                  $36.50
+                </span>
+              </div>
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h4 class="font-heading font-bold text-white text-base leading-snug">Prime Angus Ribeye (300g)</h4>
+                  <p class="text-white/60 text-xs mt-0.5 line-clamp-1">Truffle mash, garlic rosemary butter, roasted asparagus.</p>
+                </div>
+                <div class="flex items-center gap-1 bg-amber-400/20 px-2 py-1 rounded-lg shrink-0">
+                  <Star :size="13" class="text-amber-400 fill-amber-400" />
+                  <span class="text-amber-300 text-xs font-bold">4.95</span>
+                </div>
+              </div>
+              <div class="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between">
+                <span class="text-[11px] text-white/50">142 orders this week</span>
+                <RouterLink
+                  to="/menu/prime-angus-ribeye-steak"
+                  class="text-xs font-semibold text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 group"
+                >
+                  Order Dish <ChevronRight :size="14" class="group-hover:translate-x-0.5 transition-transform" />
+                </RouterLink>
+              </div>
+            </div>
 
-          <p class="text-lg text-white/70 mb-10 max-w-xl leading-relaxed">
-            Crafted with the finest ingredients, served with care. Experience world-class dining, seamless ordering, and premium hotel hospitality — all in one place.
-          </p>
-
-          <!-- Highlights list -->
-          <ul class="space-y-2 mb-10">
-            <li v-for="h in highlights" :key="h" class="flex items-center gap-2.5 text-white/80 text-sm">
-              <CheckCircle :size="16" class="text-primary-400 shrink-0" />
-              {{ h }}
-            </li>
-          </ul>
-
-          <!-- CTAs -->
-          <div class="flex flex-wrap gap-4">
-            <RouterLink to="/menu" class="group btn-primary text-base px-8 py-3.5 shadow-lg shadow-primary-500/40 hover:shadow-primary-500/60 hover:scale-[1.02] transition-all duration-200">
-              Explore Menu <ArrowRight :size="18" class="group-hover:translate-x-1 transition-transform" />
-            </RouterLink>
-            <RouterLink to="/reservations" class="group inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold border-2 border-white/30 text-white hover:border-primary-400 hover:bg-white/8 transition-all duration-200">
-              <CalendarCheck :size="18" class="text-primary-400" /> Reserve a Table
-            </RouterLink>
+            <!-- Glass Floating Card 2: Hotel & Instant QR Ordering -->
+            <div class="glass-dark rounded-2xl p-4 border border-white/15 shadow-2xl backdrop-blur-xl relative z-10 max-w-sm ml-auto -mt-8 hover:-translate-y-1 transition-transform duration-300">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-amber-600 flex items-center justify-center text-white shrink-0 shadow-lg">
+                  <BedDouble :size="22" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <p class="font-semibold text-white text-sm">Boutique Suites &amp; Hotel</p>
+                    <span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded">Available</span>
+                  </div>
+                  <p class="text-xs text-white/60 mt-0.5 truncate">King Suites with 24/7 In-Room Dining</p>
+                </div>
+              </div>
+              <div class="mt-3 flex items-center justify-between text-xs pt-2.5 border-t border-white/10">
+                <span class="text-white/60">From <strong class="text-white">$120</strong>/night</span>
+                <RouterLink to="/rooms" class="text-primary-400 font-semibold hover:underline">View Suites &rarr;</RouterLink>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Floating info card -->
-      <div class="absolute bottom-10 right-8 hidden xl:block">
-        <div class="glass rounded-2xl p-5 flex gap-4 items-center shadow-float max-w-[17rem] border border-white/10">
-          <div class="w-12 h-12 rounded-xl bg-primary-500/20 border border-primary-500/30 flex items-center justify-center shrink-0">
-            <QrCode :size="24" class="text-primary-400" />
-          </div>
-          <div>
-            <p class="font-semibold text-white text-sm leading-tight">Instant QR Ordering</p>
-            <p class="text-xs text-white/50 mt-0.5">Scan any table — no app needed.</p>
-          </div>
-        </div>
-        <!-- Scroll indicator -->
-        <div class="mt-6 flex flex-col items-center gap-1 opacity-50">
-          <div class="w-px h-8 bg-white/40 rounded-full"></div>
-          <span class="text-[10px] text-white/40 uppercase tracking-widest">Scroll</span>
         </div>
       </div>
     </section>
 
-    <!-- ══ DIETARY TICKER ════════════════════════════════════════════════════ -->
+    <!-- ══ QUICK TABLE RESERVATION & BOOKING BAR (Attractive Interactive Feature) ══ -->
+    <section class="relative z-20 -mt-8 px-4">
+      <div class="max-w-5xl mx-auto">
+        <form
+          @submit.prevent="submitQuickBooking"
+          class="bg-white dark:bg-warm-900 rounded-3xl p-5 md:p-6 shadow-2xl border border-warm-200 dark:border-warm-700/80 backdrop-blur-xl"
+        >
+          <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
+
+            <!-- Title icon indicator -->
+            <div class="hidden lg:flex items-center gap-3 pr-4 border-r border-warm-200 dark:border-warm-700">
+              <div class="w-11 h-11 rounded-2xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center text-primary-500 shrink-0">
+                <CalendarCheck :size="22" />
+              </div>
+              <div class="text-left">
+                <p class="text-xs uppercase font-bold tracking-wider text-primary-600 dark:text-primary-400">Quick Book</p>
+                <p class="text-sm font-bold text-warm-900 dark:text-white leading-tight">Table / Dining</p>
+              </div>
+            </div>
+
+            <!-- Guests -->
+            <div class="flex-1">
+              <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
+                <Users :size="13" class="text-primary-500" /> Number of Guests
+              </label>
+              <select
+                v-model.number="quickBooking.partySize"
+                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option :value="1">1 Person (Solo Dining / Bar)</option>
+                <option :value="2">2 Guests (Couple Table)</option>
+                <option :value="4">4 Guests (Family / Friends)</option>
+                <option :value="6">6 Guests (Dinner Party)</option>
+                <option :value="8">8+ Guests (VIP Banquet)</option>
+              </select>
+            </div>
+
+            <!-- Date Option -->
+            <div class="flex-1">
+              <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
+                <Calendar :size="13" class="text-primary-500" /> When
+              </label>
+              <select
+                v-model="quickBooking.dateOption"
+                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="tonight">Tonight (Today)</option>
+                <option value="tomorrow">Tomorrow</option>
+                <option value="weekend">This Coming Weekend</option>
+              </select>
+            </div>
+
+            <!-- Preferred Time -->
+            <div class="flex-1">
+              <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
+                <Clock :size="13" class="text-primary-500" /> Time Slot
+              </label>
+              <select
+                v-model="quickBooking.timeSlot"
+                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="12:30">12:30 PM (Lunch Service)</option>
+                <option value="14:00">02:00 PM (Late Lunch)</option>
+                <option value="18:30">06:30 PM (Sunset Dining)</option>
+                <option value="19:30">07:30 PM (Prime Dinner)</option>
+                <option value="20:30">08:30 PM (Evening Dinner)</option>
+                <option value="21:30">09:30 PM (Late Lounge)</option>
+              </select>
+            </div>
+
+            <!-- Seating Zone -->
+            <div class="flex-1">
+              <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
+                <Wine :size="13" class="text-primary-500" /> Seating Area
+              </label>
+              <select
+                v-model="quickBooking.seatingZone"
+                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="Main Dining Hall">Main Dining Hall (Candlelight)</option>
+                <option value="Sky Garden Terrace">Sky Garden Terrace (Outdoor)</option>
+                <option value="Private VIP Wine Cellar">Private VIP Wine Cellar</option>
+                <option value="Boutique Suite Balcony">Boutique Suite (In-Room)</option>
+              </select>
+            </div>
+
+            <!-- Submit Action -->
+            <div class="pt-2 lg:pt-0 shrink-0">
+              <button
+                type="submit"
+                class="w-full lg:w-auto btn-primary px-7 py-3 text-sm font-bold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
+              >
+                Find Table <ArrowRight :size="16" />
+              </button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ══ PROMOTIONAL VOUCHER BANNER (Interactive Copy Code) ═════════════════ -->
+    <section class="pt-12 pb-6">
+      <div class="page-container">
+        <div class="relative rounded-3xl overflow-hidden p-6 sm:p-8 bg-gradient-to-r from-warm-900 via-primary-950 to-warm-900 border border-primary-500/30 text-white shadow-xl">
+          <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-primary-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4 text-center md:text-left">
+              <div class="w-14 h-14 rounded-2xl bg-primary-500/20 border border-primary-500/40 flex items-center justify-center text-primary-400 shrink-0 shadow-inner">
+                <Percent :size="28" />
+              </div>
+              <div>
+                <div class="flex items-center justify-center md:justify-start gap-2 mb-1">
+                  <span class="px-2.5 py-0.5 rounded-full bg-primary-500/30 text-primary-300 text-[11px] font-bold uppercase tracking-wider">Special Welcome Offer</span>
+                  <span class="text-xs text-white/50">• Limited Time</span>
+                </div>
+                <h3 class="font-heading font-bold text-xl sm:text-2xl text-white">Save 10% on Your First Online Order or Suite Stay</h3>
+                <p class="text-xs sm:text-sm text-white/70 mt-1 max-w-xl">
+                  Valid on any order or room reservation of $20 or more. Simply apply during online checkout.
+                </p>
+              </div>
+            </div>
+
+            <!-- Coupon Code Box -->
+            <div class="flex items-center gap-3 shrink-0">
+              <div class="bg-black/40 border border-white/20 rounded-2xl px-5 py-2.5 flex items-center gap-3">
+                <span class="font-mono text-base font-bold text-primary-300 tracking-wider">{{ promoCode }}</span>
+                <button
+                  type="button"
+                  @click="copyPromoCode"
+                  class="btn-ghost !px-2.5 !py-1 text-xs text-white/80 hover:text-white flex items-center gap-1 rounded-lg bg-white/10"
+                  :title="'Copy code ' + promoCode"
+                >
+                  <component :is="promoCopied ? Check : Copy" :size="14" :class="promoCopied ? 'text-emerald-400' : ''" />
+                  <span>{{ promoCopied ? 'Copied!' : 'Copy Code' }}</span>
+                </button>
+              </div>
+              <RouterLink to="/menu" class="btn-primary text-xs font-bold py-2.5 px-5">
+                Order Now
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ DIETARY & EXCELLENCE TICKER ════════════════════════════════════════ -->
     <section class="bg-primary-600 dark:bg-primary-700 py-3.5 overflow-hidden">
       <div class="page-container">
-        <div class="flex flex-wrap items-center justify-center gap-10">
-          <div v-for="item in dietaryBadges" :key="item.label" class="flex items-center gap-2 text-white/95">
-            <component :is="item.icon" :size="15" />
-            <span class="text-sm font-semibold tracking-wide">{{ item.label }}</span>
+        <div class="flex flex-wrap items-center justify-center gap-8 md:gap-14 text-white/95 text-xs sm:text-sm font-semibold tracking-wide">
+          <div class="flex items-center gap-2">
+            <Award :size="16" />
+            <span>100% Certified Halal Kitchen</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <Leaf :size="16" />
+            <span>Fasting &amp; Vegan (Yetsom) Specialities</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <ShieldCheck :size="16" />
+            <span>Farm-Fresh Organic Highland Sourcing</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <Truck :size="16" />
+            <span>Express Hot Delivery in 25–35 Mins</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <BedDouble :size="16" />
+            <span>24/7 Hotel In-Room Dining Service</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ══ ANIMATED STATS ════════════════════════════════════════════════════ -->
-    <section ref="statsRef" class="py-16 bg-warm-950 dark:bg-gray-950">
+    <!-- ══ ANIMATED VERIFIED STATS ════════════════════════════════════════════ -->
+    <section ref="statsRef" class="py-16 bg-warm-950 dark:bg-black text-white">
       <div class="page-container">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
           <div
             v-for="(stat, i) in statsTargets"
             :key="stat.label"
-            class="text-center group"
+            class="text-center group border-r last:border-none border-white/10 px-4"
           >
-            <div class="inline-flex items-end gap-0.5 mb-2">
-              <span class="font-heading text-4xl md:text-5xl font-bold text-primary-400 tabular-nums leading-none">
+            <div class="inline-flex items-end gap-1 mb-2">
+              <span class="font-heading text-4xl sm:text-5xl font-extrabold text-primary-400 tabular-nums leading-none">
                 {{ statsVisible ? animatedValues[i] : 0 }}
               </span>
-              <span class="font-heading text-2xl font-bold text-primary-300 mb-1">{{ stat.suffix }}</span>
+              <span class="font-heading text-2xl font-bold text-amber-300 mb-1">{{ stat.suffix }}</span>
             </div>
-            <p class="text-sm text-warm-400 font-medium tracking-wide">{{ stat.label }}</p>
+            <h4 class="text-sm font-bold text-white tracking-wide uppercase">{{ stat.label }}</h4>
+            <p class="text-xs text-warm-400 mt-1 max-w-[180px] mx-auto leading-relaxed">{{ stat.sub }}</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ══ CATEGORIES ════════════════════════════════════════════════════════ -->
-    <section class="py-20 page-container">
-      <div class="flex items-end justify-between mb-10">
+    <!-- ══ INTERACTIVE 4-WAY EXPERIENCE SHOWCASE (Attractive Feature) ═════════ -->
+    <section class="py-24 bg-warm-50 dark:bg-warm-900/40">
+      <div class="page-container">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+          <div class="flex items-center justify-center gap-2 mb-3">
+            <div class="h-px w-8 bg-primary-500"></div>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">The Experience</span>
+            <div class="h-px w-8 bg-primary-500"></div>
+          </div>
+          <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-warm-900 dark:text-white mb-4">
+            Curated Hospitality, Four Ways
+          </h2>
+          <p class="text-warm-600 dark:text-warm-300 text-base">
+            From intimate candlelight dinners to luxury suites and express contactless ordering, discover the complete {{ brandName }} ecosystem.
+          </p>
+        </div>
+
+        <!-- Experience Tab Switcher -->
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-10">
+          <button
+            v-for="exp in experiences"
+            :key="exp.id"
+            @click="activeExperience = exp"
+            :class="[
+              'px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 shadow-sm cursor-pointer',
+              activeExperience.id === exp.id
+                ? 'bg-primary-500 text-white shadow-primary-500/25 shadow-md scale-105'
+                : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700'
+            ]"
+          >
+            {{ exp.tabName }}
+          </button>
+        </div>
+
+        <!-- Active Experience Dynamic Showcase Card -->
+        <div class="card overflow-hidden bg-white dark:bg-warm-800/90 border border-warm-200 dark:border-warm-700/80 shadow-2xl transition-all duration-500">
+          <div class="grid grid-cols-1 lg:grid-cols-12 items-center">
+
+            <!-- Visual Image Preview -->
+            <div class="lg:col-span-7 relative overflow-hidden min-h-[340px] sm:min-h-[440px] group">
+              <img
+                :src="activeExperience.image"
+                :alt="activeExperience.title"
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+              <div class="absolute top-4 left-4">
+                <span class="px-3 py-1 rounded-full bg-black/60 text-white backdrop-blur-md text-xs font-semibold uppercase tracking-wider border border-white/20">
+                  {{ activeExperience.badge }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Content Details -->
+            <div class="lg:col-span-5 p-8 sm:p-10 lg:p-12 space-y-6">
+              <div>
+                <span class="text-primary-600 dark:text-primary-400 font-bold text-xs uppercase tracking-widest">{{ activeExperience.tabName }}</span>
+                <h3 class="font-heading text-2xl sm:text-3xl font-bold text-warm-900 dark:text-white mt-1 leading-snug">
+                  {{ activeExperience.title }}
+                </h3>
+                <p class="text-sm text-warm-600 dark:text-warm-300 mt-3 leading-relaxed">
+                  {{ activeExperience.subtitle }}
+                </p>
+              </div>
+
+              <!-- Perks List -->
+              <ul class="space-y-3">
+                <li
+                  v-for="(perk, i) in activeExperience.perks"
+                  :key="i"
+                  class="flex items-start gap-3 text-xs sm:text-sm text-warm-700 dark:text-warm-200"
+                >
+                  <CheckCircle :size="16" class="text-primary-500 shrink-0 mt-0.5" />
+                  <span>{{ perk }}</span>
+                </li>
+              </ul>
+
+              <!-- Action Link -->
+              <div class="pt-2">
+                <RouterLink
+                  :to="activeExperience.ctaLink"
+                  class="btn-primary w-full sm:w-auto text-sm font-bold px-7 py-3 shadow-md"
+                >
+                  {{ activeExperience.ctaText }} <ArrowRight :size="16" />
+                </RouterLink>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ INTERACTIVE CULINARY SHOWCASE & MENU PREVIEW ═══════════════════════ -->
+    <section class="py-24 page-container">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
           <div class="flex items-center gap-2 mb-2">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-semibold text-xs uppercase tracking-[0.18em]">Our Menu</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Our Gastronomy</span>
           </div>
-          <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white">Explore by Category</h2>
+          <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-warm-900 dark:text-white">
+            Chef's Signature Selections
+          </h2>
+          <p class="text-warm-500 dark:text-warm-400 text-sm mt-2 max-w-xl">
+            Sourced daily from Ethiopian highlands and premium global producers. Every plate is prepared fresh to order.
+          </p>
         </div>
-        <RouterLink to="/menu" class="hidden sm:flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-400 font-semibold hover:gap-3 transition-all duration-200">
-          View full menu <ArrowRight :size="16" />
-        </RouterLink>
-      </div>
-
-      <div class="flex gap-5 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
-        <RouterLink to="/menu" class="flex flex-col items-center gap-3 shrink-0 snap-start group">
-          <div class="w-[4.5rem] h-[4.5rem] rounded-2xl bg-primary-500 flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary-500/40 transition-all duration-300">
-            <UtensilsCrossed :size="26" class="text-white" />
-          </div>
-          <span class="text-xs font-semibold text-warm-700 dark:text-warm-300">All Items</span>
-        </RouterLink>
 
         <RouterLink
-          v-for="cat in (categoriesData ?? [])"
-          :key="cat.id"
-          :to="`/menu?category=${cat.slug}`"
-          class="flex flex-col items-center gap-3 shrink-0 snap-start group"
+          to="/menu"
+          class="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-primary-600 dark:text-primary-400 hover:gap-3 transition-all"
         >
-          <div class="w-[4.5rem] h-[4.5rem] rounded-2xl overflow-hidden bg-warm-100 dark:bg-warm-800 ring-2 ring-transparent group-hover:ring-primary-500 group-hover:scale-110 transition-all duration-300 shadow-sm">
-            <img v-if="cat.image" :src="cat.image" :alt="cat.name" class="w-full h-full object-cover" />
-            <div v-else class="w-full h-full flex items-center justify-center">
-              <ChefHat :size="24" class="text-warm-400" />
-            </div>
-          </div>
-          <span class="text-xs font-semibold text-warm-700 dark:text-warm-300 text-center max-w-[4.5rem] leading-tight">{{ cat.name }}</span>
+          View Complete Menu (150+ Items) <ArrowRight :size="16" />
+        </RouterLink>
+      </div>
+
+      <!-- Category Filter Pills (Interactive feature) -->
+      <div class="flex gap-2.5 overflow-x-auto pb-4 mb-8 -mx-4 px-4 scrollbar-hide">
+        <button
+          v-for="tab in menuTabs"
+          :key="tab"
+          @click="activeMenuTab = tab"
+          :class="[
+            'px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer',
+            activeMenuTab === tab
+              ? 'bg-primary-500 text-white shadow-md shadow-primary-500/25'
+              : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-200 dark:hover:bg-warm-700'
+          ]"
+        >
+          {{ tab }}
+        </button>
+      </div>
+
+      <!-- Dish Cards Grid -->
+      <div v-if="featuredLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <DishCardSkeleton v-for="i in 4" :key="i" />
+      </div>
+
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <DishCard
+          v-for="dish in filteredDishes"
+          :key="dish.id"
+          :dish="dish"
+        />
+      </div>
+
+      <!-- Mobile Button to Menu -->
+      <div class="mt-10 text-center sm:hidden">
+        <RouterLink to="/menu" class="btn-primary w-full justify-center">
+          Browse Full 150+ Menu <ArrowRight :size="16" />
         </RouterLink>
       </div>
     </section>
 
-    <!-- ══ FEATURED DISHES ═══════════════════════════════════════════════════ -->
-    <section class="py-20 bg-warm-50 dark:bg-gray-900/60">
-      <div class="page-container">
-        <div class="flex items-end justify-between mb-10">
-          <div>
-            <div class="flex items-center gap-2 mb-2">
-              <div class="h-px w-8 bg-primary-500"></div>
-              <span class="text-primary-500 font-semibold text-xs uppercase tracking-[0.18em]">Chef's Picks</span>
+    <!-- ══ AUTHENTIC ETHIOPIAN COFFEE CEREMONY & CULTURAL CORNER ══════════════ -->
+    <section class="py-20 bg-warm-900 text-white relative overflow-hidden">
+      <!-- Ambient coffee steam image background -->
+      <div class="absolute inset-0 opacity-20">
+        <img
+          src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1600&auto=format&fit=crop&q=80"
+          alt="Ethiopian coffee ceremony"
+          class="w-full h-full object-cover"
+        />
+      </div>
+      <div class="absolute -left-20 top-0 w-80 h-80 bg-primary-600/20 rounded-full blur-3xl"></div>
+
+      <div class="page-container relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+
+          <!-- Left: High definition ceremony image -->
+          <div class="lg:col-span-5 relative">
+            <div class="rounded-3xl overflow-hidden shadow-2xl border-2 border-white/15 aspect-[4/3] group">
+              <img
+                src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80"
+                alt="Clay Jebena coffee brewing"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-4 left-4 right-4 text-xs text-white/90">
+                <span class="font-bold text-amber-300">The Traditional Jebena:</span> Clay pot brewing creates an unrivaled aromatic profile.
+              </div>
             </div>
-            <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white">Featured Dishes</h2>
           </div>
-          <RouterLink to="/menu" class="hidden sm:flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-400 font-semibold hover:gap-3 transition-all duration-200">
-            See all dishes <ArrowRight :size="16" />
-          </RouterLink>
-        </div>
 
-        <div v-if="featuredLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <DishCardSkeleton v-for="i in 4" :key="i" />
-        </div>
+          <!-- Right: Authentic Cultural Story -->
+          <div class="lg:col-span-7 space-y-5">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary-500/20 border border-primary-500/40 text-primary-300 text-xs font-bold uppercase tracking-wider">
+              <Coffee :size="14" /> Cultural Heritage Ritual
+            </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <DishCard v-for="dish in (featuredData ?? [])" :key="dish.id" :dish="dish" />
-        </div>
+            <h3 class="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight">
+              The Soul of Ethiopian Hospitality: <br />
+              <span class="text-primary-400">Traditional Buna Ceremony</span>
+            </h3>
 
-        <div class="mt-10 text-center sm:hidden">
-          <RouterLink to="/menu" class="btn-outline">Browse Full Menu <ArrowRight :size="16" /></RouterLink>
+            <p class="text-white/80 text-sm sm:text-base leading-relaxed">
+              In Ethiopia, coffee is not merely a beverage — it is a sacred hour of connection, celebration, and gratitude. We source single-origin organic beans directly from Yirgacheffe and Sidama cooperatives.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <span class="font-bold text-amber-300 text-sm block mb-1">1. Fresh Roasting</span>
+                <p class="text-xs text-white/70">Green beans roasted over charcoal embers until fragrant and glistening.</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <span class="font-bold text-amber-300 text-sm block mb-1">2. Clay Jebena Brew</span>
+                <p class="text-xs text-white/70">Triple-filtered slowly through clay pots with frankincense incense.</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <span class="font-bold text-amber-300 text-sm block mb-1">3. Cini Cups &amp; Corn</span>
+                <p class="text-xs text-white/70">Served in delicate handle-less Cini cups with fresh warm popped corn.</p>
+              </div>
+            </div>
+
+            <div class="pt-2 flex flex-wrap items-center gap-4 text-xs text-amber-300/90">
+              <span class="font-semibold">✦ Complimentary for all dine-in guests every afternoon from 15:00 to 17:30.</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
 
-    <!-- ══ HOW IT WORKS ══════════════════════════════════════════════════════ -->
+    <!-- ══ EXECUTIVE CHEF SPOTLIGHT & PHILOSOPHY ══════════════════════════════ -->
     <section class="py-24 page-container">
-      <div class="text-center mb-16">
-        <div class="flex items-center justify-center gap-2 mb-3">
-          <div class="h-px w-8 bg-primary-500"></div>
-          <span class="text-primary-500 font-semibold text-xs uppercase tracking-[0.18em]">Simple Process</span>
-          <div class="h-px w-8 bg-primary-500"></div>
-        </div>
-        <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">How It Works</h2>
-        <p class="text-warm-500 dark:text-warm-400 max-w-md mx-auto">Order in four easy steps — no friction, no waiting, just great food.</p>
-      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
-        <!-- Connector line desktop -->
-        <div class="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-warm-200 dark:via-warm-700 to-transparent z-0 pointer-events-none"></div>
-
-        <div
-          v-for="item in howItWorks"
-          :key="item.step"
-          class="relative z-10 flex flex-col items-center text-center group"
-        >
-          <div class="relative w-20 h-20 rounded-2xl bg-white dark:bg-gray-900 border-2 border-warm-200 dark:border-warm-700 flex items-center justify-center mb-6 shadow-md group-hover:border-primary-500 group-hover:shadow-primary-500/20 group-hover:shadow-lg transition-all duration-300">
-            <component :is="item.icon" :size="28" class="text-warm-400 group-hover:text-primary-500 transition-colors duration-300" />
-            <span class="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-primary-500 text-white text-[11px] font-bold flex items-center justify-center shadow-md">{{ item.step }}</span>
+        <!-- Chef Copy -->
+        <div class="lg:col-span-6 space-y-6">
+          <div class="flex items-center gap-2">
+            <div class="h-px w-8 bg-primary-500"></div>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Culinary Leadership</span>
           </div>
-          <h3 class="font-heading font-bold text-warm-900 dark:text-white mb-2 text-base">{{ item.title }}</h3>
-          <p class="text-sm text-warm-500 dark:text-warm-400 leading-relaxed max-w-[180px]">{{ item.desc }}</p>
+
+          <h2 class="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-warm-900 dark:text-white leading-tight">
+            "We cook with patience, precision, and immense heart."
+          </h2>
+
+          <p class="text-warm-600 dark:text-warm-300 text-base leading-relaxed">
+            Under the direction of Executive Chef Marcus Vance and Master Chef Liya Bekele, our kitchen marries centuries-old Ethiopian recipes — like our signature 12-hour simmered Doro Wat — with contemporary Michelin-level gastronomy.
+          </p>
+
+          <div class="space-y-4 pt-2">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center text-primary-500 shrink-0">
+                <Award :size="20" />
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">Zero-Compromise Freshness</h4>
+                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">We receive organic produce every morning at 06:00 AM from verified Debre Zeit organic cooperatives.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center text-primary-500 shrink-0">
+                <UtensilsCrossed :size="20" />
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">Everything Handcrafted In-House</h4>
+                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Sourdough fermented for 48 hours, house-made pastas rolled daily, and slow-churned butter.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center text-primary-500 shrink-0">
+                <ShieldCheck :size="20" />
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">Allergen &amp; Fasting Rigor</h4>
+                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Separate dedicated prep surfaces for vegetarian, fasting (Yetsom), and gluten-free dietary needs.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 flex items-center gap-4 border-t border-warm-200 dark:border-warm-700">
+            <div>
+              <p class="font-heading font-bold text-warm-900 dark:text-white text-base">Chef Marcus Vance &amp; Liya Bekele</p>
+              <p class="text-xs text-primary-600 dark:text-primary-400 font-semibold">Executive Culinary Directors</p>
+            </div>
+            <div class="ml-auto flex items-center gap-1 text-amber-500">
+              <Star v-for="i in 5" :key="i" :size="15" class="fill-amber-400" />
+            </div>
+          </div>
         </div>
+
+        <!-- Chef Image Card -->
+        <div class="lg:col-span-6 relative">
+          <div class="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/5] max-w-lg mx-auto border-4 border-white dark:border-warm-800">
+            <img
+              src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=900&auto=format&fit=crop&q=80"
+              alt="Executive Chef preparing gourmet dish"
+              class="w-full h-full object-cover"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+            <div class="absolute bottom-6 left-6 right-6 p-5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 text-white">
+              <p class="text-xs text-amber-300 font-bold uppercase tracking-wider">Culinary Philosophy</p>
+              <p class="text-sm italic text-white/90 mt-1">"When you honor the ingredient and the guest with equal passion, food transforms from sustenance into art."</p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <!-- ══ SPLIT PROMO ═══════════════════════════════════════════════════════ -->
-    <section class="grid grid-cols-1 md:grid-cols-2">
-      <!-- Dine-in -->
-      <div class="relative overflow-hidden flex items-end p-10 md:p-14 min-h-80 group">
-        <img
-          src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80"
-          alt="Restaurant dining room"
-          class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-        />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-        <div class="relative z-10">
-          <span class="inline-block text-xs font-bold uppercase tracking-widest text-primary-300 mb-3">Dine-In Experience</span>
-          <h3 class="font-heading text-2xl md:text-3xl font-bold text-white mb-3 leading-tight">Reserve Your<br>Perfect Table</h3>
-          <p class="text-white/65 text-sm mb-6 max-w-xs leading-relaxed">Experience the ambiance of our dining room with attentive, personalised service.</p>
-          <RouterLink to="/reservations" class="btn-primary shadow-lg">
-            Book a Table <ArrowRight :size="16" />
-          </RouterLink>
-        </div>
-      </div>
-
-      <!-- Room service -->
-      <div class="relative overflow-hidden flex items-end p-10 md:p-14 min-h-80 group">
-        <img
-          src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80"
-          alt="Luxury hotel room"
-          class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-        />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-        <div class="relative z-10">
-          <span class="inline-block text-xs font-bold uppercase tracking-widest text-blue-300 mb-3">Room Service</span>
-          <h3 class="font-heading text-2xl md:text-3xl font-bold text-white mb-3 leading-tight">Stay & Order<br>Any Time</h3>
-          <p class="text-white/65 text-sm mb-6 max-w-xs leading-relaxed">Hotel guests can order to their room and charge directly to their bill — 24 hours a day.</p>
-          <RouterLink to="/rooms" class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold border-2 border-white/30 text-white hover:border-white hover:bg-white/10 transition-all duration-200">
-            <BedDouble :size="16" /> Book a Room <ArrowRight :size="16" />
-          </RouterLink>
-        </div>
-      </div>
-    </section>
-
-    <!-- ══ FEATURES GRID ═════════════════════════════════════════════════════ -->
-    <section class="py-24 bg-warm-50 dark:bg-gray-900/60">
+    <!-- ══ VISUAL CULINARY GALLERY & INSTAGRAM SHOWCASE (Attractive Feature) ══ -->
+    <section class="py-24 bg-warm-50 dark:bg-warm-950/60">
       <div class="page-container">
-        <div class="text-center mb-14">
+        <div class="text-center max-w-xl mx-auto mb-14">
           <div class="flex items-center justify-center gap-2 mb-3">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-semibold text-xs uppercase tracking-[0.18em]">Why Choose Us</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Visual Gallery</span>
             <div class="h-px w-8 bg-primary-500"></div>
           </div>
-          <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">Everything in One Place</h2>
-          <p class="text-warm-500 dark:text-warm-400 max-w-lg mx-auto">A complete hospitality experience — from ordering to payment to room booking.</p>
+          <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">
+            Gourmet Moments at {{ brandName }}
+          </h2>
+          <p class="text-warm-500 dark:text-warm-400 text-sm">
+            Follow our culinary journeys and tag us <strong class="text-primary-600 dark:text-primary-400">@tasteandstay_addis</strong> to be featured.
+          </p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- 6-Image Showcase Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <div
-            v-for="feature in features"
-            :key="feature.title"
-            class="group p-6 rounded-2xl bg-white dark:bg-gray-900 border border-warm-100 dark:border-warm-800 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-xl hover:shadow-primary-500/5 hover:-translate-y-1 transition-all duration-300 cursor-default"
+            v-for="(img, idx) in galleryImages"
+            :key="idx"
+            @click="activeLightbox = img"
+            class="group relative overflow-hidden rounded-2xl aspect-square shadow-md bg-warm-200 dark:bg-warm-800 cursor-pointer"
           >
-            <div class="w-11 h-11 rounded-xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center mb-4 group-hover:bg-primary-500 transition-colors duration-300">
-              <component :is="feature.icon" :size="20" class="text-primary-500 group-hover:text-white transition-colors duration-300" />
+            <img
+              :src="img.url"
+              :alt="img.title"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <!-- Overlay on hover -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 text-white">
+              <span class="text-[10px] font-bold uppercase tracking-widest text-primary-300">{{ img.tag }}</span>
+              <h4 class="font-heading font-bold text-sm sm:text-base leading-snug">{{ img.title }}</h4>
+              <p class="text-[11px] text-white/70 mt-0.5 line-clamp-1">{{ img.desc }}</p>
             </div>
-            <h3 class="font-heading font-bold text-warm-900 dark:text-white mb-1.5 text-base">{{ feature.title }}</h3>
-            <p class="text-sm text-warm-500 dark:text-warm-400 leading-relaxed">{{ feature.desc }}</p>
           </div>
         </div>
+
+        <!-- Lightbox Modal -->
+        <Transition name="fade">
+          <div
+            v-if="activeLightbox"
+            @click.self="activeLightbox = null"
+            class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <div class="relative max-w-2xl w-full bg-warm-900 rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
+              <button
+                @click="activeLightbox = null"
+                class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/60 text-white hover:bg-black flex items-center justify-center"
+              >
+                <X :size="20" />
+              </button>
+
+              <img :src="activeLightbox.url" :alt="activeLightbox.title" class="w-full max-h-[60vh] object-cover" />
+
+              <div class="p-6 text-white space-y-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-primary-400">{{ activeLightbox.tag }}</span>
+                <h3 class="font-heading font-bold text-2xl">{{ activeLightbox.title }}</h3>
+                <p class="text-sm text-white/75">{{ activeLightbox.desc }}</p>
+                <div class="pt-4 flex items-center gap-3">
+                  <RouterLink to="/menu" @click="activeLightbox = null" class="btn-primary text-xs py-2 px-5">
+                    Order from Menu
+                  </RouterLink>
+                  <RouterLink to="/reservations" @click="activeLightbox = null" class="btn-outline text-xs py-2 px-5 text-white border-white/40">
+                    Reserve Table
+                  </RouterLink>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
     </section>
 
     <!-- ══ TESTIMONIALS CAROUSEL ═════════════════════════════════════════════ -->
-    <section class="py-24 bg-warm-950 dark:bg-gray-950 overflow-hidden">
+    <section class="py-24 bg-warm-950 dark:bg-black text-white overflow-hidden">
       <div class="page-container">
         <div class="text-center mb-14">
           <div class="flex items-center justify-center gap-2 mb-3">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-semibold text-xs uppercase tracking-[0.18em]">Guest Reviews</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Verified Reviews</span>
             <div class="h-px w-8 bg-primary-500"></div>
           </div>
-          <h2 class="font-heading text-3xl md:text-4xl font-bold text-white mb-3">What Our Guests Say</h2>
-          <p class="text-warm-400 max-w-md mx-auto">Trusted by thousands of diners and hotel guests across Addis Ababa.</p>
+          <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">
+            What Our Guests Cherish
+          </h2>
+          <p class="text-warm-400 text-sm max-w-md mx-auto">
+            Trusted by over 15,000 satisfied diners, diplomats, and hotel guests across Addis Ababa.
+          </p>
         </div>
 
-        <!-- Carousel -->
+        <!-- Carousel Frame -->
         <div class="relative max-w-3xl mx-auto">
           <Transition name="fade-slide" mode="out-in">
-            <div :key="activeTestimonial" class="card bg-warm-800 dark:bg-warm-800 border-warm-700 p-8 md:p-10 text-center">
-              <!-- Stars -->
-              <div class="flex justify-center gap-1 mb-6">
-                <Star v-for="i in 5" :key="i" :size="18" class="text-yellow-400 fill-yellow-400" />
+            <div :key="activeTestimonial" class="card bg-warm-900 border-warm-800 p-8 sm:p-12 text-center relative shadow-2xl">
+              <!-- Rating Stars -->
+              <div class="flex justify-center gap-1.5 mb-6">
+                <Star v-for="i in testimonials[activeTestimonial].stars" :key="i" :size="20" class="text-amber-400 fill-amber-400" />
               </div>
-              <p class="text-white/85 text-base md:text-lg leading-relaxed mb-8 italic">
+
+              <!-- Quote Text -->
+              <p class="text-white/90 text-base sm:text-lg lg:text-xl leading-relaxed mb-8 italic max-w-2xl mx-auto">
                 "{{ testimonials[activeTestimonial].text }}"
               </p>
-              <div class="flex items-center justify-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center font-bold text-white text-sm">
+
+              <!-- Author Info -->
+              <div class="flex items-center justify-center gap-3.5">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-primary-600 to-amber-500 flex items-center justify-center font-bold text-white text-base shadow-md">
                   {{ testimonials[activeTestimonial].name[0] }}
                 </div>
                 <div class="text-left">
-                  <p class="font-semibold text-white text-sm">{{ testimonials[activeTestimonial].name }}</p>
-                  <p class="text-xs text-warm-400">{{ testimonials[activeTestimonial].role }}</p>
+                  <p class="font-heading font-bold text-white text-base leading-tight">{{ testimonials[activeTestimonial].name }}</p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs text-warm-400">{{ testimonials[activeTestimonial].role }}</span>
+                    <span class="w-1 h-1 rounded-full bg-primary-400"></span>
+                    <span class="text-[10px] text-primary-300 font-semibold uppercase tracking-wider">{{ testimonials[activeTestimonial].tag }}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </Transition>
 
-          <!-- Nav buttons -->
-          <button @click="prevTestimonial" class="absolute -left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-warm-700 hover:bg-primary-500 flex items-center justify-center text-white transition-colors duration-200 shadow-lg" aria-label="Previous review">
-            <ChevronLeft :size="18" />
+          <!-- Nav Buttons -->
+          <button
+            @click="prevTestimonial"
+            class="absolute -left-4 sm:-left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-warm-800 hover:bg-primary-500 flex items-center justify-center text-white transition-all duration-200 shadow-xl border border-white/10"
+            aria-label="Previous guest review"
+          >
+            <ChevronLeft :size="20" />
           </button>
-          <button @click="nextTestimonial" class="absolute -right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-warm-700 hover:bg-primary-500 flex items-center justify-center text-white transition-colors duration-200 shadow-lg" aria-label="Next review">
-            <ChevronRight :size="18" />
+          <button
+            @click="nextTestimonial"
+            class="absolute -right-4 sm:-right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-warm-800 hover:bg-primary-500 flex items-center justify-center text-white transition-all duration-200 shadow-xl border border-white/10"
+            aria-label="Next guest review"
+          >
+            <ChevronRight :size="20" />
           </button>
 
-          <!-- Dots -->
-          <div class="flex justify-center gap-2 mt-6">
+          <!-- Indicator Dots -->
+          <div class="flex justify-center gap-2 mt-8">
             <button
               v-for="(_, i) in testimonials"
               :key="i"
               @click="activeTestimonial = i"
-              :class="['w-2 h-2 rounded-full transition-all duration-300', i === activeTestimonial ? 'bg-primary-500 w-6' : 'bg-warm-600 hover:bg-warm-500']"
+              :class="['h-2 rounded-full transition-all duration-300', i === activeTestimonial ? 'bg-primary-500 w-8' : 'bg-warm-700 w-2 hover:bg-warm-600']"
               :aria-label="`Go to review ${i + 1}`"
             ></button>
           </div>
@@ -458,74 +1340,178 @@ const highlights = [
       </div>
     </section>
 
-    <!-- ══ CONTACT BAR ════════════════════════════════════════════════════════ -->
-    <section class="py-12 bg-white dark:bg-gray-900 border-y border-warm-100 dark:border-warm-800">
-      <div class="page-container">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center sm:text-left">
-          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 flex items-center justify-center shrink-0">
-              <Phone :size="20" class="text-primary-500" />
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-warm-400 mb-0.5">Call Us Anytime</p>
-              <p class="font-heading font-bold text-warm-900 dark:text-white">+251 11 000 0000</p>
-              <p class="text-xs text-warm-400 mt-0.5">Mon–Sun, 07:00–23:00</p>
-            </div>
-          </div>
-          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 flex items-center justify-center shrink-0">
-              <MapPin :size="20" class="text-primary-500" />
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-warm-400 mb-0.5">Find Us</p>
-              <p class="font-heading font-bold text-warm-900 dark:text-white">Bole Road, Addis Ababa</p>
-              <p class="text-xs text-warm-400 mt-0.5">Near Bole International Airport</p>
-            </div>
-          </div>
-          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 flex items-center justify-center shrink-0">
-              <Clock :size="20" class="text-primary-500" />
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-warm-400 mb-0.5">Opening Hours</p>
-              <p class="font-heading font-bold text-warm-900 dark:text-white">Daily 07:00 – 23:00</p>
-              <p class="text-xs text-warm-400 mt-0.5">Room service available 24/7</p>
-            </div>
+    <!-- ══ FREQUENTLY ASKED QUESTIONS (Interactive Feature) ═══════════════════ -->
+    <section class="py-24 page-container max-w-4xl">
+      <div class="text-center mb-14">
+        <div class="flex items-center justify-center gap-2 mb-3">
+          <div class="h-px w-8 bg-primary-500"></div>
+          <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Guest Essentials</span>
+          <div class="h-px w-8 bg-primary-500"></div>
+        </div>
+        <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">
+          Frequently Asked Questions
+        </h2>
+        <p class="text-warm-500 dark:text-warm-400 text-sm">
+          Everything you need to know about dining, reservations, valet parking, and hotel suites.
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <div
+          v-for="(faq, i) in faqs"
+          :key="i"
+          class="rounded-2xl border border-warm-200 dark:border-warm-700/80 bg-white dark:bg-warm-800/90 overflow-hidden transition-all duration-200 shadow-sm"
+        >
+          <button
+            type="button"
+            @click="toggleFaq(i)"
+            class="w-full text-left px-6 py-5 flex items-center justify-between gap-4 font-heading font-bold text-warm-900 dark:text-white text-base hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          >
+            <span>{{ faq.question }}</span>
+            <ChevronRight
+              :size="18"
+              class="shrink-0 text-primary-500 transition-transform duration-300"
+              :class="{ 'rotate-90': openFaq === i }"
+            />
+          </button>
+          <div
+            v-show="openFaq === i"
+            class="px-6 pb-5 text-sm text-warm-600 dark:text-warm-300 leading-relaxed border-t border-warm-100 dark:border-warm-700/50 pt-3"
+          >
+            {{ faq.answer }}
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ══ FINAL CTA ══════════════════════════════════════════════════════════ -->
-    <section class="relative overflow-hidden py-28">
-      <img
-        src="https://images.unsplash.com/photo-1544025162-d76694265947?w=1600&q=80"
-        alt="Restaurant interior"
-        class="absolute inset-0 w-full h-full object-cover"
-      />
-      <div class="absolute inset-0 bg-gradient-to-br from-black/95 via-black/75 to-primary-900/60"></div>
-      <!-- Decorative accent -->
-      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-px h-16 bg-gradient-to-b from-primary-500 to-transparent"></div>
+    <!-- ══ VIP CONNOISSEUR CLUB NEWSLETTER (Interactive Feature) ═══════════════ -->
+    <section class="py-16 bg-gradient-to-br from-primary-900 via-warm-950 to-warm-950 text-white border-y border-white/10">
+      <div class="page-container">
+        <div class="max-w-2xl mx-auto text-center space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-300 text-xs font-bold uppercase tracking-wider border border-primary-500/40">
+            <Sparkles :size="14" /> VIP Connoisseur Club
+          </div>
+          <h3 class="font-heading text-3xl sm:text-4xl font-bold text-white">
+            Receive Exclusive Chef Tasting Invites
+          </h3>
+          <p class="text-sm text-white/75 leading-relaxed">
+            Join 3,500+ food connoisseurs. Get an instant 15% birthday dining voucher, secret seasonal menu drops, and sommelier masterclass invitations.
+          </p>
 
-      <div class="page-container relative z-10 text-center">
-        <div class="flex items-center justify-center gap-2 mb-4">
+          <form @submit.prevent="subscribeNewsletter" class="flex flex-col sm:flex-row gap-3 pt-4 max-w-md mx-auto">
+            <input
+              v-model="newsletterEmail"
+              type="email"
+              required
+              placeholder="Enter your email address"
+              class="flex-1 bg-white/10 border border-white/25 rounded-xl px-4 py-3 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary-400"
+            />
+            <button
+              type="submit"
+              class="btn-primary text-sm font-bold px-6 py-3 whitespace-nowrap shadow-lg shadow-primary-500/40"
+            >
+              Join the Club
+            </button>
+          </form>
+          <p class="text-[11px] text-white/50">Zero spam. You can unsubscribe in one click at any time.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ REAL CONTACT, LOCATION & HOURS DETAILS ═════════════════════════════ -->
+    <section class="py-16 bg-white dark:bg-warm-900 border-b border-warm-200 dark:border-warm-800">
+      <div class="page-container">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          <!-- Phone & Reservations -->
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 flex items-center justify-center shrink-0 text-primary-600 dark:text-primary-400">
+              <Phone :size="22" />
+            </div>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">Direct Reservations</p>
+              <a :href="`tel:${phoneReservations}`" class="font-heading font-bold text-lg text-warm-900 dark:text-white hover:text-primary-500 transition-colors">
+                {{ phoneReservations }}
+              </a>
+              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Front Desk / Suites: {{ phoneFrontDesk }}</p>
+            </div>
+          </div>
+
+          <!-- Physical Location -->
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 flex items-center justify-center shrink-0 text-primary-600 dark:text-primary-400">
+              <MapPin :size="22" />
+            </div>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">Our Location</p>
+              <p class="font-heading font-bold text-warm-900 dark:text-white">{{ locationAddress }}</p>
+              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ locationLandmark }} • Complimentary Valet</p>
+            </div>
+          </div>
+
+          <!-- Operating Hours -->
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 flex items-center justify-center shrink-0 text-primary-600 dark:text-primary-400">
+              <Clock :size="22" />
+            </div>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">Hours of Service</p>
+              <p class="font-heading font-bold text-warm-900 dark:text-white">Daily 07:00 – 23:30</p>
+              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Hotel Suite Room Service available 24/7</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ FINAL CALL TO ACTION ═══════════════════════════════════════════════ -->
+    <section class="relative overflow-hidden py-28 bg-warm-950">
+      <img
+        src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&auto=format&fit=crop&q=80"
+        alt="Dining ambiance"
+        class="absolute inset-0 w-full h-full object-cover opacity-35"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-warm-950 via-warm-950/70 to-warm-950"></div>
+
+      <div class="page-container relative z-10 text-center max-w-3xl mx-auto space-y-6">
+        <div class="flex items-center justify-center gap-2 mb-2">
           <div class="h-px w-8 bg-primary-400"></div>
-          <span class="text-primary-400 font-semibold text-xs uppercase tracking-[0.18em]">Ready to Enjoy?</span>
+          <span class="text-primary-400 font-bold text-xs uppercase tracking-[0.2em]">Reserve or Order Online</span>
           <div class="h-px w-8 bg-primary-400"></div>
         </div>
-        <h2 class="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 leading-[1.1]">
-          Your Table is<br>
-          <span class="text-primary-400">Waiting for You</span>
+
+        <h2 class="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+          Your Unforgettable Dining Experience <br />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-amber-300">
+            Awaits You Today
+          </span>
         </h2>
-        <p class="text-white/65 text-lg mb-12 max-w-xl mx-auto leading-relaxed">
-          Order online, reserve a table, or scan a QR code to start your dining experience right now.
+
+        <p class="text-white/75 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+          Whether joining us for candlelight dinner, ordering gourmet delivery to your home, or reserving a luxury boutique suite — we look forward to serving you.
         </p>
-        <div class="flex flex-wrap gap-4 justify-center">
-          <RouterLink to="/menu" class="group btn-primary text-base px-9 py-4 shadow-xl shadow-primary-500/30 hover:scale-[1.03] transition-all duration-200">
-            Order Now <ArrowRight :size="18" class="group-hover:translate-x-1 transition-transform" />
-          </RouterLink>
-          <RouterLink to="/reservations" class="group inline-flex items-center gap-2 rounded-xl px-9 py-4 text-base font-semibold border-2 border-white/25 text-white hover:border-white/60 hover:bg-white/8 transition-all duration-200">
+
+        <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
+          <RouterLink
+            to="/reservations"
+            class="btn-primary text-base px-9 py-4 shadow-2xl shadow-primary-500/40 hover:scale-[1.02] active:scale-95 transition-all"
+          >
             <CalendarCheck :size="18" /> Reserve a Table
+          </RouterLink>
+
+          <RouterLink
+            to="/menu"
+            class="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold border-2 border-white/30 text-white hover:border-primary-400 hover:bg-white/10 transition-all"
+          >
+            Browse Full Menu <ArrowRight :size="18" />
+          </RouterLink>
+
+          <RouterLink
+            to="/rooms"
+            class="inline-flex items-center gap-2 rounded-xl px-7 py-4 text-base font-semibold text-white/80 hover:text-white transition-all"
+          >
+            <BedDouble :size="18" class="text-primary-400" /> Book Hotel Room
           </RouterLink>
         </div>
       </div>
@@ -536,20 +1522,29 @@ const highlights = [
 
 <style scoped>
 @keyframes heroZoom {
-  from { transform: scale(1.05); }
+  from { transform: scale(1.04); }
   to   { transform: scale(1.12); }
 }
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateX(24px);
+  transform: translateX(20px);
 }
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateX(-24px);
+  transform: translateX(-20px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

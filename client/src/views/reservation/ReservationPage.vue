@@ -1,14 +1,23 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { reservationApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import { Calendar, Users, Clock } from '@lucide/vue'
 
+const route   = useRoute()
 const ui      = useUiStore()
 const loading = ref(false)
 const done    = ref(false)
-const form    = ref({ name: '', email: '', phone: '', party_size: 2, reserved_at: '', notes: '' })
+const form    = ref({
+  name: '',
+  email: '',
+  phone: '',
+  party_size: Number(route.query.party_size) || 2,
+  reserved_at: typeof route.query.reserved_at === 'string' ? route.query.reserved_at : '',
+  notes: typeof route.query.notes === 'string' ? route.query.notes : ''
+})
 
 async function submit() {
   loading.value = true

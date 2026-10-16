@@ -15,15 +15,16 @@ class ChapaGateway implements PaymentGateway
     {
         $txRef = 'RES-'.$order->ulid.'-'.time();
 
-        $name = $order->user?->name ?: 'Guest Diner';
+        $name = $order->address_snapshot['customer_name'] ?? $order->user?->name ?? 'Guest Diner';
         $nameParts = explode(' ', trim($name));
         $firstName = $nameParts[0] ?: 'Guest';
         $lastName  = count($nameParts) > 1 ? end($nameParts) : 'Customer';
-        $email     = $order->user?->email ?: 'guest@restaurant.com';
-        $phone     = $order->user?->phone ?: '0911000000';
+        $email     = $order->address_snapshot['customer_email'] ?? $order->user?->email ?? 'guest@tasteandstay.et';
+        $phone     = $order->address_snapshot['customer_phone'] ?? $order->user?->phone ?? '0911000000';
 
+        $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:5173'), '/');
         $secret      = config('services.chapa.secret');
-        $returnUrl   = config('services.chapa.return_url') ?: "http://localhost:5173/orders/{$order->ulid}/track?payment=chapa_return";
+        $returnUrl   = config('services.chapa.return_url') ?: "{$frontendUrl}/orders/{$order->ulid}/track?payment=chapa_return";
         $callbackUrl = config('services.chapa.webhook_url') ?: url('/api/v1/webhooks/chapa');
 
         if (!empty($secret)) {

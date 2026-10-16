@@ -162,6 +162,53 @@ class PaymentController extends Controller
         return $this->success(['transaction_id' => $txId], 'Room charge applied successfully');
     }
 
+    /**
+     * Settle and confirm order payment automatically (Telebirr, CBE, Card, Cash).
+     */
+    public function payNow(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order_ulid'     => 'required|string|exists:orders,ulid',
+            'payment_method' => 'nullable|string|in:chapa,telebirr,cbe,card,cash,stripe,room_charge',
+        ]);
+
+        $order = Order::where('ulid', $request->order_ulid)->firstOrFail();
+        $method = $request->input('payment_method', $order->payment_method ?: 'chapa');
+
+        $order->update([
+            'payment_status' => PaymentStatus::Paid,
+            'payment_method' => $method,
+        ]);
+
+        $txId = strtoupper($method) . '-' . substr($order->ulid, -8) . '-' . time();
+
+        Payment::updateOrCreate(
+            ['order_id' => $order->id],
+            [
+                'gateway'        => $method,
+                'transaction_id' => $txId,
+                'amount'         => $order->total,
+                'currency'       => 'ETB',
+                'status'         => PaymentStatus::Paid,
+                'payload'        => [
+                    'settled_at' => now()->toIso8601String(),
+                    'channel'    => 'instant_settlement',
+                ],
+            ]
+        );
+
+        if ($order->status === OrderStatus::Pending) {
+            app(OrderService::class)->updateStatus($order, OrderStatus::Confirmed, null, "Payment automatically settled via {$method}");
+        }
+
+        return $this->success([
+            'order_ulid'     => $order->ulid,
+            'payment_status' => 'paid',
+            'order_status'   => $order->fresh()->status->value,
+            'transaction_id' => $txId,
+        ], 'Payment successfully processed and marked as PAID');
+    }
+
     public function stripeWebhook(Request $request): JsonResponse
     {
         $this->handleWebhook($request, 'stripe', $request->header('Stripe-Signature', ''));

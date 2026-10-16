@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { staffApi, menuApi } from '../../services/api'
+import { staffApi, menuApi, paymentApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
-import { UtensilsCrossed, CheckCircle, Clock, Bell, RefreshCw, AlertCircle, Sparkles, Plus, X, Search, Trash2, User, Phone, MessageSquare } from '@lucide/vue'
+import { UtensilsCrossed, CheckCircle, Clock, Bell, RefreshCw, AlertCircle, Sparkles, Plus, X, Search, Trash2, User, Phone, MessageSquare, CreditCard } from '@lucide/vue'
 
 const ui = useUiStore()
 
@@ -90,6 +90,19 @@ async function markServed(order) {
     await fetchData()
   } catch (err) {
     ui.toast('Failed to mark as served', 'error')
+  }
+}
+
+async function markPaid(order) {
+  try {
+    await paymentApi.payNow({
+      order_ulid: order.ulid,
+      payment_method: order.payment_method || 'cash'
+    })
+    ui.toast(`Payment for order #${order.ulid.slice(-6).toUpperCase()} confirmed! Automatically marked as PAID.`, 'success')
+    await fetchData()
+  } catch (err) {
+    ui.toast('Failed to record payment', 'error')
   }
 }
 

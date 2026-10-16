@@ -100,6 +100,7 @@ Route::prefix('v1')->group(function () {
     Route::get('orders/{order}/track', [OrderController::class, 'track']);
     Route::post('payments/intent', [PaymentController::class, 'createIntent']);
     Route::post('payments/chapa', [PaymentController::class, 'createChapaIntent']);
+    Route::post('payments/pay-now', [PaymentController::class, 'payNow']);
     Route::post('payments/room-charge', [PaymentController::class, 'roomCharge']);
 
     // ── Authenticated routes ───────────────────────────────────────────────────

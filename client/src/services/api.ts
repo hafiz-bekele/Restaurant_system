@@ -117,6 +117,7 @@ export const paymentApi = {
   createIntent:     (orderUlid: string) => api.post('/payments/intent', { order_ulid: orderUlid }),
   createChapaIntent:(orderUlid: string) => api.post('/payments/chapa', { order_ulid: orderUlid }),
   verifyChapa:      (data: { order_ulid?: string, tx_ref?: string }) => api.post('/payments/chapa/verify', data),
+  payNow:           (data: { order_ulid: string, payment_method?: string }) => api.post('/payments/pay-now', data),
   roomCharge:       (orderUlid: string, bookingId: number | string) => api.post('/payments/room-charge', { order_ulid: orderUlid, booking_id: bookingId }),
 }
 

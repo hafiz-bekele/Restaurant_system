@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { useI18n } from 'vue-i18n'
 import {
   Plus, Trash2, Pencil, X, BedDouble, Upload, Link,
   ImageOff, Users, DollarSign, RefreshCw, Search, CheckCircle,
@@ -10,6 +11,7 @@ import {
 import RoomCardSkeleton from '../../components/ui/RoomCardSkeleton.vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
@@ -153,11 +155,11 @@ async function save() {
   const price   = Number(form.value.price_per_night)
 
   if (!roomNum) {
-    ui.toast('Room number is required', 'error')
+    ui.toast(t('adminRooms.roomNumber'), 'error')
     return
   }
   if (!form.value.price_per_night && form.value.price_per_night !== 0) {
-    ui.toast('Price per night is required', 'error')
+    ui.toast(t('adminRooms.pricePerNight'), 'error')
     return
   }
   if (price < 0) {
@@ -169,29 +171,29 @@ async function save() {
     const payload = buildPayload()
     if (editingRoom.value) {
       await adminApi.updateRoom(editingRoom.value.id, payload)
-      ui.toast(`Room ${form.value.room_number} updated`, 'success')
+      ui.toast(t('adminRooms.toastRoomSaved'), 'success')
     } else {
       await adminApi.createRoom(payload)
-      ui.toast(`Room ${form.value.room_number} created`, 'success')
+      ui.toast(t('adminRooms.toastRoomSaved'), 'success')
     }
     qc.invalidateQueries({ queryKey: ['admin', 'rooms'] })
     closeModal()
   } catch (e) {
     const errors = e.response?.data?.errors
-    ui.toast(errors ? Object.values(errors).flat()[0] : 'Failed to save room', 'error')
+    ui.toast(errors ? Object.values(errors).flat()[0] : t('adminRooms.toastRoomSaveFailed'), 'error')
   } finally {
     saving.value = false
   }
 }
 
 async function deleteRoom(room) {
-  if (!confirm(`Remove Room ${room.room_number}? This cannot be undone.`)) return
+  if (!confirm(t('adminRooms.confirmDeleteRoom', { number: room.room_number }))) return
   try {
     await adminApi.deleteRoom(room.id)
     qc.invalidateQueries({ queryKey: ['admin', 'rooms'] })
-    ui.toast(`Room ${room.room_number} removed`, 'success')
+    ui.toast(t('adminRooms.toastRoomDeleted'), 'success')
   } catch {
-    ui.toast('Failed to delete room', 'error')
+    ui.toast(t('adminRooms.toastRoomSaveFailed'), 'error')
   }
 }
 
@@ -199,9 +201,9 @@ async function updateBookingStatus(booking, status) {
   try {
     await adminApi.updateBooking(booking.id, { status })
     qc.invalidateQueries({ queryKey: ['admin', 'room-bookings'] })
-    ui.toast('Booking status updated', 'success')
+    ui.toast(t('adminRooms.toastBookingUpdated'), 'success')
   } catch {
-    ui.toast('Failed to update booking', 'error')
+    ui.toast(t('adminRooms.toastBookingUpdateFailed'), 'error')
   }
 }
 
@@ -218,19 +220,19 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-          <BedDouble :size="24" class="text-primary-500" /> Rooms & Bookings
+          <BedDouble :size="24" class="text-primary-500" /> {{ $t('adminRooms.title') }}
         </h1>
-        <p class="text-sm text-warm-500 dark:text-warm-400 mt-0.5">Manage hotel rooms and guest reservations</p>
+        <p class="text-sm text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('adminRooms.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
         <button
           @click="qc.invalidateQueries({ queryKey: tab === 'rooms' ? ['admin','rooms'] : ['admin','room-bookings'] })"
           class="btn-ghost text-xs gap-1.5 py-2 px-3"
         >
-          <RefreshCw :size="13" /> Refresh
+          <RefreshCw :size="13" /> {{ $t('adminRooms.refresh') }}
         </button>
         <button v-if="tab === 'rooms'" @click="openCreate" class="btn-primary gap-2 shadow-sm">
-          <Plus :size="16" /> Add Room
+          <Plus :size="16" /> {{ $t('adminRooms.addRoom') }}
         </button>
       </div>
     </div>
@@ -241,13 +243,13 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
         @click="tab = 'rooms'"
         :class="['px-4 py-1.5 rounded-lg text-sm font-semibold transition-all', tab === 'rooms' ? 'bg-white dark:bg-gray-900 shadow text-warm-900 dark:text-white' : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300']"
       >
-        Rooms <span class="ml-1 text-xs text-warm-400">({{ rooms().length }})</span>
+        {{ $t('adminRooms.tabRooms', { count: rooms().length }) }}
       </button>
       <button
         @click="tab = 'bookings'"
         :class="['px-4 py-1.5 rounded-lg text-sm font-semibold transition-all', tab === 'bookings' ? 'bg-white dark:bg-gray-900 shadow text-warm-900 dark:text-white' : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300']"
       >
-        Bookings <span class="ml-1 text-xs text-warm-400">({{ bookings().length }})</span>
+        {{ $t('adminRooms.tabBookings', { count: bookings().length }) }}
       </button>
     </div>
 
@@ -280,7 +282,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
             <!-- Status badge -->
             <div class="absolute top-2 left-2 flex gap-1">
               <span :class="['badge text-[10px]', roomStatusClass(room.status)]">{{ room.status }}</span>
-              <span v-if="!room.is_active" class="badge badge-red text-[10px]">Inactive</span>
+              <span v-if="!room.is_active" class="badge badge-red text-[10px]">{{ $t('adminRooms.inactiveBadge') }}</span>
             </div>
           </div>
 
@@ -288,17 +290,17 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
           <div class="p-4">
             <div class="flex items-start justify-between gap-2 mb-1">
               <h3 class="font-semibold text-sm text-warm-900 dark:text-white leading-tight">
-                Room {{ room.room_number }}
+                {{ $t('adminRooms.roomTitle', { number: room.room_number }) }}
               </h3>
               <span class="font-bold text-primary-600 dark:text-primary-400 text-sm shrink-0">
-                ${{ Number(room.price_per_night).toFixed(0) }}<span class="text-[10px] font-normal text-warm-400">/night</span>
+                ETB {{ Number(room.price_per_night).toFixed(0) }}<span class="text-[10px] font-normal text-warm-400">{{ $t('adminRooms.perNight') }}</span>
               </span>
             </div>
 
             <p class="text-xs text-warm-400 capitalize mb-2 flex items-center gap-2">
               <span class="inline-flex items-center gap-1"><BedDouble :size="11" /> {{ room.type }}</span>
               <span>·</span>
-              <span class="inline-flex items-center gap-1"><Users :size="11" /> {{ room.capacity }} guests</span>
+              <span class="inline-flex items-center gap-1"><Users :size="11" /> {{ $t('adminRooms.guestsCount', { count: room.capacity }) }}</span>
             </p>
 
             <p v-if="room.description" class="text-xs text-warm-500 dark:text-warm-400 line-clamp-2 mb-3">
@@ -318,10 +320,10 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
             <!-- Actions -->
             <div class="flex items-center gap-1 pt-2 border-t border-warm-100 dark:border-warm-800">
               <button @click="openEdit(room)" class="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-lg text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
-                <Pencil :size="12" /> Edit
+                <Pencil :size="12" /> {{ $t('adminRooms.editBtn') }}
               </button>
               <button @click="deleteRoom(room)" class="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                <Trash2 :size="12" /> Remove
+                <Trash2 :size="12" /> {{ $t('adminRooms.removeBtn') }}
               </button>
             </div>
           </div>
@@ -331,10 +333,10 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
       <!-- Empty state -->
       <div v-else class="card p-16 text-center">
         <BedDouble :size="48" class="mx-auto text-warm-300 dark:text-warm-600 mb-4" />
-        <p class="font-semibold text-warm-700 dark:text-warm-300 mb-1">No rooms yet</p>
-        <p class="text-sm text-warm-400 mb-5">Add your first room to start accepting bookings.</p>
+        <p class="font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminRooms.noRoomsTitle') }}</p>
+        <p class="text-sm text-warm-400 mb-5">{{ $t('adminRooms.noRoomsDesc') }}</p>
         <button @click="openCreate" class="btn-primary mx-auto">
-          <Plus :size="16" /> Add First Room
+          <Plus :size="16" /> {{ $t('adminRooms.addFirstRoom') }}
         </button>
       </div>
     </div>
@@ -345,12 +347,12 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
       <!-- Bookings filter -->
       <div class="flex flex-wrap items-center gap-3">
         <select v-model="bookingStatusFilter" class="input w-auto text-sm py-2">
-          <option value="">All Statuses</option>
+          <option value="">{{ $t('adminRooms.allStatuses') }}</option>
           <option v-for="s in ['pending','confirmed','checked_in','checked_out','cancelled']" :key="s" :value="s">
             {{ s.replace('_', ' ') }}
           </option>
         </select>
-        <p class="text-xs text-warm-500">{{ bookings().length }} bookings</p>
+        <p class="text-xs text-warm-500">{{ $t('adminRooms.bookingsCount', { count: bookings().length }) }}</p>
       </div>
 
       <!-- Skeleton -->
@@ -361,13 +363,13 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
         <table class="w-full text-sm text-left">
           <thead class="bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
             <tr>
-              <th class="px-5 py-3.5">Guest</th>
-              <th class="px-5 py-3.5">Room</th>
-              <th class="px-5 py-3.5">Check-In</th>
-              <th class="px-5 py-3.5">Check-Out</th>
-              <th class="px-5 py-3.5">Total</th>
-              <th class="px-5 py-3.5">Status</th>
-              <th class="px-5 py-3.5 text-right">Update</th>
+              <th class="px-5 py-3.5">{{ $t('adminRooms.thGuest') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminRooms.thRoom') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminRooms.thCheckIn') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminRooms.thCheckOut') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminRooms.thTotal') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminRooms.thStatus') }}</th>
+              <th class="px-5 py-3.5 text-right">{{ $t('adminRooms.thUpdate') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
@@ -387,7 +389,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
               <td class="px-5 py-3.5 text-warm-600 dark:text-warm-400 whitespace-nowrap">{{ formatDate(b.check_in_date) }}</td>
               <td class="px-5 py-3.5 text-warm-600 dark:text-warm-400 whitespace-nowrap">{{ formatDate(b.check_out_date) }}</td>
               <td class="px-5 py-3.5 font-bold text-primary-600 dark:text-primary-400">
-                ${{ Number(b.total_amount ?? b.total_price ?? 0).toFixed(2) }}
+                ETB {{ Number(b.total_amount ?? b.total_price ?? 0).toFixed(2) }}
               </td>
               <td class="px-5 py-3.5">
                 <span :class="['badge text-xs capitalize', statusBadgeClass(b.status)]">
@@ -413,8 +415,8 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
       <!-- Empty bookings -->
       <div v-else class="card p-12 text-center">
         <BedDouble :size="40" class="mx-auto text-warm-300 mb-3" />
-        <p class="font-semibold text-warm-700 dark:text-warm-300">No bookings found</p>
-        <p class="text-sm text-warm-400 mt-1">Adjust the status filter or check back later.</p>
+        <p class="font-semibold text-warm-700 dark:text-warm-300">{{ $t('adminRooms.noBookingsTitle') }}</p>
+        <p class="text-sm text-warm-400 mt-1">{{ $t('adminRooms.noBookingsDesc') }}</p>
       </div>
     </div>
 
@@ -434,10 +436,10 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
             <div class="flex items-center justify-between p-6 pb-4 border-b border-warm-100 dark:border-warm-800 shrink-0">
               <div>
                 <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
-                  {{ editingRoom ? `Edit Room ${editingRoom.room_number}` : 'Add New Room' }}
+                  {{ editingRoom ? $t('adminRooms.modalEditTitle', { number: editingRoom.room_number }) : $t('adminRooms.modalAddTitle') }}
                 </h2>
                 <p class="text-xs text-warm-400 mt-0.5">
-                  {{ editingRoom ? 'Update room details, image, and amenities' : 'Fill in the details to register a new hotel room' }}
+                  {{ editingRoom ? $t('adminRooms.modalEditSubtitle') : $t('adminRooms.modalAddSubtitle') }}
                 </p>
               </div>
               <button @click="closeModal" class="btn-ghost p-1.5 rounded-lg shrink-0">
@@ -450,7 +452,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
 
               <!-- Image section -->
               <div>
-                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-2">Room Image</label>
+                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-2">{{ $t('adminRooms.roomImage') }}</label>
 
                 <!-- Mode toggle -->
                 <div class="flex gap-1 p-1 bg-warm-100 dark:bg-warm-800 rounded-xl w-fit mb-3">
@@ -458,13 +460,13 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
                     @click="switchImageMode('url')"
                     :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all', imageMode === 'url' ? 'bg-white dark:bg-gray-900 shadow text-warm-900 dark:text-white' : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300']"
                   >
-                    <Link :size="13" /> Image URL
+                    <Link :size="13" /> {{ $t('adminRooms.imageUrlTab') }}
                   </button>
                   <button
                     @click="switchImageMode('file')"
                     :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all', imageMode === 'file' ? 'bg-white dark:bg-gray-900 shadow text-warm-900 dark:text-white' : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300']"
                   >
-                    <Upload :size="13" /> Upload File
+                    <Upload :size="13" /> {{ $t('adminRooms.uploadFileTab') }}
                   </button>
                 </div>
 
@@ -486,8 +488,8 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
                     class="border-2 border-dashed border-warm-300 dark:border-warm-700 rounded-xl p-6 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/40 dark:hover:bg-primary-900/10 transition-all duration-200"
                   >
                     <Upload :size="28" class="mx-auto text-warm-400 mb-2" />
-                    <p class="text-sm font-medium text-warm-600 dark:text-warm-300">Click to choose a photo</p>
-                    <p class="text-xs text-warm-400 mt-1">PNG, JPG, WEBP — max 5 MB</p>
+                    <p class="text-sm font-medium text-warm-600 dark:text-warm-300">{{ $t('adminRooms.dropzoneText') }}</p>
+                    <p class="text-xs text-warm-400 mt-1">{{ $t('adminRooms.dropzoneHint') }}</p>
                   </div>
                 </div>
 
@@ -508,12 +510,12 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">
-                    Room Number <span class="text-red-500">*</span>
+                    {{ $t('adminRooms.roomNumber') }} <span class="text-red-500">*</span>
                   </label>
                   <input v-model="form.room_number" type="text" required class="input text-sm" placeholder="e.g. 101, A-12" />
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Room Type</label>
+                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminRooms.roomType') }}</label>
                   <select v-model="form.type" class="input text-sm capitalize">
                     <option v-for="t in roomTypes" :key="t" :value="t" class="capitalize">{{ t }}</option>
                   </select>
@@ -524,7 +526,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">
-                    Guest Capacity
+                    {{ $t('adminRooms.guestCapacity') }}
                   </label>
                   <div class="relative">
                     <Users :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
@@ -533,7 +535,7 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
                 </div>
                 <div>
                   <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">
-                    Price per Night ($) <span class="text-red-500">*</span>
+                    {{ $t('adminRooms.pricePerNight') }} <span class="text-red-500">*</span>
                   </label>
                   <div class="relative">
                     <DollarSign :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
@@ -544,13 +546,13 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
 
               <!-- Description -->
               <div>
-                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Description</label>
-                <textarea v-model="form.description" rows="3" class="input text-sm resize-none" placeholder="Describe the room — size, view, special features…"></textarea>
+                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminRooms.description') }}</label>
+                <textarea v-model="form.description" rows="3" class="input text-sm resize-none" :placeholder="$t('adminRooms.descPlaceholder')"></textarea>
               </div>
 
               <!-- Amenities -->
               <div>
-                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-2">Amenities</label>
+                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-2">{{ $t('adminRooms.amenities') }}</label>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <button
                     v-for="a in amenityList"
@@ -580,8 +582,8 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
                     <span :class="['absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200', form.is_active ? 'translate-x-5' : 'translate-x-0.5']"></span>
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-warm-800 dark:text-warm-200">Active & Bookable</p>
-                    <p class="text-xs text-warm-400">Room will appear in guest booking flow</p>
+                    <p class="text-sm font-semibold text-warm-800 dark:text-warm-200">{{ $t('adminRooms.activeToggleTitle') }}</p>
+                    <p class="text-xs text-warm-400">{{ $t('adminRooms.activeToggleDesc') }}</p>
                   </div>
                 </label>
               </div>
@@ -591,12 +593,12 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
             <!-- Footer -->
             <div class="p-6 pt-4 border-t border-warm-100 dark:border-warm-800 shrink-0 flex items-center justify-between gap-3">
               <p class="text-xs text-warm-400">
-                {{ editingRoom ? 'Changes apply immediately.' : 'Room will be visible to guests after saving.' }}
+                {{ editingRoom ? $t('adminRooms.modalEditNotice') : $t('adminRooms.modalAddNotice') }}
               </p>
               <div class="flex gap-2">
-                <button @click="closeModal" class="btn-outline text-sm py-2 px-4">Cancel</button>
+                <button @click="closeModal" class="btn-outline text-sm py-2 px-4">{{ $t('adminRooms.cancelBtn') }}</button>
                 <button @click="save" :disabled="saving" class="btn-primary text-sm py-2 px-5 shadow-md">
-                  {{ saving ? 'Saving…' : editingRoom ? 'Save Changes' : 'Add Room' }}
+                  {{ saving ? $t('adminRooms.savingBtn') : editingRoom ? $t('adminRooms.saveChangesBtn') : $t('adminRooms.addRoomBtn') }}
                 </button>
               </div>
             </div>

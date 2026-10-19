@@ -3,9 +3,11 @@ import { ref } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { useI18n } from 'vue-i18n'
 import { Calendar, Search } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
@@ -37,14 +39,14 @@ const reservations = () => data.value?.data ?? []
 async function updateStatus(reservation, status) {
   await adminApi.updateReservation(reservation.id, { status })
   qc.invalidateQueries({ queryKey: ['admin', 'reservations'] })
-  ui.toast('Reservation updated')
+  ui.toast(t('adminReservations.toastUpdated'), 'success')
 }
 
 async function cancel(reservation) {
-  if (!confirm('Cancel this reservation?')) return
+  if (!confirm(t('adminReservations.confirmCancelPrompt'))) return
   await adminApi.deleteReservation(reservation.id)
   qc.invalidateQueries({ queryKey: ['admin', 'reservations'] })
-  ui.toast('Reservation cancelled')
+  ui.toast(t('adminReservations.toastCancelled'), 'info')
 }
 
 function formatDate(dt) {
@@ -56,7 +58,7 @@ function formatDate(dt) {
   <div>
     <div class="flex items-center justify-between mb-6">
       <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-        <Calendar :size="22" class="text-primary-500" /> Reservations
+        <Calendar :size="22" class="text-primary-500" /> {{ $t('adminReservations.title') }}
       </h1>
     </div>
 
@@ -64,11 +66,11 @@ function formatDate(dt) {
     <div class="flex flex-wrap gap-3 mb-6">
       <input v-model="dateFilter" type="date" class="input w-auto" />
       <select v-model="statusFilter" class="input w-auto">
-        <option v-for="s in statusOptions" :key="s" :value="s">{{ s || 'All Statuses' }}</option>
+        <option v-for="s in statusOptions" :key="s" :value="s">{{ s ? s.toUpperCase() : $t('adminReservations.allStatuses') }}</option>
       </select>
       <div class="relative">
         <Search :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
-        <input v-model="search" type="search" placeholder="Name, email, phone…" class="input pl-9 w-60" />
+        <input v-model="search" type="search" :placeholder="$t('adminReservations.searchPlaceholder')" class="input pl-9 w-60" />
       </div>
     </div>
 
@@ -78,13 +80,13 @@ function formatDate(dt) {
       <table class="w-full text-sm">
         <thead class="bg-warm-50 dark:bg-warm-800">
           <tr class="text-left text-warm-600 dark:text-warm-400">
-            <th class="px-5 py-3 font-medium">Guest</th>
-            <th class="px-5 py-3 font-medium">Date & Time</th>
-            <th class="px-5 py-3 font-medium">Table</th>
-            <th class="px-5 py-3 font-medium">Party</th>
-            <th class="px-5 py-3 font-medium">Status</th>
-            <th class="px-5 py-3 font-medium">Update</th>
-            <th class="px-5 py-3 font-medium">Actions</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thGuest') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thDateTime') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thTable') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thParty') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thStatus') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thUpdate') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thActions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-warm-50 dark:divide-warm-800">
@@ -113,11 +115,11 @@ function formatDate(dt) {
                 v-if="r.status !== 'cancelled'"
                 @click="cancel(r)"
                 class="text-xs text-red-400 hover:text-red-600 font-medium"
-              >Cancel</button>
+              >{{ $t('adminReservations.cancelBtn') }}</button>
             </td>
           </tr>
           <tr v-if="!reservations().length">
-            <td colspan="7" class="px-5 py-10 text-center text-warm-400">No reservations found</td>
+            <td colspan="7" class="px-5 py-10 text-center text-warm-400">{{ $t('adminReservations.noReservationsFound') }}</td>
           </tr>
         </tbody>
       </table>
@@ -125,8 +127,8 @@ function formatDate(dt) {
 
     <!-- Pagination -->
     <div v-if="data?.meta" class="flex items-center justify-between mt-4 text-sm text-warm-500">
-      <span>{{ data.meta.total }} total</span>
-      <span>Page {{ data.meta.current_page }} of {{ data.meta.last_page }}</span>
+      <span>{{ $t('adminReservations.totalLabel', { total: data.meta.total }) }}</span>
+      <span>{{ $t('adminReservations.pageLabel', { current: data.meta.current_page, last: data.meta.last_page }) }}</span>
     </div>
   </div>
 </template>

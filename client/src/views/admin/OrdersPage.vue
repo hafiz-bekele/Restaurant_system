@@ -3,9 +3,11 @@ import { ref, computed } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi, staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { useI18n } from 'vue-i18n'
 import { ShoppingBag, UserCheck, Utensils, RefreshCw, X, Search, Plus, Trash2, CheckCircle } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
@@ -75,9 +77,9 @@ async function updateStatus(id, newStatus) {
   try {
     await adminApi.updateOrder(id, { status: newStatus })
     qc.invalidateQueries({ queryKey: ['admin', 'orders'] })
-    ui.toast('Order status updated', 'success')
+    ui.toast(t('adminOrders.statusUpdatedToast'), 'success')
   } catch {
-    ui.toast('Failed to update status', 'error')
+    ui.toast(t('adminOrders.failedToUpdateStatus'), 'error')
   }
 }
 
@@ -93,10 +95,10 @@ async function submitReassign() {
   try {
     await adminApi.reassignWaiter(selectedOrder.value.ulid, selectedWaiterId.value)
     qc.invalidateQueries({ queryKey: ['admin', 'orders'] })
-    ui.toast('Waiter reassigned successfully', 'success')
+    ui.toast(t('adminOrders.reassignedSuccessToast'), 'success')
     showReassignModal.value = false
   } catch (e) {
-    ui.toast(e.response?.data?.message || 'Failed to reassign waiter', 'error')
+    ui.toast(e.response?.data?.message || t('adminOrders.failedToReassign'), 'error')
   } finally {
     reassigning.value = false
   }
@@ -164,10 +166,10 @@ async function submitNewOrder() {
       notes: combinedNotes,
     })
     qc.invalidateQueries({ queryKey: ['admin', 'orders'] })
-    ui.toast('In-house order created and dispatched to Kitchen KDS!', 'success')
+    ui.toast(t('adminOrders.orderCreatedToast'), 'success')
     showCreateModal.value = false
   } catch (err) {
-    ui.toast(err.response?.data?.message || 'Failed to create order', 'error')
+    ui.toast(err.response?.data?.message || t('adminOrders.failedToCreateOrder'), 'error')
   } finally {
     creatingOrder.value = false
   }
@@ -181,10 +183,10 @@ async function submitNewOrder() {
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
           <ShoppingBag :size="24" class="text-primary-500" />
-          Live Orders & Operational Dispatch
+          {{ $t('adminOrders.title') }}
         </h1>
         <p class="text-sm text-warm-500 dark:text-warm-400 mt-1">
-          Manage order lifecycle, update statuses, and reassign waiters
+          {{ $t('adminOrders.subtitle') }}
         </p>
       </div>
 
@@ -194,7 +196,7 @@ async function submitNewOrder() {
           @click="openCreateOrder"
           class="btn-primary text-xs gap-1.5 py-2 px-3.5 shadow-sm"
         >
-          <Plus :size="15" /> In-House / Phone Order
+          <Plus :size="15" /> {{ $t('adminOrders.inHousePhoneOrderBtn') }}
         </button>
 
         <div class="relative">
@@ -202,13 +204,13 @@ async function submitNewOrder() {
           <input
             v-model="search"
             type="search"
-            placeholder="Search reference or guest..."
+            :placeholder="$t('adminOrders.searchPlaceholder')"
             class="input pl-9 w-44 sm:w-56 text-xs"
           />
         </div>
 
         <select v-model="status" class="input w-auto text-xs py-2 font-medium">
-          <option v-for="s in statusOptions" :key="s" :value="s">{{ s ? s.toUpperCase() : 'ALL STATUSES' }}</option>
+          <option v-for="s in statusOptions" :key="s" :value="s">{{ s ? s.toUpperCase() : $t('adminOrders.allStatuses') }}</option>
         </select>
       </div>
     </div>
@@ -221,14 +223,14 @@ async function submitNewOrder() {
       <table class="w-full text-sm text-left">
         <thead class="bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
           <tr>
-            <th class="px-5 py-3.5">Reference</th>
-            <th class="px-5 py-3.5">Type & Location</th>
-            <th class="px-5 py-3.5">Customer</th>
-            <th class="px-5 py-3.5">Items</th>
-            <th class="px-5 py-3.5">Assigned Waiter</th>
-            <th class="px-5 py-3.5">Total</th>
-            <th class="px-5 py-3.5">Status</th>
-            <th class="px-5 py-3.5 text-right">Actions</th>
+            <th class="px-5 py-3.5">{{ $t('adminOrders.thRef') }}</th>
+            <th class="px-5 py-3.5">{{ $t('adminOrders.thTypeLocation') }}</th>
+            <th class="px-5 py-3.5">{{ $t('adminOrders.thCustomer') }}</th>
+            <th class="px-5 py-3.5">{{ $t('adminOrders.thItems') }}</th>
+            <th class="px-5 py-3.5">{{ $t('adminOrders.thAssignedWaiter') }}</th>
+            <th class="px-5 py-3.5">{{ $t('adminOrders.thTotal') }}</th>
+            <th class="px-5 py-3.5">{{ $t('adminOrders.thStatus') }}</th>
+            <th class="px-5 py-3.5 text-right">{{ $t('adminOrders.thActions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
@@ -255,13 +257,13 @@ async function submitNewOrder() {
 
             <!-- Customer -->
             <td class="px-5 py-3.5 text-xs text-warm-700 dark:text-warm-300">
-              <p class="font-semibold">{{ order.user?.name ?? 'Walk-in Guest' }}</p>
-              <p class="text-[11px] text-warm-400">{{ order.user?.email ?? 'Table QR Scan' }}</p>
+              <p class="font-semibold">{{ order.user?.name ?? $t('adminOrders.walkInGuest') }}</p>
+              <p class="text-[11px] text-warm-400">{{ order.user?.email ?? $t('adminOrders.tableQrScan') }}</p>
             </td>
 
             <!-- Items count -->
             <td class="px-5 py-3.5 text-xs text-warm-600 dark:text-warm-400">
-              {{ order.items?.length ?? 1 }} item(s)
+              {{ $t('adminOrders.itemsCount', { count: order.items?.length ?? 1 }) }}
             </td>
 
             <!-- Assigned Waiter -->
@@ -270,20 +272,20 @@ async function submitNewOrder() {
                 <span v-if="order.waiter" class="badge badge-green text-xs flex items-center gap-1">
                   <UserCheck :size="12" /> {{ order.waiter.name }}
                 </span>
-                <span v-else class="text-xs text-warm-400 italic">Unassigned</span>
+                <span v-else class="text-xs text-warm-400 italic">{{ $t('adminOrders.unassigned') }}</span>
                 <button
                   @click="openReassign(order)"
                   class="btn-ghost p-1 text-[11px] text-primary-600 font-semibold hover:underline"
-                  title="Reassign Waiter"
+                  :title="$t('adminOrders.changeBtn')"
                 >
-                  Change
+                  {{ $t('adminOrders.changeBtn') }}
                 </button>
               </div>
             </td>
 
             <!-- Total -->
             <td class="px-5 py-3.5 font-bold text-warm-900 dark:text-white">
-              ${{ Number(order.total).toFixed(2) }}
+              ETB {{ Number(order.total).toFixed(2) }}
             </td>
 
             <!-- Status Badge -->
@@ -317,7 +319,7 @@ async function submitNewOrder() {
       </table>
 
       <div v-if="orders().length === 0" class="text-center py-12 text-warm-500 text-sm">
-        No orders match current filter criteria.
+        {{ $t('adminOrders.noOrdersMatch') }}
       </div>
     </div>
 
@@ -328,9 +330,9 @@ async function submitNewOrder() {
           <div>
             <h3 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
               <ShoppingBag :size="18" class="text-primary-500" />
-              In-House / Phone Order Entry
+              {{ $t('adminOrders.modalTitle') }}
             </h3>
-            <p class="text-xs text-warm-500">Ring up an order on behalf of a guest/customer and dispatch directly to Kitchen KDS.</p>
+            <p class="text-xs text-warm-500">{{ $t('adminOrders.modalDesc') }}</p>
           </div>
           <button @click="showCreateModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
         </div>
@@ -340,17 +342,17 @@ async function submitNewOrder() {
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Customer / Guest</label>
-                <input v-model="guestName" type="text" placeholder="e.g. Alex / Caller" class="input text-xs" />
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminOrders.customerGuest') }}</label>
+                <input v-model="guestName" type="text" :placeholder="$t('adminOrders.customerPlaceholder')" class="input text-xs" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Phone Number</label>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminOrders.phoneNumber') }}</label>
                 <input v-model="guestPhone" type="tel" placeholder="+251..." class="input text-xs" />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Target Table *</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminOrders.targetTable') }}</label>
               <select v-model="selectedTableId" class="input text-xs">
                 <option v-for="t in tables()" :key="t.id" :value="t.id">
                   {{ t.name }} ({{ t.area || 'Floor' }}, {{ t.capacity }} seats)
@@ -363,7 +365,7 @@ async function submitNewOrder() {
               <input
                 v-model="dishSearch"
                 type="search"
-                placeholder="Search menu dishes..."
+                :placeholder="$t('adminOrders.searchMenuPlaceholder')"
                 class="input pl-8 text-xs"
               />
             </div>
@@ -377,7 +379,7 @@ async function submitNewOrder() {
               >
                 <div>
                   <p class="font-semibold text-xs text-warm-900 dark:text-white">{{ d.name }}</p>
-                  <p class="text-[11px] text-warm-400">${{ Number(d.price).toFixed(2) }}</p>
+                  <p class="text-[11px] text-warm-400">ETB {{ Number(d.price).toFixed(2) }}</p>
                 </div>
                 <button type="button" class="btn-primary p-1 rounded-lg text-[10px]"><Plus :size="12" /></button>
               </div>
@@ -387,10 +389,10 @@ async function submitNewOrder() {
           <!-- Right: Order Summary & Financials -->
           <div class="flex flex-col justify-between bg-warm-50 dark:bg-warm-900 p-3.5 rounded-2xl border border-warm-200 dark:border-warm-800">
             <div>
-              <h4 class="font-bold text-xs uppercase text-warm-600 dark:text-warm-400 mb-2">Selected Items ({{ newOrderItems.length }})</h4>
+              <h4 class="font-bold text-xs uppercase text-warm-600 dark:text-warm-400 mb-2">{{ $t('adminOrders.selectedItems', { count: newOrderItems.length }) }}</h4>
 
               <div v-if="!newOrderItems.length" class="text-center py-8 text-xs text-warm-400 italic">
-                Click items from the catalog on the left to add
+                {{ $t('adminOrders.clickCatalogPrompt') }}
               </div>
 
               <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -401,7 +403,7 @@ async function submitNewOrder() {
                 >
                   <div class="flex-1 truncate mr-2">
                     <p class="font-semibold text-warm-900 dark:text-white truncate">{{ item.name }}</p>
-                    <span class="text-[10px] text-warm-400">${{ (item.price * item.quantity).toFixed(2) }}</span>
+                    <span class="text-[10px] text-warm-400">ETB {{ (item.price * item.quantity).toFixed(2) }}</span>
                   </div>
                   <div class="flex items-center gap-1.5 shrink-0">
                     <button type="button" @click="updateItemQty(idx, -1)" class="w-5 h-5 rounded bg-warm-200 dark:bg-warm-700 font-bold text-xs flex items-center justify-center">-</button>
@@ -412,27 +414,27 @@ async function submitNewOrder() {
               </div>
 
               <div class="mt-3">
-                <input v-model="newOrderNotes" type="text" placeholder="Kitchen instructions..." class="input text-xs" />
+                <input v-model="newOrderNotes" type="text" :placeholder="$t('adminOrders.kitchenNotesPlaceholder')" class="input text-xs" />
               </div>
             </div>
 
             <!-- Financial Breakdown -->
             <div class="pt-3 mt-3 border-t border-warm-200 dark:border-warm-800 space-y-1 text-xs">
               <div class="flex justify-between text-warm-500">
-                <span>Subtotal:</span>
-                <span>${{ subtotal.toFixed(2) }}</span>
+                <span>{{ $t('adminOrders.subtotal') }}</span>
+                <span>ETB {{ subtotal.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between text-warm-500">
-                <span>Service Fee (10%):</span>
-                <span>${{ serviceCharge.toFixed(2) }}</span>
+                <span>{{ $t('adminOrders.serviceFee') }}</span>
+                <span>ETB {{ serviceCharge.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between text-warm-500">
-                <span>VAT (15%):</span>
-                <span>${{ vatAmount.toFixed(2) }}</span>
+                <span>{{ $t('adminOrders.vat') }}</span>
+                <span>ETB {{ vatAmount.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between font-bold text-sm text-warm-900 dark:text-white pt-1 border-t border-warm-200 dark:border-warm-800">
-                <span>Total:</span>
-                <span class="text-primary-600 dark:text-primary-400">${{ grandTotal.toFixed(2) }}</span>
+                <span>{{ $t('adminOrders.total') }}</span>
+                <span class="text-primary-600 dark:text-primary-400">ETB {{ grandTotal.toFixed(2) }}</span>
               </div>
 
               <button
@@ -440,7 +442,7 @@ async function submitNewOrder() {
                 :disabled="!newOrderItems.length || creatingOrder"
                 class="btn-primary w-full justify-center text-xs py-2.5 mt-2 shadow-md"
               >
-                {{ creatingOrder ? 'Dispatching to KDS...' : 'Create & Dispatch Order' }}
+                {{ creatingOrder ? $t('adminOrders.dispatchingBtn') : $t('adminOrders.createDispatchBtn') }}
               </button>
             </div>
           </div>
@@ -454,20 +456,20 @@ async function submitNewOrder() {
         <div class="flex items-center justify-between pb-3 border-b border-warm-100 dark:border-warm-800 mb-4">
           <h3 class="font-heading font-bold text-warm-900 dark:text-white flex items-center gap-2">
             <UserCheck :size="18" class="text-primary-500" />
-            Reassign Order #{{ selectedOrder?.ulid?.slice(-6).toUpperCase() }}
+            {{ $t('adminOrders.reassignModalTitle', { ref: selectedOrder?.ulid?.slice(-6).toUpperCase() }) }}
           </h3>
           <button @click="showReassignModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
         </div>
 
         <p class="text-xs text-warm-600 dark:text-warm-400 mb-4">
-          Assign this active dining order to an on-duty floor server:
+          {{ $t('adminOrders.reassignModalPrompt') }}
         </p>
 
         <form @submit.prevent="submitReassign" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Select Waiter *</label>
+            <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminOrders.selectWaiterLabel') }}</label>
             <select v-model="selectedWaiterId" required class="input">
-              <option value="" disabled>-- Select On-Duty Waiter --</option>
+              <option value="" disabled>{{ $t('adminOrders.selectWaiterDefault') }}</option>
               <option v-for="w in waiters()" :key="w.id" :value="String(w.id)">
                 {{ w.name }} ({{ w.email }})
               </option>
@@ -475,9 +477,9 @@ async function submitNewOrder() {
           </div>
 
           <div class="flex justify-end gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">
-            <button type="button" @click="showReassignModal = false" class="btn-ghost">Cancel</button>
+            <button type="button" @click="showReassignModal = false" class="btn-ghost">{{ $t('adminOrders.cancelBtn') }}</button>
             <button type="submit" :disabled="reassigning" class="btn-primary">
-              {{ reassigning ? 'Reassigning...' : 'Confirm Reassignment' }}
+              {{ reassigning ? $t('adminOrders.reassigningBtn') : $t('adminOrders.confirmReassignBtn') }}
             </button>
           </div>
         </form>

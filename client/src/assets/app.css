@@ -28,8 +28,8 @@
   --color-warm-900: #1c1917;
   --color-warm-950: #0c0a09;
 
-  --font-heading: 'Poppins', system-ui, sans-serif;
-  --font-body:    'Inter',   system-ui, sans-serif;
+  --font-heading: 'Poppins', 'Noto Sans Ethiopic', system-ui, sans-serif;
+  --font-body:    'Inter', 'Noto Sans Ethiopic', system-ui, sans-serif;
 
   --radius-card:  1rem;
   --shadow-card:  0 4px 24px -4px rgb(0 0 0 / 0.08);

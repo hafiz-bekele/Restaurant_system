@@ -29,10 +29,13 @@ import am from './i18n/locales/am'
 const pinia = createPinia()
 pinia.use(piniaPersistedState)
 
+const currentLocale = localStorage.getItem('locale') || 'am'
+document.documentElement.lang = currentLocale
+
 const i18n = createI18n({
   legacy: false,
-  locale: localStorage.getItem('locale') || 'en',
-  fallbackLocale: 'en',
+  locale: currentLocale,
+  fallbackLocale: 'am',
   messages: { en, am },
 })
 

@@ -7,11 +7,14 @@ import {
   UtensilsCrossed, CalendarDays, BedDouble, Info,
   Home, ShieldCheck, Gauge, User, LogIn, Package, Heart,
 } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useCartStore } from '../../stores/cart'
 import { useUiStore }   from '../../stores/ui'
 import { APP_NAME } from '../../config'
+import LanguageSwitcher from './LanguageSwitcher.vue'
 
+const { t }  = useI18n()
 const auth   = useAuthStore()
 const cart   = useCartStore()
 const ui     = useUiStore()
@@ -25,16 +28,16 @@ const userMenuOpen = ref(false)
 const navLinks = computed(() => {
   if (auth.isStaff) {
     return [
-      { label: 'Home',  to: '/',      icon: Home  },
-      { label: 'About', to: '/about', icon: Info  },
+      { labelKey: 'nav.home',  to: '/',      icon: Home  },
+      { labelKey: 'nav.about', to: '/about', icon: Info  },
     ]
   }
   return [
-    { label: 'Home',         to: '/',             icon: Home           },
-    { label: 'Menu',         to: '/menu',         icon: UtensilsCrossed },
-    { label: 'Reservations', to: '/reservations', icon: CalendarDays   },
-    { label: 'Hotel Suites', to: '/rooms',        icon: BedDouble      },
-    { label: 'About',        to: '/about',        icon: Info           },
+    { labelKey: 'nav.home',         to: '/',             icon: Home           },
+    { labelKey: 'nav.menu',         to: '/menu',         icon: UtensilsCrossed },
+    { labelKey: 'nav.reservations', to: '/reservations', icon: CalendarDays   },
+    { labelKey: 'nav.suites',       to: '/rooms',        icon: BedDouble      },
+    { labelKey: 'nav.about',        to: '/about',        icon: Info           },
   ]
 })
 
@@ -73,7 +76,7 @@ async function handleLogout() {
           <ChefHat :size="16" class="text-white" />
         </div>
         <span class="font-heading font-bold text-base text-warm-900 dark:text-white tracking-tight">
-          {{ APP_NAME }}
+          {{ t('brandName') }}
         </span>
       </RouterLink>
 
@@ -91,12 +94,15 @@ async function handleLogout() {
           ]"
         >
           <component :is="link.icon" :size="15" :class="isActive(link.to) ? 'text-primary-500' : 'text-warm-400 dark:text-warm-600'" />
-          {{ link.label }}
+          {{ t(link.labelKey) }}
         </RouterLink>
       </nav>
 
       <!-- ── Right actions ─────────────────────────────── -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1.5">
+
+        <!-- Language switcher (Amharic / English) -->
+        <LanguageSwitcher />
 
         <!-- Dark / light toggle -->
         <button
@@ -151,7 +157,7 @@ async function handleLogout() {
           >
             <Gauge v-if="auth.isAdmin" :size="14" />
             <LayoutDashboard v-else    :size="14" />
-            {{ auth.isAdmin ? 'Dashboard' : 'My Portal' }}
+            {{ auth.isAdmin ? t('nav.dashboard') : t('nav.myPortal') }}
           </RouterLink>
 
           <!-- User menu -->
@@ -206,7 +212,7 @@ async function handleLogout() {
                   >
                     <Gauge v-if="auth.isAdmin" :size="16" class="text-warm-400" />
                     <LayoutDashboard v-else    :size="16" class="text-warm-400" />
-                    {{ auth.isAdmin ? 'Admin Dashboard' : 'Staff Portal' }}
+                    {{ auth.isAdmin ? t('nav.dashboard') : t('nav.myPortal') }}
                   </RouterLink>
                 </div>
 
@@ -217,7 +223,7 @@ async function handleLogout() {
                     class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                   >
                     <LogOut :size="16" class="text-red-500" />
-                    Sign Out
+                    {{ t('nav.signOut') }}
                   </button>
                 </div>
               </div>
@@ -265,21 +271,21 @@ async function handleLogout() {
                     @click="userMenuOpen = false"
                     class="flex items-center gap-3 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-white/5"
                   >
-                    <User :size="15" class="text-warm-400" /> My Profile
+                    <User :size="15" class="text-warm-400" /> {{ t('nav.profile') }}
                   </RouterLink>
                   <RouterLink
                     to="/orders"
                     @click="userMenuOpen = false"
                     class="flex items-center gap-3 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-white/5"
                   >
-                    <Package :size="15" class="text-warm-400" /> My Orders
+                    <Package :size="15" class="text-warm-400" /> {{ t('nav.myOrders') }}
                   </RouterLink>
                   <RouterLink
                     to="/favorites"
                     @click="userMenuOpen = false"
                     class="flex items-center gap-3 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-white/5"
                   >
-                    <Heart :size="15" class="text-warm-400" /> Favourites
+                    <Heart :size="15" class="text-warm-400" /> {{ t('nav.favorites') }}
                   </RouterLink>
                 </div>
                 <div class="border-t border-warm-100 dark:border-white/6 py-1.5">
@@ -287,7 +293,7 @@ async function handleLogout() {
                     @click="handleLogout"
                     class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
                   >
-                    <LogOut :size="15" class="text-red-500" /> Sign Out
+                    <LogOut :size="15" class="text-red-500" /> {{ t('nav.signOut') }}
                   </button>
                 </div>
               </div>
@@ -302,7 +308,7 @@ async function handleLogout() {
             class="hidden sm:inline-flex items-center gap-1.5 btn-primary !py-1.5 !px-3.5 text-xs font-semibold shadow-sm ml-1"
           >
             <LogIn :size="14" />
-            <span>Sign In</span>
+            <span>{{ t('nav.login') }}</span>
           </RouterLink>
         </template>
 
@@ -356,8 +362,14 @@ async function handleLogout() {
               :size="17"
               :class="isActive(link.to) ? 'text-primary-500' : 'text-warm-400 dark:text-warm-600'"
             />
-            {{ link.label }}
+            {{ t(link.labelKey) }}
           </RouterLink>
+        </div>
+
+        <!-- Language Switcher in Mobile Menu -->
+        <div class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-warm-50 dark:bg-white/4 mb-3">
+          <span class="text-xs font-medium text-warm-600 dark:text-warm-400">ቋንቋ / Language</span>
+          <LanguageSwitcher />
         </div>
 
         <!-- Staff section -->
@@ -381,7 +393,7 @@ async function handleLogout() {
             >
               <Gauge v-if="auth.isAdmin" :size="17" class="text-warm-400" />
               <LayoutDashboard v-else    :size="17" class="text-warm-400" />
-              {{ auth.isAdmin ? 'Admin Dashboard' : 'Staff Portal' }}
+              {{ auth.isAdmin ? t('nav.dashboard') : t('nav.myPortal') }}
             </RouterLink>
 
             <button
@@ -389,7 +401,7 @@ async function handleLogout() {
               class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
             >
               <LogOut :size="17" class="text-red-500" />
-              Sign Out
+              {{ t('nav.signOut') }}
             </button>
           </div>
         </template>
@@ -407,13 +419,13 @@ async function handleLogout() {
               </div>
             </div>
             <RouterLink to="/profile" @click="mobileOpen = false" class="flex items-center gap-3 px-3 py-2 text-sm text-warm-700 dark:text-warm-300">
-              <User :size="17" class="text-warm-400" /> My Profile
+              <User :size="17" class="text-warm-400" /> {{ t('nav.profile') }}
             </RouterLink>
             <RouterLink to="/orders" @click="mobileOpen = false" class="flex items-center gap-3 px-3 py-2 text-sm text-warm-700 dark:text-warm-300">
-              <Package :size="17" class="text-warm-400" /> My Orders
+              <Package :size="17" class="text-warm-400" /> {{ t('nav.myOrders') }}
             </RouterLink>
             <button @click="handleLogout" class="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-              <LogOut :size="17" class="text-red-500" /> Sign Out
+              <LogOut :size="17" class="text-red-500" /> {{ t('nav.signOut') }}
             </button>
           </div>
         </template>
@@ -427,7 +439,7 @@ async function handleLogout() {
               class="w-full btn-primary justify-center py-2.5 text-sm font-semibold gap-2 shadow-sm"
             >
               <LogIn :size="16" />
-              <span>Sign In to Account</span>
+              <span>{{ t('nav.login') }}</span>
             </RouterLink>
           </div>
         </template>

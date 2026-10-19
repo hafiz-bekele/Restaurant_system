@@ -1,11 +1,13 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { guestApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import { AlertTriangle, CheckCircle } from '@lucide/vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const ui    = useUiStore()
 
@@ -21,13 +23,13 @@ const form = ref({
   description: '',
 })
 
-const categories = [
-  { value: 'late_food',      label: 'Late Food' },
-  { value: 'cold_dish',      label: 'Cold Dish' },
-  { value: 'missing_item',   label: 'Missing Item' },
-  { value: 'staff_behavior', label: 'Staff Behavior' },
-  { value: 'other',          label: 'Other' },
-]
+const categories = computed(() => [
+  { value: 'late_food',      label: t('guestComplaint.catLateFood') },
+  { value: 'cold_dish',      label: t('guestComplaint.catColdDish') },
+  { value: 'missing_item',   label: t('guestComplaint.catMissingItem') },
+  { value: 'staff_behavior', label: t('guestComplaint.catStaffBehavior') },
+  { value: 'other',          label: t('guestComplaint.catOther') },
+])
 
 async function submit() {
   loading.value = true
@@ -35,9 +37,9 @@ async function submit() {
     const { data } = await guestApi.submitComplaint(form.value)
     ticket.value = data.data
     done.value   = true
-    ui.toast('Complaint submitted', 'success')
+    ui.toast(t('guestComplaint.toastSubmitted'), 'success')
   } catch (e) {
-    ui.toast(e.response?.data?.message ?? 'Failed to submit complaint', 'error')
+    ui.toast(e.response?.data?.message ?? t('guestComplaint.toastFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -48,24 +50,24 @@ async function submit() {
   <DefaultLayout>
     <div class="page-container py-12 max-w-lg">
       <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-2 flex items-center gap-2">
-        <AlertTriangle :size="28" class="text-orange-500" /> Submit a Complaint
+        <AlertTriangle :size="28" class="text-orange-500" /> {{ $t('guestComplaint.title') }}
       </h1>
-      <p class="text-warm-500 dark:text-warm-400 mb-8">We're sorry to hear you had an issue. We'll look into it right away.</p>
+      <p class="text-warm-500 dark:text-warm-400 mb-8">{{ $t('guestComplaint.subtitle') }}</p>
 
       <!-- Success state -->
       <div v-if="done" class="card p-10 text-center space-y-4">
         <CheckCircle :size="52" class="mx-auto text-green-500" />
-        <h2 class="font-heading text-xl font-bold text-warm-900 dark:text-white">Complaint Received</h2>
-        <p class="text-warm-500">Your ticket number is:</p>
+        <h2 class="font-heading text-xl font-bold text-warm-900 dark:text-white">{{ $t('guestComplaint.receivedTitle') }}</h2>
+        <p class="text-warm-500">{{ $t('guestComplaint.ticketNumberText') }}</p>
         <p class="font-mono text-2xl font-bold text-primary-600 dark:text-primary-400">{{ ticket?.ticket_number }}</p>
-        <p class="text-sm text-warm-400">You can use this number to track your complaint status.</p>
-        <button @click="done = false" class="btn-outline">Submit Another</button>
+        <p class="text-sm text-warm-400">{{ $t('guestComplaint.trackStatusText') }}</p>
+        <button @click="done = false" class="btn-outline">{{ $t('guestComplaint.submitAnother') }}</button>
       </div>
 
       <!-- Form -->
       <form v-else @submit.prevent="submit" class="card p-8 space-y-5">
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Category</label>
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('guestComplaint.categoryLabel') }}</label>
           <div class="grid grid-cols-2 gap-2">
             <label
               v-for="cat in categories" :key="cat.value"
@@ -78,17 +80,17 @@ async function submit() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Subject</label>
-          <input v-model="form.subject" type="text" required maxlength="255" class="input" placeholder="Brief description of the issue" />
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('guestComplaint.subjectLabel') }}</label>
+          <input v-model="form.subject" type="text" required maxlength="255" class="input" :placeholder="$t('guestComplaint.subjectPlaceholder')" />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Details (optional)</label>
-          <textarea v-model="form.description" rows="4" maxlength="1000" class="input resize-none" placeholder="Tell us more about what happened…"></textarea>
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('guestComplaint.detailsLabel') }}</label>
+          <textarea v-model="form.description" rows="4" maxlength="1000" class="input resize-none" :placeholder="$t('guestComplaint.detailsPlaceholder')"></textarea>
         </div>
 
         <button type="submit" :disabled="loading" class="btn-primary w-full justify-center py-3">
-          {{ loading ? 'Submitting…' : 'Submit Complaint' }}
+          {{ loading ? $t('guestComplaint.submittingBtn') : $t('guestComplaint.submitBtn') }}
         </button>
       </form>
     </div>

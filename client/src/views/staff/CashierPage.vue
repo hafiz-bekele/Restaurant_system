@@ -616,250 +616,294 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Top Header Bar with Live Till Status & Action Buttons -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2.5">
-          <div class="p-2.5 rounded-2xl bg-primary-500/10 text-primary-600 dark:text-primary-400">
-            <CreditCard :size="24" />
+  <div class="space-y-4 max-w-7xl mx-auto">
+    <!-- 1. UNIFIED COMMAND HUB CARD (Master Control + Till Status + Financial Ribbon in ONE collected form) -->
+    <div class="card p-4 sm:p-5 shadow-sm space-y-3.5 border border-warm-200 dark:border-warm-800">
+      <!-- Row 1: Left (Title + Shift Status chip) | Right (Action Buttons) -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-2xl bg-primary-500/10 text-primary-600 dark:text-primary-400 shrink-0">
+            <CreditCard :size="22" />
           </div>
           <div>
-            <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-              {{ $t('cashierPage.title') }}
-              <span v-if="currentShiftData.has_active_shift" class="badge badge-green text-[10px] uppercase font-bold tracking-wider inline-flex items-center gap-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 class="font-heading text-lg sm:text-xl font-bold text-warm-900 dark:text-white">
+                {{ $t('cashierPage.title') }}
+              </h1>
+              <span
+                v-if="currentShiftData.has_active_shift"
+                class="badge badge-green text-[10px] uppercase font-bold tracking-wider inline-flex items-center gap-1.5 py-0.5 px-2"
+              >
                 <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                {{ $t('cashierPage.liveBadge') }}
+                {{ $t('cashierPage.liveBadge') }} #{{ currentShiftData.shift?.id }}
               </span>
-            </h1>
-            <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('cashierPage.subtitle') }}</p>
+              <span
+                v-else
+                class="badge badge-orange text-[10px] font-bold py-0.5 px-2 inline-flex items-center gap-1"
+              >
+                <AlertCircle :size="11" /> {{ $t('cashierPage.noActiveShift') }}
+              </span>
+            </div>
+            <p class="text-[11px] text-warm-500 dark:text-warm-400 mt-0.5">
+              <template v-if="currentShiftData.has_active_shift">
+                {{ currentShiftData.shift?.user?.name || auth.user?.name }} •
+                Opened {{ new Date(currentShiftData.shift?.opened_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }} •
+                Float: ETB {{ Number(currentShiftData.shift?.opening_float || 0).toFixed(2) }}
+              </template>
+              <template v-else>
+                {{ $t('cashierPage.noActiveShiftPrompt') }}
+              </template>
+            </p>
           </div>
         </div>
-      </div>
 
-      <!-- Till / Shift Controls -->
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          v-if="!currentShiftData.has_active_shift"
-          @click="showOpenShiftModal = true"
-          class="btn-primary text-xs py-2 px-3.5 inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 shadow-sm"
-        >
-          <Unlock :size="14" /> {{ $t('cashierPage.openShiftBtn') }}
-        </button>
-
-        <template v-else>
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-1.5 shrink-0 self-start sm:self-auto flex-wrap">
           <button
-            @click="showDrawerActionModal = true"
-            class="btn-outline text-xs py-2 px-3 inline-flex items-center gap-1"
+            v-if="!currentShiftData.has_active_shift"
+            @click="showOpenShiftModal = true"
+            class="btn-primary text-xs py-1.5 px-3.5 inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 shadow-xs font-semibold"
           >
-            <Wallet :size="14" /> {{ $t('cashierPage.drawerActionBtn') }}
+            <Unlock :size="13" /> {{ $t('cashierPage.openShiftBtn') }}
           </button>
-          <button
-            @click="openXReport"
-            class="btn-ghost text-xs py-2 px-3 inline-flex items-center gap-1"
-          >
-            <FileText :size="14" /> {{ $t('cashierPage.xReportBtn') }}
-          </button>
-          <button
-            @click="closingCashCounted = currentShiftData.summary?.expected_cash || 0; showCloseShiftModal = true"
-            class="btn-outline text-xs py-2 px-3 inline-flex items-center gap-1 text-red-600 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30"
-          >
-            <Lock :size="14" /> {{ $t('cashierPage.closeShiftBtn') }}
-          </button>
-        </template>
 
-        <button @click="fetchData" class="btn-ghost text-xs py-2 px-2.5" title="Refresh">
-          <RefreshCw :size="14" />
-        </button>
-      </div>
-    </div>
+          <template v-else>
+            <button
+              @click="showDrawerActionModal = true"
+              class="btn-outline text-xs py-1.5 px-2.5 inline-flex items-center gap-1 font-medium"
+            >
+              <Wallet :size="13" /> {{ $t('cashierPage.drawerActionBtn') }}
+            </button>
+            <button
+              @click="openXReport"
+              class="btn-ghost text-xs py-1.5 px-2.5 inline-flex items-center gap-1 font-medium text-warm-600 dark:text-warm-300"
+            >
+              <FileText :size="13" /> {{ $t('cashierPage.xReportBtn') }}
+            </button>
+            <button
+              @click="closingCashCounted = currentShiftData.summary?.expected_cash || 0; showCloseShiftModal = true"
+              class="btn-outline text-xs py-1.5 px-2.5 inline-flex items-center gap-1 text-red-600 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 font-medium"
+            >
+              <Lock :size="13" /> {{ $t('cashierPage.closeShiftBtn') }}
+            </button>
+          </template>
 
-    <!-- Active Shift Notification Banner or Closed Warning -->
-    <div
-      v-if="currentShiftData.has_active_shift && currentShiftData.shift"
-      class="p-4 rounded-2xl bg-primary-50 dark:bg-primary-950/30 border border-primary-200/80 dark:border-primary-800/40 flex flex-wrap items-center justify-between gap-3 text-xs"
-    >
-      <div class="flex items-center gap-3">
-        <div class="p-2 rounded-xl bg-white dark:bg-warm-800 text-primary-600 dark:text-primary-400 shadow-2xs">
-          <Clock :size="16" />
+          <button @click="fetchData" class="btn-ghost text-xs p-1.5 text-warm-500 hover:text-warm-800" title="Refresh">
+            <RefreshCw :size="14" />
+          </button>
         </div>
-        <div>
-          <p class="font-bold text-warm-900 dark:text-white text-sm">
-            {{ $t('cashierPage.shiftActive', { id: currentShiftData.shift.id }) }}
-          </p>
-          <p class="text-warm-500 dark:text-warm-400">
-            {{ $t('cashierPage.shiftActiveSubtitle', {
-              time: new Date(currentShiftData.shift.opened_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              name: currentShiftData.shift.user?.name || auth.user?.name,
-              float: Number(currentShiftData.shift.opening_float).toFixed(2)
-            }) }}
+      </div>
+
+      <!-- Row 2: Integrated Financial Metrics Ribbon (Collected Horizontal Ticker) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 pt-3 border-t border-warm-100 dark:border-warm-800">
+        <!-- Cash in Till -->
+        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400 flex items-center gap-1">
+            <DollarSign :size="11" /> {{ $t('cashierPage.cashInDrawer') }}
+          </span>
+          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+            ETB {{ Number(currentShiftData.summary?.expected_cash || summary.cash_total || 0).toFixed(2) }}
           </p>
         </div>
-      </div>
-      <div class="flex items-center gap-4 text-right">
-        <div>
-          <p class="text-[11px] text-warm-500 uppercase font-semibold">{{ $t('cashierPage.expectedDrawerCash', { amount: '' }) }}</p>
-          <p class="font-mono text-base font-bold text-primary-600 dark:text-primary-400">
-            ETB {{ Number(currentShiftData.summary?.expected_cash || 0).toFixed(2) }}
+
+        <!-- Telebirr -->
+        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1">
+            <Smartphone :size="11" /> {{ $t('cashierPage.digitalCollected') }}
+          </span>
+          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+            ETB {{ Number(summary.telebirr_total || summary.digital_total || 0).toFixed(2) }}
+          </p>
+        </div>
+
+        <!-- CBE Birr -->
+        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <Building2 :size="11" /> {{ $t('cashierPage.cbeCollected') }}
+          </span>
+          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+            ETB {{ Number(summary.cbe_total || 0).toFixed(2) }}
+          </p>
+        </div>
+
+        <!-- Card / POS -->
+        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
+            <CreditCard :size="11" /> {{ $t('cashierPage.cardCollected') }}
+          </span>
+          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+            ETB {{ Number(summary.card_total || 0).toFixed(2) }}
+          </p>
+        </div>
+
+        <!-- Room Charges -->
+        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1">
+            <BedDouble :size="11" /> {{ $t('cashierPage.roomChargeCollected') }}
+          </span>
+          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+            ETB {{ Number(summary.room_charge_total || 0).toFixed(2) }}
+          </p>
+        </div>
+
+        <!-- Grand Total -->
+        <div class="p-2.5 rounded-xl bg-primary-50 dark:bg-primary-950/40 border border-primary-200/60 dark:border-primary-800/60">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 flex items-center justify-between">
+            <span class="flex items-center gap-1"><TrendingUp :size="11" /> {{ $t('cashierPage.grandTotal') }}</span>
+            <span class="text-[9px] opacity-80">({{ summary.orders_count }})</span>
+          </span>
+          <p class="font-mono text-sm font-bold text-primary-700 dark:text-primary-300 mt-0.5">
+            ETB {{ Number(summary.grand_total || 0).toFixed(2) }}
           </p>
         </div>
       </div>
     </div>
 
-    <div
-      v-else
-      class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 flex flex-wrap items-center justify-between gap-3 text-xs"
-    >
-      <div class="flex items-center gap-3">
-        <div class="p-2 rounded-xl bg-white dark:bg-warm-800 text-amber-600 dark:text-amber-400 shadow-2xs">
-          <AlertCircle :size="16" />
+    <!-- 2. MASTER WORKSTATION CONTAINER (Collected & Consolidated POS Workspace) -->
+    <div class="card overflow-hidden shadow-sm border border-warm-200 dark:border-warm-800">
+      <!-- Master Navigation Bar: Segmented Workstation Switcher (Left) & Context Quick Controls (Right) -->
+      <div class="p-3 sm:p-3.5 bg-warm-50/70 dark:bg-warm-900/50 border-b border-warm-200/80 dark:border-warm-800/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Segmented Tab Switcher -->
+        <div class="inline-flex p-1 rounded-xl bg-warm-200/60 dark:bg-warm-800/60 gap-1 self-start md:self-auto">
+          <button
+            @click="activeTab = 'orders'"
+            :class="[
+              'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5',
+              activeTab === 'orders'
+                ? 'bg-white dark:bg-warm-700 text-warm-900 dark:text-white shadow-xs'
+                : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+            ]"
+          >
+            <Receipt :size="14" />
+            <span>{{ $t('cashierPage.tabs.orders') }}</span>
+            <span
+              v-if="unpaidOrdersCount > 0"
+              class="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-500 text-white"
+            >
+              {{ unpaidOrdersCount }}
+            </span>
+          </button>
+
+          <button
+            @click="activeTab = 'pos'"
+            :class="[
+              'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5',
+              activeTab === 'pos'
+                ? 'bg-white dark:bg-warm-700 text-warm-900 dark:text-white shadow-xs'
+                : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+            ]"
+          >
+            <ShoppingBag :size="14" />
+            <span>{{ $t('cashierPage.tabs.pos') }}</span>
+            <span
+              v-if="ticketItems.length > 0"
+              class="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-primary-500 text-white"
+            >
+              {{ ticketItems.length }}
+            </span>
+          </button>
+
+          <button
+            @click="activeTab = 'shifts'; loadShiftHistory()"
+            :class="[
+              'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5',
+              activeTab === 'shifts'
+                ? 'bg-white dark:bg-warm-700 text-warm-900 dark:text-white shadow-xs'
+                : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+            ]"
+          >
+            <FileText :size="14" />
+            <span>{{ $t('cashierPage.tabs.shifts') }}</span>
+          </button>
         </div>
-        <div>
-          <p class="font-bold text-warm-900 dark:text-white text-sm">{{ $t('cashierPage.noActiveShift') }}</p>
-          <p class="text-warm-500 dark:text-warm-400">{{ $t('cashierPage.noActiveShiftPrompt') }}</p>
-        </div>
-      </div>
-      <button @click="showOpenShiftModal = true" class="btn-primary text-xs py-1.5 px-3 bg-amber-600 hover:bg-amber-700">
-        {{ $t('cashierPage.openShiftBtn') }}
-      </button>
-    </div>
 
-    <!-- Live Shift Financial Summary Counters (Today's ETB Metrics) -->
-    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-      <!-- Cash in Drawer -->
-      <div class="card p-4 border-l-4 border-green-500">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-warm-500 mb-1">{{ $t('cashierPage.cashInDrawer') }}</p>
-        <p class="font-heading text-xl font-bold text-green-600 dark:text-green-400">
-          ETB {{ Number(currentShiftData.summary?.expected_cash || summary.cash_total || 0).toFixed(2) }}
-        </p>
-        <p class="text-[10px] text-warm-400 mt-0.5">Physical till register</p>
-      </div>
-
-      <!-- Telebirr & Mobile -->
-      <div class="card p-4 border-l-4 border-blue-500">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-warm-500 mb-1">{{ $t('cashierPage.digitalCollected') }}</p>
-        <p class="font-heading text-xl font-bold text-blue-600 dark:text-blue-400">
-          ETB {{ Number(summary.telebirr_total || summary.digital_total || 0).toFixed(2) }}
-        </p>
-        <p class="text-[10px] text-warm-400 mt-0.5">Telebirr / Chapa</p>
-      </div>
-
-      <!-- CBE Birr -->
-      <div class="card p-4 border-l-4 border-amber-500">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-warm-500 mb-1">{{ $t('cashierPage.cbeCollected') }}</p>
-        <p class="font-heading text-xl font-bold text-amber-600 dark:text-amber-400">
-          ETB {{ Number(summary.cbe_total || 0).toFixed(2) }}
-        </p>
-        <p class="text-[10px] text-warm-400 mt-0.5">Commercial Bank of Ethiopia</p>
-      </div>
-
-      <!-- Card / POS -->
-      <div class="card p-4 border-l-4 border-cyan-500">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-warm-500 mb-1">{{ $t('cashierPage.cardCollected') }}</p>
-        <p class="font-heading text-xl font-bold text-cyan-600 dark:text-cyan-400">
-          ETB {{ Number(summary.card_total || 0).toFixed(2) }}
-        </p>
-        <p class="text-[10px] text-warm-400 mt-0.5">Visa, Mastercard POS</p>
-      </div>
-
-      <!-- Room Charges -->
-      <div class="card p-4 border-l-4 border-purple-500">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-warm-500 mb-1">{{ $t('cashierPage.roomChargeCollected') }}</p>
-        <p class="font-heading text-xl font-bold text-purple-600 dark:text-purple-400">
-          ETB {{ Number(summary.room_charge_total || 0).toFixed(2) }}
-        </p>
-        <p class="text-[10px] text-warm-400 mt-0.5">Hotel Suite guest folios</p>
-      </div>
-
-      <!-- Grand Total -->
-      <div class="card p-4 border-l-4 border-primary-500">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-warm-500 mb-1">{{ $t('cashierPage.grandTotal') }}</p>
-        <p class="font-heading text-xl font-bold text-primary-600 dark:text-primary-400">
-          ETB {{ Number(summary.grand_total || 0).toFixed(2) }}
-        </p>
-        <p class="text-[10px] text-warm-400 mt-0.5">{{ $t('cashierPage.ordersCountToday', { count: summary.orders_count }) }}</p>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs Selector -->
-    <div class="flex items-center gap-2 border-b border-warm-200 dark:border-warm-800 pb-2">
-      <button
-        @click="activeTab = 'orders'"
-        :class="['px-4 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5', activeTab === 'orders' ? 'bg-primary-500 text-white shadow-sm' : 'text-warm-600 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-800']"
-      >
-        <Receipt :size="15" /> {{ $t('cashierPage.tabs.orders') }}
-        <span class="badge badge-orange text-[10px] ml-1">{{ orders.filter(o => o.payment_status === 'pending').length }}</span>
-      </button>
-
-      <button
-        @click="activeTab = 'pos'"
-        :class="['px-4 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5', activeTab === 'pos' ? 'bg-primary-500 text-white shadow-sm' : 'text-warm-600 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-800']"
-      >
-        <ShoppingBag :size="15" /> {{ $t('cashierPage.tabs.pos') }}
-      </button>
-
-      <button
-        @click="activeTab = 'shifts'; loadShiftHistory()"
-        :class="['px-4 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5', activeTab === 'shifts' ? 'bg-primary-500 text-white shadow-sm' : 'text-warm-600 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-800']"
-      >
-        <FileText :size="15" /> {{ $t('cashierPage.tabs.shifts') }}
-      </button>
-    </div>
-
-    <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <!-- TAB 1: ORDERS & BILL SETTLEMENT                                          -->
-    <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <div v-if="activeTab === 'orders'" class="space-y-4">
-      <!-- Search & Filters Toolbar -->
-      <div class="card p-4 space-y-3.5">
-        <!-- Main Filter Bar: Search, Status Pills with Icons, Toggle Advanced & Reset -->
-        <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <!-- Integrated Search & Filter Controls (Orders Tab) -->
+        <div v-if="activeTab === 'orders'" class="flex items-center gap-2 self-stretch md:self-auto">
           <!-- Search Input -->
-          <div class="relative w-full lg:w-80 shrink-0">
-            <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
+          <div class="relative flex-1 md:w-72">
+            <Search :size="14" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
             <input
               v-model="searchQuery"
               type="text"
-              class="input pl-9 pr-8 text-xs py-2 w-full shadow-2xs"
+              class="input pl-8 pr-7 text-xs py-1.5 w-full bg-white dark:bg-warm-800"
               :placeholder="$t('cashierPage.searchPlaceholder')"
             />
             <button
               v-if="searchQuery"
               @click="searchQuery = ''"
-              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-warm-400 hover:text-warm-600 dark:hover:text-warm-200"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-warm-400 hover:text-warm-600 dark:hover:text-warm-200"
             >
-              <X :size="14" />
+              <X :size="12" />
             </button>
           </div>
 
-          <!-- Primary Status Filter Pills with Icons -->
-          <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+          <!-- Advanced Filters Trigger -->
+          <button
+            @click="showAdvancedFilters = !showAdvancedFilters"
+            :class="[
+              'btn-outline text-xs py-1.5 px-2.5 inline-flex items-center gap-1.5 transition-all bg-white dark:bg-warm-800 shrink-0',
+              showAdvancedFilters || (typeFilter !== 'all' || methodFilter !== 'all' || dateFilter !== 'all' || sortBy !== 'newest')
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20'
+                : ''
+            ]"
+          >
+            <SlidersHorizontal :size="13" />
+            <span class="hidden sm:inline">{{ $t('cashierPage.filtersTitle') }}</span>
+            <span
+              v-if="activeFiltersCount > 0"
+              class="badge badge-orange text-[10px] font-bold"
+            >
+              {{ activeFiltersCount }}
+            </span>
+            <ChevronDown :size="12" :class="['transition-transform duration-200', showAdvancedFilters ? 'rotate-180' : '']" />
+          </button>
+
+          <!-- Reset Button -->
+          <button
+            v-if="hasActiveFilters"
+            @click="resetFilters"
+            class="btn-ghost text-xs py-1.5 px-2 text-warm-500 hover:text-red-500 inline-flex items-center gap-1 shrink-0"
+            :title="$t('cashierPage.filterReset')"
+          >
+            <RotateCcw :size="12" />
+            <span class="hidden sm:inline">{{ $t('cashierPage.clearAll') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ───────────────────────────────────────────────────────────────────────── -->
+      <!-- TAB 1: ORDERS & BILL SETTLEMENT                                          -->
+      <!-- ───────────────────────────────────────────────────────────────────────── -->
+      <div v-if="activeTab === 'orders'">
+        <!-- Status Filter Pills Sub-Row -->
+        <div class="px-3.5 py-2 bg-white dark:bg-warm-900 border-b border-warm-100 dark:border-warm-800/70 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5">
             <!-- All Orders -->
             <button
               @click="statusFilter = 'all'"
               :class="[
-                'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
                 statusFilter === 'all'
-                  ? 'bg-primary-500 text-white shadow-xs'
+                  ? 'bg-primary-500 text-white shadow-2xs'
                   : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-200 dark:hover:bg-warm-700'
               ]"
             >
-              <Receipt :size="13" />
+              <Receipt :size="12" />
               <span>{{ $t('cashierPage.filterAll') }}</span>
               <span class="opacity-75 text-[11px]">({{ orders.length }})</span>
             </button>
 
-            <!-- Unpaid / Action Needed (Highlighted with Clock and pulse badge) -->
+            <!-- Unpaid / Action Needed -->
             <button
               @click="statusFilter = 'pending'"
               :class="[
-                'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
                 statusFilter === 'pending'
-                  ? 'bg-amber-500 text-white shadow-xs'
-                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/40 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                  ? 'bg-amber-500 text-white shadow-2xs'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/40 hover:bg-amber-100'
               ]"
             >
-              <Clock :size="13" :class="unpaidOrdersCount > 0 ? 'animate-pulse text-amber-500 dark:text-amber-300' : ''" />
+              <Clock :size="12" :class="unpaidOrdersCount > 0 ? 'animate-pulse text-amber-500 dark:text-amber-300' : ''" />
               <span>{{ $t('cashierPage.filterPending') }}</span>
               <span
                 v-if="unpaidOrdersCount > 0"
@@ -873,13 +917,13 @@ onUnmounted(() => {
             <button
               @click="statusFilter = 'paid'"
               :class="[
-                'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
                 statusFilter === 'paid'
-                  ? 'bg-green-600 text-white shadow-xs'
+                  ? 'bg-green-600 text-white shadow-2xs'
                   : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-200 dark:hover:bg-warm-700'
               ]"
             >
-              <CheckCircle :size="13" class="text-green-500" />
+              <CheckCircle :size="12" class="text-green-500" />
               <span>{{ $t('cashierPage.filterPaid') }}</span>
               <span class="opacity-75 text-[11px]">({{ paidOrdersCount }})</span>
             </button>
@@ -888,50 +932,21 @@ onUnmounted(() => {
             <button
               @click="statusFilter = 'refunded'"
               :class="[
-                'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 whitespace-nowrap',
                 statusFilter === 'refunded'
-                  ? 'bg-red-600 text-white shadow-xs'
+                  ? 'bg-red-600 text-white shadow-2xs'
                   : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-200 dark:hover:bg-warm-700'
               ]"
             >
-              <RotateCcw :size="13" />
+              <RotateCcw :size="12" />
               <span>{{ $t('cashierPage.filterRefunded') }}</span>
               <span v-if="refundedOrdersCount > 0" class="opacity-75 text-[11px]">({{ refundedOrdersCount }})</span>
             </button>
           </div>
 
-          <!-- Controls: Advanced Filters Toggle & Reset Button -->
-          <div class="flex items-center gap-1.5 shrink-0 self-end lg:self-auto">
-            <button
-              @click="showAdvancedFilters = !showAdvancedFilters"
-              :class="[
-                'btn-outline text-xs py-1.5 px-3 inline-flex items-center gap-1.5 transition-all',
-                showAdvancedFilters || (typeFilter !== 'all' || methodFilter !== 'all' || dateFilter !== 'all' || sortBy !== 'newest')
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20'
-                  : ''
-              ]"
-            >
-              <SlidersHorizontal :size="13" />
-              <span>{{ $t('cashierPage.filtersTitle') }}</span>
-              <span
-                v-if="activeFiltersCount > 0"
-                class="badge badge-orange text-[10px] ml-0.5 font-bold"
-              >
-                {{ activeFiltersCount }}
-              </span>
-              <ChevronDown :size="13" :class="['transition-transform duration-200', showAdvancedFilters ? 'rotate-180' : '']" />
-            </button>
-
-            <button
-              v-if="hasActiveFilters"
-              @click="resetFilters"
-              class="btn-ghost text-xs py-1.5 px-2.5 text-warm-500 hover:text-red-500 inline-flex items-center gap-1"
-              :title="$t('cashierPage.filterReset')"
-            >
-              <RotateCcw :size="12" />
-              <span>{{ $t('cashierPage.clearAll') }}</span>
-            </button>
-          </div>
+          <span class="text-[11px] font-medium text-warm-400">
+            {{ $t('cashierPage.showingOrdersCount', { filtered: filteredOrders.length, total: orders.length }) }}
+          </span>
         </div>
 
         <!-- Collapsible Multi-Dimensional Filter Controls Panel -->
@@ -1083,10 +1098,8 @@ onUnmounted(() => {
             <RotateCcw :size="11" /> {{ $t('cashierPage.clearAll') }}
           </button>
         </div>
-      </div>
 
-      <!-- Orders Table -->
-      <div class="card overflow-hidden">
+        <!-- Orders Table (Seated directly in master workstation container) -->
         <TableSkeleton v-if="loading" :rows="6" :cols="6" />
 
         <div v-else-if="filteredOrders.length" class="overflow-x-auto">
@@ -1248,12 +1261,12 @@ onUnmounted(() => {
           <p class="font-medium text-sm">{{ $t('cashierPage.noOrdersFound') }}</p>
         </div>
       </div>
-    </div>
 
     <!-- ───────────────────────────────────────────────────────────────────────── -->
     <!-- TAB 2: QUICK POS REGISTER (COUNTER BILLING)                              -->
     <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <div v-else-if="activeTab === 'pos'" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div v-else-if="activeTab === 'pos'" class="p-4 sm:p-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       <!-- Left: Dish Catalog & Search (7 Cols) -->
       <div class="lg:col-span-7 space-y-4">
         <!-- Categories & Search Bar -->
@@ -1476,12 +1489,13 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+  </div>
 
     <!-- ───────────────────────────────────────────────────────────────────────── -->
     <!-- TAB 3: SHIFT HISTORY & Z-REPORTS                                         -->
     <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <div v-else-if="activeTab === 'shifts'" class="space-y-4">
-      <div class="card p-5">
+    <div v-else-if="activeTab === 'shifts'" class="p-4 sm:p-5 space-y-4">
+      <div>
         <h2 class="font-heading font-bold text-base text-warm-900 dark:text-white mb-4 flex items-center gap-2">
           <Clock :size="18" class="text-primary-500" /> {{ $t('cashierPage.shiftHistoryBtn') }}
         </h2>
@@ -1593,6 +1607,7 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+  </div>
 
     <!-- ───────────────────────────────────────────────────────────────────────── -->
     <!-- MODAL: MULTI-CHANNEL PAYMENT SETTLEMENT                                  -->

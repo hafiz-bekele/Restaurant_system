@@ -71,7 +71,7 @@ class OrderService
             ]);
 
             // Snapshot order items from cart
-            $cart->load(['items.dish', 'items.variant']);
+            $cart->load(['items.dish.category', 'items.variant']);
 
             foreach ($cart->items as $item) {
                 $price = (float) $item->dish->price;
@@ -89,7 +89,7 @@ class OrderService
                     'unit_price' => $price,
                     'quantity' => $item->quantity,
                     'options' => $item->options,
-                    'station' => $item->dish->category?->name,
+                    'station' => $item->dish->category?->name ?? 'kitchen',
                 ]);
             }
 

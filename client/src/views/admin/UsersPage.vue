@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Plus, Trash2, X, Key, Shield, ShieldCheck, Check, Search, Sliders, Users, AlertCircle, CheckCircle, RefreshCw } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
@@ -216,9 +218,15 @@ async function toggleUserDuty(user) {
   try {
     await adminApi.toggleUserDuty(user.id)
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
-    ui.toast(`${user.name} is now ${!user.on_duty ? 'ON DUTY' : 'OFF SHIFT'}`, 'success')
+    ui.toast(
+      t('adminUsers.toastDutyToggled', {
+        name: user.name,
+        status: !user.on_duty ? t('adminUsers.onDutyStatus') : t('adminUsers.offShiftStatus'),
+      }),
+      'success'
+    )
   } catch {
-    ui.toast('Failed to toggle duty status', 'error')
+    ui.toast(t('adminUsers.toastFailed'), 'error')
   }
 }
 
@@ -227,11 +235,17 @@ async function createUser() {
   try {
     await adminApi.createUser(newUserForm.value)
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
-    ui.toast(`Staff member ${newUserForm.value.name} onboarded as ${newUserForm.value.role}!`, 'success')
+    ui.toast(
+      t('adminUsers.toastOnboarded', {
+        name: newUserForm.value.name,
+        role: newUserForm.value.role,
+      }),
+      'success'
+    )
     showModal.value = false
   } catch (e) {
     const errors = e.response?.data?.errors
-    ui.toast(errors ? Object.values(errors).flat()[0] : 'Failed to create user', 'error')
+    ui.toast(errors ? Object.values(errors).flat()[0] : t('adminUsers.toastFailed'), 'error')
   } finally {
     saving.value = false
   }
@@ -255,7 +269,7 @@ function applyRoleDefaultPreset() {
   const currentRole = editForm.value.role
   if (rolePresets[currentRole]) {
     editForm.value.permissions = [...rolePresets[currentRole]]
-    ui.toast(`Applied default permissions for ${currentRole}`, 'success')
+    ui.toast(t('adminUsers.toastDefaultApplied', { role: currentRole }), 'success')
   }
 }
 
@@ -284,11 +298,11 @@ async function savePermissionsAndRole() {
       permissions: editForm.value.permissions,
     })
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
-    ui.toast(`Permissions and role updated for ${selectedUser.value.name}`, 'success')
+    ui.toast(t('adminUsers.toastPermsUpdated', { name: selectedUser.value.name }), 'success')
     showPermissionsModal.value = false
   } catch (e) {
     const errors = e.response?.data?.errors
-    ui.toast(errors ? Object.values(errors).flat()[0] : 'Failed to update permissions', 'error')
+    ui.toast(errors ? Object.values(errors).flat()[0] : t('adminUsers.toastFailed'), 'error')
   } finally {
     saving.value = false
   }
@@ -297,14 +311,14 @@ async function savePermissionsAndRole() {
 async function updateStatus(user, status) {
   await adminApi.updateUser(user.id, { status })
   qc.invalidateQueries({ queryKey: ['admin', 'users'] })
-  ui.toast(`Status updated for ${user.name}`, 'success')
+  ui.toast(t('adminUsers.toastStatusUpdated', { name: user.name }), 'success')
 }
 
 async function deleteUser(user) {
-  if (!confirm(`Are you sure you want to deactivate and remove ${user.name}?`)) return
+  if (!confirm(t('adminUsers.confirmDeactivate', { name: user.name }))) return
   await adminApi.deleteUser(user.id)
   qc.invalidateQueries({ queryKey: ['admin', 'users'] })
-  ui.toast('User removed from staff directory')
+  ui.toast(t('adminUsers.toastUserRemoved'))
 }
 
 const filteredPermissionGroups = computed(() => {
@@ -339,16 +353,16 @@ function roleBadgeClass(role) {
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2.5">
           <ShieldCheck :size="26" class="text-primary-500" />
-          Staff Access & Permissions Governance
+          {{ $t('adminUsers.title') }}
         </h1>
         <p class="text-xs text-warm-500 dark:text-warm-400 mt-1">
-          Assign operational roles, grant granular permissions, and manage staff shifts
+          {{ $t('adminUsers.subtitle') }}
         </p>
       </div>
 
       <div class="flex items-center gap-3">
         <button @click="openNewUserModal" class="btn-primary text-xs gap-1.5 py-2 px-3.5 shadow-sm">
-          <Plus :size="15" /> Onboard Staff
+          <Plus :size="15" /> {{ $t('adminUsers.addStaffBtn') }}
         </button>
       </div>
     </div>
@@ -358,8 +372,8 @@ function roleBadgeClass(role) {
       <div class="flex items-center gap-2.5 text-amber-800 dark:text-amber-200">
         <Shield :size="18" class="text-amber-500 shrink-0" />
         <div>
-          <span class="font-bold">Role-Based Access Governance Principle:</span>
-          Admins and Super Admins manage roles, grant permissions, and inspect audits. Operational duties (taking orders, cooking dishes, settling bills) are executed by designated staff personas.
+          <span class="font-bold">{{ $t('adminUsers.bannerPrincipleTitle') }}</span>
+          {{ $t('adminUsers.bannerPrincipleText') }}
         </div>
       </div>
       <div class="flex gap-2">
@@ -367,13 +381,13 @@ function roleBadgeClass(role) {
           @click="activeTab = 'directory'"
           :class="['px-3 py-1.5 rounded-xl font-semibold transition-all text-xs', activeTab === 'directory' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white dark:bg-warm-850 text-warm-700 dark:text-warm-300 border border-warm-200 dark:border-warm-700']"
         >
-          Staff Directory & Access
+          {{ $t('adminUsers.tabDirectory') }}
         </button>
         <button
           @click="activeTab = 'matrix'"
           :class="['px-3 py-1.5 rounded-xl font-semibold transition-all text-xs', activeTab === 'matrix' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white dark:bg-warm-850 text-warm-700 dark:text-warm-300 border border-warm-200 dark:border-warm-700']"
         >
-          RBAC Permissions Matrix
+          {{ $t('adminUsers.tabMatrix') }}
         </button>
       </div>
     </div>
@@ -389,21 +403,21 @@ function roleBadgeClass(role) {
               <input
                 v-model="search"
                 type="search"
-                placeholder="Search staff by name, email, section…"
+                :placeholder="$t('adminUsers.searchPlaceholder')"
                 class="input pl-9 w-60 sm:w-72 text-xs"
               />
             </div>
             <select v-model="roleFilter" class="input w-auto text-xs py-2">
-              <option value="">All Roles</option>
+              <option value="">{{ $t('adminUsers.filterAllRoles') }}</option>
               <option v-for="r in (rolesData ?? [])" :key="r.id" :value="r.name">{{ r.name }}</option>
             </select>
             <select v-model="dutyFilter" class="input w-auto text-xs py-2">
-              <option value="">All Shift States</option>
-              <option value="1">🟢 On Duty Only</option>
-              <option value="0">⚪ Off Shift Only</option>
+              <option value="">{{ $t('adminUsers.filterAllDuty') }}</option>
+              <option value="1">{{ $t('adminUsers.filterOnDuty') }}</option>
+              <option value="0">{{ $t('adminUsers.filterOffDuty') }}</option>
             </select>
           </div>
-          <p class="text-xs text-warm-500 font-medium">{{ users().length }} staff members found</p>
+          <p class="text-xs text-warm-500 font-medium">{{ $t('adminUsers.staffCount', { count: users().length }) }}</p>
         </div>
 
         <!-- Quick Role Switcher Pills -->
@@ -413,42 +427,42 @@ function roleBadgeClass(role) {
             @click="roleFilter = ''"
             :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === '' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
-            All Staff
+            {{ $t('adminUsers.filterAllStaff') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'manager'"
             :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'manager' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
-            Managers
+            {{ $t('adminUsers.filterManagers') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'reception'"
             :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'reception' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
-            Receptionists
+            {{ $t('adminUsers.filterReceptionists') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'waiter'"
             :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'waiter' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
-            Floor Waiters
+            {{ $t('adminUsers.filterWaiters') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'kitchen'"
             :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'kitchen' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
-            Kitchen Chefs
+            {{ $t('adminUsers.filterChefs') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'cashier'"
             :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'cashier' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
-            Cashiers
+            {{ $t('adminUsers.filterCashiers') }}
           </button>
         </div>
       </div>
@@ -461,12 +475,12 @@ function roleBadgeClass(role) {
         <table class="w-full text-sm text-left">
           <thead class="bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
             <tr>
-              <th class="px-5 py-3.5">Staff Member</th>
-              <th class="px-5 py-3.5">Role</th>
-              <th class="px-5 py-3.5">Permissions Granted</th>
-              <th class="px-5 py-3.5">Shift / Section</th>
-              <th class="px-5 py-3.5">Status</th>
-              <th class="px-5 py-3.5 text-right">Access Controls</th>
+              <th class="px-5 py-3.5">{{ $t('adminUsers.thStaffMember') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminUsers.thRole') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminUsers.thPermissions') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminUsers.thShiftSection') }}</th>
+              <th class="px-5 py-3.5">{{ $t('adminUsers.thStatus') }}</th>
+              <th class="px-5 py-3.5 text-right">{{ $t('adminUsers.thAccessControls') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
@@ -507,12 +521,12 @@ function roleBadgeClass(role) {
                   <span class="font-mono text-xs font-bold text-warm-800 dark:text-warm-200">
                     {{ user.permissions?.length ?? 0 }}
                   </span>
-                  <span class="text-[11px] text-warm-400">capabilities</span>
+                  <span class="text-[11px] text-warm-400">{{ $t('adminUsers.capabilitiesCount') }}</span>
                   <button
                     @click="openPermissionsModal(user)"
                     class="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 font-medium ml-1"
                   >
-                    <Key :size="12" /> Edit
+                    <Key :size="12" /> {{ $t('adminUsers.btnEdit') }}
                   </button>
                 </div>
               </td>
@@ -529,10 +543,10 @@ function roleBadgeClass(role) {
                         ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
                         : 'bg-warm-100 dark:bg-warm-800 text-warm-500 border-warm-200 dark:border-warm-700'
                     ]"
-                    :title="`Click to toggle duty shift status for ${user.name}`"
+                    :title="$t('adminUsers.toggleDutyTitle', { name: user.name })"
                   >
                     <span :class="['w-2 h-2 rounded-full', user.on_duty ? 'bg-emerald-500 animate-pulse' : 'bg-warm-400']"></span>
-                    <span>{{ user.on_duty ? 'On Duty' : 'Off Shift' }}</span>
+                    <span>{{ user.on_duty ? $t('adminUsers.onDutyBadge') : $t('adminUsers.offDutyBadge') }}</span>
                   </button>
 
                   <div v-if="user.section" class="text-[11px] font-medium text-warm-700 dark:text-warm-300 flex items-center gap-1">
@@ -540,7 +554,7 @@ function roleBadgeClass(role) {
                     <span class="truncate max-w-[180px]">{{ user.section }}</span>
                   </div>
                   <div v-else class="text-[10px] text-warm-400 italic">
-                    General / Unassigned
+                    {{ $t('adminUsers.generalUnassigned') }}
                   </div>
                 </div>
               </td>
@@ -552,9 +566,9 @@ function roleBadgeClass(role) {
                   @change="e => updateStatus(user, e.target.value)"
                   class="input text-xs py-1 px-2 w-auto font-medium"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="blocked">Blocked</option>
+                  <option value="active">{{ $t('adminUsers.statusActive') }}</option>
+                  <option value="inactive">{{ $t('adminUsers.statusInactive') }}</option>
+                  <option value="blocked">{{ $t('adminUsers.statusBlocked') }}</option>
                 </select>
               </td>
 
@@ -564,10 +578,10 @@ function roleBadgeClass(role) {
                   <button
                     @click="openPermissionsModal(user)"
                     class="btn-secondary text-xs py-1.5 px-2.5 gap-1 shadow-xs"
-                    title="Manage Permissions & Role"
+                    :title="$t('adminUsers.btnManageAccess')"
                   >
                     <Sliders :size="13" />
-                    <span>Manage Access</span>
+                    <span>{{ $t('adminUsers.btnManageAccess') }}</span>
                   </button>
                   <button
                     @click="deleteUser(user)"
@@ -582,7 +596,7 @@ function roleBadgeClass(role) {
 
             <tr v-if="!users().length">
               <td colspan="6" class="px-5 py-12 text-center text-warm-400 text-xs">
-                No staff members found matching criteria.
+                {{ $t('adminUsers.noUsersFound') }}
               </td>
             </tr>
           </tbody>
@@ -593,15 +607,15 @@ function roleBadgeClass(role) {
     <!-- TAB 2: RBAC Matrix Overview -->
     <div v-else class="card p-6 space-y-6">
       <div>
-        <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">Role-Based Access Control (RBAC) Matrix</h2>
-        <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Overview of default operational permissions mapped to each of the 7 system personas</p>
+        <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">{{ $t('adminUsers.matrixTitle') }}</h2>
+        <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('adminUsers.matrixSubtitle') }}</p>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left border-collapse">
           <thead>
             <tr class="bg-warm-100 dark:bg-warm-850 text-warm-700 dark:text-warm-300 border-b border-warm-200 dark:border-warm-800">
-              <th class="p-3 font-bold">Functional Capability</th>
+              <th class="p-3 font-bold">{{ $t('adminUsers.thCapability') }}</th>
               <th class="p-3 font-bold text-center">Super Admin</th>
               <th class="p-3 font-bold text-center">Admin</th>
               <th class="p-3 font-bold text-center">Manager</th>
@@ -662,9 +676,9 @@ function roleBadgeClass(role) {
             <div>
               <h3 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
                 <Sliders :size="18" class="text-primary-500" />
-                Assign Role & Permissions: {{ selectedUser?.name }}
+                {{ $t('adminUsers.modalEditTitle', { name: selectedUser?.name }) }}
               </h3>
-              <p class="text-xs text-warm-500 dark:text-warm-400">{{ selectedUser?.email }} • Direct Permissions &amp; Access Scope</p>
+              <p class="text-xs text-warm-500 dark:text-warm-400">{{ $t('adminUsers.modalEditSubtitle', { email: selectedUser?.email }) }}</p>
             </div>
           </div>
           <button @click="showPermissionsModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
@@ -675,18 +689,18 @@ function roleBadgeClass(role) {
           <!-- Role & Presets Row -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-warm-100/70 dark:bg-warm-900/50 border border-warm-200 dark:border-warm-800">
             <div>
-              <label class="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">Primary Role</label>
+              <label class="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.role') }}</label>
               <select v-model="editForm.role" class="input text-xs">
                 <option v-for="r in (rolesData ?? [])" :key="r.id" :value="r.name">{{ r.name }}</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">Account Status</label>
+              <label class="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.status') }}</label>
               <select v-model="editForm.status" class="input text-xs">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="blocked">Blocked</option>
+                <option value="active">{{ $t('adminUsers.statusActive') }}</option>
+                <option value="inactive">{{ $t('adminUsers.statusInactive') }}</option>
+                <option value="blocked">{{ $t('adminUsers.statusBlocked') }}</option>
               </select>
             </div>
 
@@ -695,10 +709,10 @@ function roleBadgeClass(role) {
                 type="button"
                 @click="applyRoleDefaultPreset"
                 class="btn-secondary text-xs py-2 px-3 gap-1.5 justify-center shadow-xs"
-                title="Reset permissions to the default template for the selected role"
+                :title="$t('adminUsers.applyDefaults', { role: editForm.role })"
               >
                 <RefreshCw :size="13" />
-                <span>Apply {{ editForm.role }} Defaults</span>
+                <span>{{ $t('adminUsers.applyDefaults', { role: editForm.role }) }}</span>
               </button>
             </div>
           </div>
@@ -708,14 +722,14 @@ function roleBadgeClass(role) {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
               <label class="font-bold text-warm-900 dark:text-warm-100 cursor-pointer flex items-center gap-2">
                 <input v-model="editForm.on_duty" type="checkbox" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500" />
-                <span>Staff Member is Currently On Duty (Active Shift)</span>
+                <span>{{ $t('adminUsers.staffOnDutyCheckbox') }}</span>
               </label>
 
               <div>
                 <input
                   v-model="editForm.section"
                   type="text"
-                  placeholder="Assigned Station / Desk / Section"
+                  :placeholder="$t('adminUsers.sectionStation')"
                   class="input text-xs"
                 />
               </div>
@@ -723,7 +737,7 @@ function roleBadgeClass(role) {
 
             <!-- Quick Station presets for the role -->
             <div v-if="sectionPresets[editForm.role]?.length" class="flex flex-wrap items-center gap-1 pt-1">
-              <span class="text-[10px] text-warm-400 font-semibold uppercase tracking-wider mr-1">Station Presets:</span>
+              <span class="text-[10px] text-warm-400 font-semibold uppercase tracking-wider mr-1">{{ $t('adminUsers.stationPresets') }}</span>
               <button
                 v-for="preset in sectionPresets[editForm.role]"
                 :key="preset"
@@ -748,12 +762,12 @@ function roleBadgeClass(role) {
               <input
                 v-model="permSearch"
                 type="search"
-                placeholder="Search granular permissions…"
+                :placeholder="$t('adminUsers.searchPermsPlaceholder')"
                 class="input pl-8 text-xs w-full"
               />
             </div>
             <span class="text-xs font-semibold text-primary-600 dark:text-primary-400 shrink-0">
-              {{ editForm.permissions.length }} permissions selected
+              {{ $t('adminUsers.permsSelected', { count: editForm.permissions.length }) }}
             </span>
           </div>
 
@@ -767,7 +781,7 @@ function roleBadgeClass(role) {
               <h4 class="font-bold text-xs uppercase tracking-wider text-warm-600 dark:text-warm-400 mb-3 flex items-center justify-between">
                 <span>{{ group.category }}</span>
                 <span :class="['text-[10px] font-semibold px-2 py-0.5 rounded-full', group.permissions.filter(p => isPermChecked(p.id)).length > 0 ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'text-warm-400 bg-warm-100 dark:bg-warm-800']">
-                  {{ group.permissions.filter(p => isPermChecked(p.id)).length }}/{{ group.permissions.length }} enabled
+                  {{ $t('adminUsers.enabledCount', { enabled: group.permissions.filter(p => isPermChecked(p.id)).length, total: group.permissions.length }) }}
                 </span>
               </h4>
 
@@ -809,11 +823,11 @@ function roleBadgeClass(role) {
         <!-- Modal Footer -->
         <div class="pt-3.5 mt-3.5 border-t border-warm-100 dark:border-warm-800 flex items-center justify-between gap-3">
           <p class="text-[11px] text-warm-400">
-            Changes take effect on the staff member's next request or active session.
+            {{ $t('adminUsers.changesEffectNote') }}
           </p>
           <div class="flex gap-2">
             <button type="button" @click="showPermissionsModal = false" class="btn-outline text-xs py-2 px-3.5">
-              Cancel
+              {{ $t('adminUsers.cancel') }}
             </button>
             <button
               type="button"
@@ -821,7 +835,7 @@ function roleBadgeClass(role) {
               :disabled="saving"
               class="btn-primary text-xs py-2 px-4 shadow-md font-semibold"
             >
-              {{ saving ? 'Saving Changes...' : 'Save Permissions & Role' }}
+              {{ saving ? $t('adminUsers.savingChanges') : $t('adminUsers.savePermsBtn') }}
             </button>
           </div>
         </div>
@@ -835,31 +849,31 @@ function roleBadgeClass(role) {
           <div class="card w-full max-w-md p-6 shadow-float">
             <div class="flex items-center justify-between mb-5">
               <div>
-                <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">Onboard New Staff Member</h2>
-                <p class="text-xs text-warm-500">Create account and assign initial operational role</p>
+                <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">{{ $t('adminUsers.modalAddTitle') }}</h2>
+                <p class="text-xs text-warm-500">{{ $t('adminUsers.modalAddSubtitle') }}</p>
               </div>
               <button @click="showModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
             </div>
 
             <form @submit.prevent="createUser" class="space-y-4">
               <div>
-                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Full Name *</label>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.fullName') }}</label>
                 <input v-model="newUserForm.name" type="text" required class="input text-xs" placeholder="e.g. Samuel Bekele" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Email Address *</label>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.email') }}</label>
                 <input v-model="newUserForm.email" type="email" required class="input text-xs" placeholder="samuel@restaurant.com" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Phone Number</label>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.phone') }}</label>
                 <input v-model="newUserForm.phone" type="tel" class="input text-xs" placeholder="+251 911 000 000" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Temporary Password *</label>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.password') }}</label>
                 <input v-model="newUserForm.password" type="password" required minlength="8" class="input text-xs" placeholder="Min. 8 characters" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Initial Role *</label>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.role') }}</label>
                 <select
                   :value="newUserForm.role"
                   @change="e => handleRoleChange(e.target.value)"
@@ -867,34 +881,12 @@ function roleBadgeClass(role) {
                 >
                   <option v-for="r in (rolesData ?? [])" :key="r.id" :value="r.name">{{ r.name }}</option>
                 </select>
-
-                <!-- Role Operational Scope Guidance -->
-                <div class="mt-1.5 p-2 rounded-xl bg-warm-50 dark:bg-warm-800/50 border border-warm-200 dark:border-warm-700 text-[11px] text-warm-600 dark:text-warm-300">
-                  <span v-if="newUserForm.role === 'manager'" class="font-medium text-blue-600 dark:text-blue-400">
-                    👑 Operations Manager: Full floor oversight, KDS, POS billing, order cancellations & table reassignment.
-                  </span>
-                  <span v-else-if="newUserForm.role === 'reception'" class="font-medium text-indigo-600 dark:text-indigo-400">
-                    🛎️ Front Desk Reception: Table floor plan seating, suite bookings, guest check-in & reservations.
-                  </span>
-                  <span v-else-if="newUserForm.role === 'waiter'" class="font-medium text-amber-600 dark:text-amber-400">
-                    🍽️ Floor Waiter: Ring up table orders, monitor kitchen cooking, deliver dishes to tables.
-                  </span>
-                  <span v-else-if="newUserForm.role === 'kitchen'" class="font-medium text-orange-600 dark:text-orange-400">
-                    👨‍🍳 Kitchen Chef: Kitchen Display System (KDS), ticket timing alerts, 86 stock controls.
-                  </span>
-                  <span v-else-if="newUserForm.role === 'cashier'" class="font-medium text-green-600 dark:text-green-400">
-                    💳 Cashier POS: Settle dining bills, thermal receipts, split payments & daily shift balance.
-                  </span>
-                  <span v-else class="text-warm-500">
-                    Assign initial operational role and department scope.
-                  </span>
-                </div>
               </div>
 
               <!-- Work Section / Desk / Station Assignment -->
               <div>
                 <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
-                  Assigned Section / Station / Desk
+                  {{ $t('adminUsers.sectionStation') }}
                 </label>
                 <input
                   v-model="newUserForm.section"
@@ -929,14 +921,14 @@ function roleBadgeClass(role) {
                     type="checkbox"
                     class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
                   />
-                  <span>Staff Member is On Duty (Available for Shifts & Orders)</span>
+                  <span>{{ $t('adminUsers.staffOnDutyAddCheckbox') }}</span>
                 </label>
               </div>
 
               <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">
-                <button type="button" @click="showModal = false" class="btn-outline flex-1 text-xs">Cancel</button>
+                <button type="button" @click="showModal = false" class="btn-outline flex-1 text-xs">{{ $t('adminUsers.cancel') }}</button>
                 <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
-                  {{ saving ? 'Onboarding…' : 'Create & Assign Role' }}
+                  {{ saving ? $t('adminUsers.onboardingBtn') : $t('adminUsers.createAssignBtn') }}
                 </button>
               </div>
             </form>

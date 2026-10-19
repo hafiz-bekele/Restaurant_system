@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { staffApi, menuApi, paymentApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { UtensilsCrossed, CheckCircle, Clock, Bell, RefreshCw, AlertCircle, Sparkles, Plus, X, Search, Trash2, User, Phone, MessageSquare, CreditCard } from '@lucide/vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 
 const loading = ref(true)
@@ -86,10 +88,10 @@ async function fetchData() {
 async function markServed(order) {
   try {
     await staffApi.markServed(order.ulid)
-    ui.toast(`Order #${order.ulid.slice(-6).toUpperCase()} marked as served to table!`, 'success')
+    ui.toast(t('waiterPage.orderServedToast', { ulid: order.ulid.slice(-6).toUpperCase() }), 'success')
     await fetchData()
   } catch (err) {
-    ui.toast('Failed to mark as served', 'error')
+    ui.toast(t('waiterPage.failedToSubmitOrder'), 'error')
   }
 }
 
@@ -99,10 +101,10 @@ async function markPaid(order) {
       order_ulid: order.ulid,
       payment_method: order.payment_method || 'cash'
     })
-    ui.toast(`Payment for order #${order.ulid.slice(-6).toUpperCase()} confirmed! Automatically marked as PAID.`, 'success')
+    ui.toast(t('waiterPage.orderPaidToast', { ulid: order.ulid.slice(-6).toUpperCase() }), 'success')
     await fetchData()
   } catch (err) {
-    ui.toast('Failed to record payment', 'error')
+    ui.toast(t('waiterPage.failedToSubmitOrder'), 'error')
   }
 }
 
@@ -169,11 +171,11 @@ async function submitOrder() {
       items: orderItems.value.map(i => ({ dish_id: i.dish_id, quantity: i.quantity })),
       notes: orderNotes.value || undefined,
     })
-    ui.toast('Order sent directly to Kitchen KDS!', 'success')
+    ui.toast(t('waiterPage.orderSentSuccess'), 'success')
     showOrderModal.value = false
     await fetchData()
   } catch (err) {
-    ui.toast(err.response?.data?.message || 'Failed to submit order', 'error')
+    ui.toast(err.response?.data?.message || t('waiterPage.failedToSubmitOrder'), 'error')
   } finally {
     submittingOrder.value = false
   }
@@ -202,16 +204,16 @@ onUnmounted(() => {
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-          <UtensilsCrossed :size="26" class="text-primary-500" /> Waiter Floor Terminal
+          <UtensilsCrossed :size="26" class="text-primary-500" /> {{ $t('waiterPage.title') }}
         </h1>
-        <p class="text-sm text-warm-500">Monitor table sections, receive kitchen pickup alerts, and take table orders.</p>
+        <p class="text-sm text-warm-500">{{ $t('waiterPage.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="openTakeOrder()" class="btn-primary text-xs gap-1.5 py-2 px-3.5 shadow-sm">
-          <Plus :size="15" /> Take New Table Order
+          <Plus :size="15" /> {{ $t('waiterPage.takeNewOrder') }}
         </button>
         <button @click="fetchData" class="btn-ghost text-xs gap-1.5 py-1.5 px-3">
-          <RefreshCw :size="14" /> Refresh
+          <RefreshCw :size="14" /> {{ $t('waiterPage.refresh') }}
         </button>
       </div>
     </div>
@@ -221,9 +223,9 @@ onUnmounted(() => {
       <div class="flex items-center justify-between p-4 border-b border-primary-200 dark:border-primary-900">
         <div class="flex items-center gap-2 text-primary-700 dark:text-primary-300 font-bold">
           <Bell :size="20" class="animate-bounce" />
-          <span>{{ readyOrders.length }} Order(s) READY for Table Delivery!</span>
+          <span>{{ $t('waiterPage.readyAlertBanner', { count: readyOrders.length }) }}</span>
         </div>
-        <span class="badge badge-green text-xs animate-pulse">Kitchen Dispatch Alert</span>
+        <span class="badge badge-green text-xs animate-pulse">{{ $t('waiterPage.kitchenDispatchAlert') }}</span>
       </div>
 
       <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -237,11 +239,11 @@ onUnmounted(() => {
               <span class="font-mono font-bold text-sm text-warm-900 dark:text-white">
                 #{{ order.ulid.slice(-6).toUpperCase() }}
               </span>
-              <span class="badge badge-green text-xs">Ready</span>
+              <span class="badge badge-green text-xs">{{ $t('waiterPage.readyBadge') }}</span>
             </div>
 
             <p class="text-sm font-semibold text-primary-600 dark:text-primary-400 mb-1">
-              {{ order.table ? `Table: ${order.table.name} (${order.table.area || 'Floor'})` : `Type: ${order.type}` }}
+              {{ order.table ? `${$t('kitchenPage.tableNum', { name: order.table.name })} (${order.table.area || 'Floor'})` : `${$t('kitchenPage.delivery')}: ${order.type}` }}
             </p>
 
             <!-- Guest customer info badge -->
@@ -270,7 +272,7 @@ onUnmounted(() => {
             @click="markServed(order)"
             class="btn-primary w-full justify-center text-xs py-2 gap-1.5 shadow-sm"
           >
-            <CheckCircle :size="15" /> Mark Delivered & Served
+            <CheckCircle :size="15" /> {{ $t('waiterPage.markServed') }}
           </button>
         </div>
       </div>
@@ -279,7 +281,7 @@ onUnmounted(() => {
     <!-- In Preparation Queue -->
     <div v-if="inProgressOrders.length" class="mb-8">
       <h2 class="font-heading font-semibold text-base text-warm-800 dark:text-warm-200 mb-3 flex items-center gap-2">
-        <Clock :size="18" class="text-amber-500" /> Currently Cooking in Kitchen ({{ inProgressOrders.length }})
+        <Clock :size="18" class="text-amber-500" /> {{ $t('kitchenPage.preparingOrders', { count: inProgressOrders.length }) }}
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div
@@ -292,9 +294,9 @@ onUnmounted(() => {
             <span class="badge badge-orange text-[10px] capitalize">{{ o.status }}</span>
           </div>
           <p class="font-semibold text-warm-900 dark:text-white">
-            {{ o.table ? `Table ${o.table.name}` : o.type }}
+            {{ o.table ? $t('kitchenPage.tableNum', { name: o.table.name }) : o.type }}
           </p>
-          <p class="text-warm-500 mt-1">{{ o.items?.length ?? 1 }} item(s)</p>
+          <p class="text-warm-500 mt-1">{{ o.items?.length ?? 1 }} {{ $t('trackingPage.dishFallback') }}</p>
         </div>
       </div>
     </div>
@@ -303,7 +305,7 @@ onUnmounted(() => {
     <div>
       <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
-          Floor Plan Tables
+          {{ $t('waiterPage.tablesFloorHeader') }}
         </h2>
 
         <!-- Area Filter Buttons -->
@@ -319,7 +321,7 @@ onUnmounted(() => {
                 : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-200'
             ]"
           >
-            {{ area }}
+            {{ area === 'All' ? $t('waiterPage.allAreas') : area }}
           </button>
         </div>
       </div>
@@ -363,12 +365,12 @@ onUnmounted(() => {
                   table.status === 'available' ? 'badge-green' : table.status === 'occupied' ? 'badge-orange' : 'badge'
                 ]"
               >
-                {{ table.status }}
+                {{ table.status === 'available' ? $t('waiterPage.tableStatusAvailable') : (table.status === 'occupied' ? $t('waiterPage.tableStatusOccupied') : $t('waiterPage.tableStatusReserved')) }}
               </span>
             </div>
 
             <div class="mt-3 pt-2 border-t border-warm-100 dark:border-warm-800 flex items-center justify-between text-xs text-warm-500">
-              <span>{{ table.capacity }} Seats</span>
+              <span>{{ $t('waiterPage.capacityGuests', { count: table.capacity }) }}</span>
               <span v-if="table.orders_count" class="text-primary-600 dark:text-primary-400 font-semibold font-mono">
                 {{ table.orders_count }} active
               </span>
@@ -379,7 +381,7 @@ onUnmounted(() => {
             @click="openTakeOrder(table)"
             class="btn-secondary text-[11px] py-1.5 px-2 mt-3 w-full justify-center gap-1 font-semibold"
           >
-            <Plus :size="13" /> Take Order
+            <Plus :size="13" /> {{ $t('waiterPage.takeNewOrder') }}
           </button>
         </div>
       </div>
@@ -392,9 +394,9 @@ onUnmounted(() => {
           <div>
             <h3 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
               <UtensilsCrossed :size="18" class="text-primary-500" />
-              Take Table Order
+              {{ $t('waiterPage.takeOrderModalTitle') }}
             </h3>
-            <p class="text-xs text-warm-500">Add dishes and submit directly to Kitchen KDS & auto-assign to you.</p>
+            <p class="text-xs text-warm-500">{{ $t('waiterPage.subtitle') }}</p>
           </div>
           <button @click="showOrderModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
         </div>
@@ -403,10 +405,12 @@ onUnmounted(() => {
           <!-- Left: Menu Selector -->
           <div class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Target Table *</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
+                {{ $t('waiterPage.selectFloorTable') }} *
+              </label>
               <select v-model="selectedTable" class="input text-xs">
                 <option v-for="t in tables" :key="t.id" :value="t.id">
-                  {{ t.name }} ({{ t.area || 'Floor' }}, {{ t.capacity }} seats)
+                  {{ $t('waiterPage.tableWithArea', { name: t.name, area: t.area || 'Floor', capacity: t.capacity }) }}
                 </option>
               </select>
             </div>
@@ -416,7 +420,7 @@ onUnmounted(() => {
               <input
                 v-model="dishSearch"
                 type="search"
-                placeholder="Search dishes..."
+                :placeholder="$t('waiterPage.searchMenuToOrder')"
                 class="input pl-8 text-xs"
               />
             </div>
@@ -430,7 +434,7 @@ onUnmounted(() => {
               >
                 <div>
                   <p class="font-semibold text-xs text-warm-900 dark:text-white">{{ d.name }}</p>
-                  <p class="text-[11px] text-warm-400">${{ Number(d.price).toFixed(2) }}</p>
+                  <p class="text-[11px] text-warm-400">ETB {{ Number(d.price).toFixed(2) }}</p>
                 </div>
                 <button type="button" class="btn-primary p-1 rounded-lg text-[10px]"><Plus :size="12" /></button>
               </div>
@@ -440,10 +444,12 @@ onUnmounted(() => {
           <!-- Right: Order Ticket Summary -->
           <div class="flex flex-col justify-between bg-warm-50 dark:bg-warm-900 p-3.5 rounded-2xl border border-warm-200 dark:border-warm-800">
             <div>
-              <h4 class="font-bold text-xs uppercase text-warm-600 dark:text-warm-400 mb-2">Order Items ({{ orderItems.length }})</h4>
+              <h4 class="font-bold text-xs uppercase text-warm-600 dark:text-warm-400 mb-2">
+                {{ $t('waiterPage.currentOrderSlip') }} ({{ orderItems.length }})
+              </h4>
 
               <div v-if="!orderItems.length" class="text-center py-8 text-xs text-warm-400 italic">
-                Click dishes on the left to add items to table bill
+                {{ $t('waiterPage.noItemsSelected') }}
               </div>
 
               <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -454,7 +460,7 @@ onUnmounted(() => {
                 >
                   <div class="flex-1 truncate mr-2">
                     <p class="font-semibold text-warm-900 dark:text-white truncate">{{ item.name }}</p>
-                    <span class="text-[10px] text-warm-400">${{ (item.price * item.quantity).toFixed(2) }}</span>
+                    <span class="text-[10px] text-warm-400">ETB {{ (item.price * item.quantity).toFixed(2) }}</span>
                   </div>
                   <div class="flex items-center gap-1.5 shrink-0">
                     <button type="button" @click="updateItemQty(idx, -1)" class="w-5 h-5 rounded bg-warm-200 dark:bg-warm-700 font-bold text-xs flex items-center justify-center">-</button>
@@ -466,27 +472,27 @@ onUnmounted(() => {
 
               <!-- Notes -->
               <div class="mt-3">
-                <input v-model="orderNotes" type="text" placeholder="Kitchen notes (e.g., no onions)..." class="input text-xs" />
+                <input v-model="orderNotes" type="text" :placeholder="$t('waiterPage.specialInstructionsNotes')" class="input text-xs" />
               </div>
             </div>
 
             <!-- Financials Breakdown -->
             <div class="pt-3 mt-3 border-t border-warm-200 dark:border-warm-800 space-y-1 text-xs">
               <div class="flex justify-between text-warm-500">
-                <span>Subtotal:</span>
-                <span>${{ orderSubtotal.toFixed(2) }}</span>
+                <span>{{ $t('waiterPage.subtotal') }}:</span>
+                <span>ETB {{ orderSubtotal.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between text-warm-500">
-                <span>Service Charge (10%):</span>
-                <span>${{ orderServiceCharge.toFixed(2) }}</span>
+                <span>{{ $t('waiterPage.serviceCharge') }}:</span>
+                <span>ETB {{ orderServiceCharge.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between text-warm-500">
-                <span>VAT Tax (15%):</span>
-                <span>${{ orderVat.toFixed(2) }}</span>
+                <span>{{ $t('waiterPage.vat') }}:</span>
+                <span>ETB {{ orderVat.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between font-bold text-sm text-warm-900 dark:text-white pt-1 border-t border-warm-200 dark:border-warm-800">
-                <span>Total Payable:</span>
-                <span class="text-primary-600 dark:text-primary-400">${{ orderGrandTotal.toFixed(2) }}</span>
+                <span>{{ $t('waiterPage.grandTotal') }}:</span>
+                <span class="text-primary-600 dark:text-primary-400">ETB {{ orderGrandTotal.toFixed(2) }}</span>
               </div>
 
               <button
@@ -494,7 +500,7 @@ onUnmounted(() => {
                 :disabled="!orderItems.length || submittingOrder"
                 class="btn-primary w-full justify-center text-xs py-2.5 mt-2 shadow-md"
               >
-                {{ submittingOrder ? 'Dispatching to Kitchen...' : 'Send Order to Kitchen KDS' }}
+                {{ submittingOrder ? $t('waiterPage.sending') : $t('waiterPage.sendOrderDirectToKds') }}
               </button>
             </div>
           </div>

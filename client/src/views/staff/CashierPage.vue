@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { CreditCard, DollarSign, Printer, CheckCircle, RefreshCw, AlertCircle, ShoppingBag, BedDouble, Receipt } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 import { APP_NAME } from '../../config'
 
+const { t } = useI18n()
 const ui = useUiStore()
 
 const loading = ref(true)
@@ -50,10 +52,10 @@ async function fetchData() {
 async function confirmPayment(order, method = 'cash') {
   try {
     await staffApi.confirmPayment(order.ulid, { payment_type: method })
-    ui.toast(`Payment for order #${order.ulid.slice(-6)} confirmed!`, 'success')
+    ui.toast(t('cashierPage.paymentConfirmedToast', { ulid: order.ulid.slice(-6).toUpperCase() }), 'success')
     await fetchData()
   } catch (err) {
-    ui.toast('Failed to confirm payment', 'error')
+    ui.toast(t('cashierPage.failedToConfirmPayment'), 'error')
   }
 }
 
@@ -82,45 +84,45 @@ onUnmounted(() => {
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-          <CreditCard :size="26" class="text-primary-500" /> Cashier &amp; POS Billing
+          <CreditCard :size="26" class="text-primary-500" /> {{ $t('cashierPage.title') }}
         </h1>
-        <p class="text-sm text-warm-500">Reconcile shift balances, settle bills, and issue fiscal receipts.</p>
+        <p class="text-sm text-warm-500">{{ $t('cashierPage.subtitle') }}</p>
       </div>
       <button @click="fetchData" class="btn-ghost text-xs gap-1.5 py-1.5 px-3">
-        <RefreshCw :size="14" /> Refresh
+        <RefreshCw :size="14" /> {{ $t('cashierPage.refresh') }}
       </button>
     </div>
 
     <!-- Shift Financial Balance Summary Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <div class="card p-5 border-l-4 border-green-500">
-        <p class="text-xs font-medium text-warm-500 mb-1">Cash Collected</p>
+        <p class="text-xs font-medium text-warm-500 mb-1">{{ $t('cashierPage.cashCollected') }}</p>
         <p class="font-heading text-2xl font-bold text-green-600 dark:text-green-400">
-          ${{ Number(summary.cash_total || 0).toFixed(2) }}
+          ETB {{ Number(summary.cash_total || 0).toFixed(2) }}
         </p>
         <p class="text-[11px] text-warm-400 mt-1">Cash drawer register</p>
       </div>
 
       <div class="card p-5 border-l-4 border-blue-500">
-        <p class="text-xs font-medium text-warm-500 mb-1">Digital / Cards / Chapa</p>
+        <p class="text-xs font-medium text-warm-500 mb-1">{{ $t('cashierPage.digitalCollected') }}</p>
         <p class="font-heading text-2xl font-bold text-blue-600 dark:text-blue-400">
-          ${{ Number(summary.digital_total || 0).toFixed(2) }}
+          ETB {{ Number(summary.digital_total || 0).toFixed(2) }}
         </p>
         <p class="text-[11px] text-warm-400 mt-1">Stripe, Chapa, Telebirr</p>
       </div>
 
       <div class="card p-5 border-l-4 border-purple-500">
-        <p class="text-xs font-medium text-warm-500 mb-1">Room Charges Billed</p>
+        <p class="text-xs font-medium text-warm-500 mb-1">{{ $t('cashierPage.roomChargeCollected') }}</p>
         <p class="font-heading text-2xl font-bold text-purple-600 dark:text-purple-400">
-          ${{ Number(summary.room_charge_total || 0).toFixed(2) }}
+          ETB {{ Number(summary.room_charge_total || 0).toFixed(2) }}
         </p>
         <p class="text-[11px] text-warm-400 mt-1">Hotel suite guest folios</p>
       </div>
 
       <div class="card p-5 border-l-4 border-primary-500">
-        <p class="text-xs font-medium text-warm-500 mb-1">Shift Total Revenue</p>
+        <p class="text-xs font-medium text-warm-500 mb-1">{{ $t('cashierPage.grandTotal') }}</p>
         <p class="font-heading text-2xl font-bold text-primary-600 dark:text-primary-400">
-          ${{ Number(summary.grand_total || 0).toFixed(2) }}
+          ETB {{ Number(summary.grand_total || 0).toFixed(2) }}
         </p>
         <p class="text-[11px] text-warm-400 mt-1">{{ summary.orders_count }} total orders today</p>
       </div>
@@ -130,26 +132,26 @@ onUnmounted(() => {
     <div class="card p-6">
       <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
-          <Receipt :size="20" class="text-primary-500" /> Recent Orders &amp; Billing
+          <Receipt :size="20" class="text-primary-500" /> {{ $t('cashierPage.title') }}
         </h2>
         <div class="flex gap-2">
           <button
             @click="filter = 'all'"
             :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filter === 'all' ? 'bg-primary-500 text-white' : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300']"
           >
-            All Orders ({{ orders.length }})
+            {{ $t('cashierPage.filterAll') }} ({{ orders.length }})
           </button>
           <button
             @click="filter = 'pending'"
             :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filter === 'pending' ? 'bg-amber-500 text-white' : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300']"
           >
-            Unpaid / Pending ({{ orders.filter(o => o.payment_status === 'pending').length }})
+            {{ $t('cashierPage.filterPending') }} ({{ orders.filter(o => o.payment_status === 'pending').length }})
           </button>
           <button
             @click="filter = 'paid'"
             :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filter === 'paid' ? 'bg-green-600 text-white' : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300']"
           >
-            Paid / Settled ({{ orders.filter(o => o.payment_status === 'paid').length }})
+            {{ $t('cashierPage.filterPaid') }} ({{ orders.filter(o => o.payment_status === 'paid').length }})
           </button>
         </div>
       </div>
@@ -160,24 +162,24 @@ onUnmounted(() => {
         <table class="w-full text-sm">
           <thead class="bg-warm-50 dark:bg-warm-800/60 text-warm-600 dark:text-warm-300 text-xs">
             <tr>
-              <th class="px-4 py-3 text-left font-semibold">Order / ULID</th>
-              <th class="px-4 py-3 text-left font-semibold">Customer / Destination</th>
-              <th class="px-4 py-3 text-left font-semibold">Method</th>
-              <th class="px-4 py-3 text-left font-semibold">Total Amount</th>
-              <th class="px-4 py-3 text-left font-semibold">Payment Status</th>
-              <th class="px-4 py-3 text-right font-semibold">Actions</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ $t('cashierPage.orderCol') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ $t('cashierPage.tableOrTypeCol') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ $t('checkoutPage.paymentMethod') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ $t('cashierPage.totalCol') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ $t('cashierPage.statusCol') }}</th>
+              <th class="px-4 py-3 text-right font-semibold">{{ $t('cashierPage.actionsCol') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
             <tr v-for="order in filteredOrders" :key="order.ulid" class="hover:bg-warm-50/50 dark:hover:bg-warm-850 transition-colors">
               <td class="px-4 py-3">
-                <span class="font-mono text-xs text-warm-500 font-semibold">{{ order.ulid.slice(-8) }}</span>
+                <span class="font-mono text-xs text-warm-500 font-semibold">#{{ order.ulid.slice(-8) }}</span>
                 <p class="text-[11px] text-warm-400">{{ order.items?.length ?? 0 }} items</p>
               </td>
               <td class="px-4 py-3">
-                <p class="font-medium text-warm-900 dark:text-white">{{ order.user?.name ?? 'Guest Customer' }}</p>
+                <p class="font-medium text-warm-900 dark:text-white">{{ order.user?.name ?? $t('trackingPage.receipt.guestDiner') }}</p>
                 <p class="text-xs text-warm-400">
-                  {{ order.type === 'dine_in' ? `Table ${order.table?.name ?? order.table_id ?? 'N/A'}` : order.type === 'delivery' ? 'Delivery Order' : 'Takeout' }}
+                  {{ order.type === 'dine_in' ? `${$t('kitchenPage.tableNum', { name: order.table?.name ?? order.table_id ?? 'N/A' })}` : order.type === 'delivery' ? $t('kitchenPage.delivery') : $t('kitchenPage.takeout') }}
                 </p>
               </td>
               <td class="px-4 py-3">
@@ -186,11 +188,11 @@ onUnmounted(() => {
                 </span>
               </td>
               <td class="px-4 py-3 font-semibold text-primary-600 dark:text-primary-400 font-mono text-sm">
-                ${{ Number(order.total).toFixed(2) }}
+                ETB {{ Number(order.total).toFixed(2) }}
               </td>
               <td class="px-4 py-3">
                 <span :class="['badge text-xs', order.payment_status === 'paid' ? 'badge-green' : 'badge-orange']">
-                  {{ order.payment_status === 'paid' ? 'Paid' : 'Unpaid' }}
+                  {{ order.payment_status === 'paid' ? $t('trackingPage.paidBadge') : $t('trackingPage.unpaidBadge') }}
                 </span>
               </td>
               <td class="px-4 py-3 text-right space-x-2">
@@ -199,13 +201,13 @@ onUnmounted(() => {
                   @click="confirmPayment(order, 'cash')"
                   class="btn-primary py-1 px-3 text-xs bg-green-600 hover:bg-green-700 inline-flex items-center gap-1"
                 >
-                  <DollarSign :size="13" /> Settle Cash
+                  <DollarSign :size="13" /> {{ $t('cashierPage.confirmCash') }}
                 </button>
                 <button
                   @click="openReceipt(order)"
                   class="btn-outline py-1 px-3 text-xs inline-flex items-center gap-1"
                 >
-                  <Printer :size="13" /> Receipt
+                  <Printer :size="13" /> {{ $t('cashierPage.viewReceipt') }}
                 </button>
               </td>
             </tr>
@@ -215,7 +217,7 @@ onUnmounted(() => {
 
       <div v-else class="text-center py-16 text-warm-400">
         <Receipt :size="48" class="mx-auto mb-3 opacity-30" />
-        <p class="font-medium">No orders matching filter</p>
+        <p class="font-medium">{{ $t('cashierPage.noOrdersFound') }}</p>
       </div>
     </div>
 
@@ -225,17 +227,17 @@ onUnmounted(() => {
         <!-- Printable area -->
         <div id="thermal-receipt" class="font-mono text-xs space-y-2 border-b border-dashed border-warm-300 pb-4">
           <div class="text-center border-b border-dashed border-warm-300 pb-3">
-            <h3 class="font-bold text-base tracking-wider uppercase">{{ APP_NAME }}</h3>
+            <h3 class="font-bold text-base tracking-wider uppercase">{{ $t('brandName') }}</h3>
             <p class="text-[10px] text-warm-500">{{ new Date().toLocaleString() }}</p>
           </div>
 
           <div class="flex justify-between text-[11px] pt-1">
-            <span>Order #: {{ selectedOrder.ulid.slice(-8) }}</span>
+            <span>{{ $t('trackingPage.receipt.orderRef') }}: #{{ selectedOrder.ulid.slice(-8) }}</span>
             <span class="capitalize">{{ selectedOrder.type }}</span>
           </div>
           <div class="flex justify-between text-[11px]">
-            <span>Guest: {{ selectedOrder.user?.name ?? 'Guest' }}</span>
-            <span v-if="selectedOrder.table">Table: {{ selectedOrder.table.name }}</span>
+            <span>{{ $t('trackingPage.receipt.customer') }}: {{ selectedOrder.user?.name ?? $t('trackingPage.receipt.guestDiner') }}</span>
+            <span v-if="selectedOrder.table">{{ $t('kitchenPage.tableNum', { name: selectedOrder.table.name }) }}</span>
           </div>
 
           <hr class="border-dashed border-warm-300 my-2" />
@@ -243,7 +245,7 @@ onUnmounted(() => {
           <div class="space-y-1">
             <div v-for="item in selectedOrder.items" :key="item.id" class="flex justify-between">
               <span>{{ item.quantity }}x {{ item.name_snapshot }}</span>
-              <span>${{ (Number(item.price_snapshot) * item.quantity).toFixed(2) }}</span>
+              <span>ETB {{ (Number(item.price_snapshot) * item.quantity).toFixed(2) }}</span>
             </div>
           </div>
 
@@ -251,43 +253,42 @@ onUnmounted(() => {
 
           <div class="space-y-1 text-right">
             <div class="flex justify-between">
-              <span>Subtotal:</span>
-              <span>${{ Number(selectedOrder.subtotal).toFixed(2) }}</span>
+              <span>{{ $t('cartPage.subtotal') }}:</span>
+              <span>ETB {{ Number(selectedOrder.subtotal || selectedOrder.total).toFixed(2) }}</span>
             </div>
             <div v-if="selectedOrder.service_charge" class="flex justify-between text-warm-500">
-              <span>Service Charge:</span>
-              <span>${{ Number(selectedOrder.service_charge).toFixed(2) }}</span>
+              <span>{{ $t('trackingPage.receipt.serviceCharge') }}:</span>
+              <span>ETB {{ Number(selectedOrder.service_charge).toFixed(2) }}</span>
             </div>
             <div v-if="selectedOrder.tax" class="flex justify-between text-warm-500">
-              <span>VAT:</span>
-              <span>${{ Number(selectedOrder.tax).toFixed(2) }}</span>
+              <span>{{ $t('cartPage.vat') }}:</span>
+              <span>ETB {{ Number(selectedOrder.tax).toFixed(2) }}</span>
             </div>
             <div v-if="selectedOrder.discount" class="flex justify-between text-green-600">
-              <span>Discount:</span>
-              <span>-${{ Number(selectedOrder.discount).toFixed(2) }}</span>
+              <span>{{ $t('cartPage.promoDiscount') }}:</span>
+              <span>-ETB {{ Number(selectedOrder.discount).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between font-bold text-sm pt-1 border-t border-dashed border-warm-300">
-              <span>TOTAL:</span>
-              <span>${{ Number(selectedOrder.total).toFixed(2) }}</span>
+              <span>{{ $t('cartPage.grandTotal') }}:</span>
+              <span>ETB {{ Number(selectedOrder.total).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between text-[11px] text-warm-500 pt-1">
-              <span>Method / Status:</span>
+              <span>{{ $t('trackingPage.receipt.paymentMethodStatus') }}:</span>
               <span class="capitalize font-semibold">{{ selectedOrder.payment_method }} ({{ selectedOrder.payment_status }})</span>
             </div>
           </div>
 
           <div class="text-center text-[10px] text-warm-400 pt-3">
-            <p>Thank you for dining with us!</p>
-            <p>Please come again.</p>
+            <p>{{ $t('trackingPage.receipt.thankYou') }}</p>
           </div>
         </div>
 
         <div class="flex gap-2">
           <button @click="printReceipt" class="btn-primary flex-1 justify-center py-2 text-xs">
-            <Printer :size="14" /> Print Thermal Slip
+            <Printer :size="14" /> {{ $t('trackingPage.receipt.printPdf') }}
           </button>
           <button @click="showReceiptModal = false" class="btn-outline flex-1 justify-center py-2 text-xs">
-            Close
+            {{ $t('common.close') }}
           </button>
         </div>
       </div>

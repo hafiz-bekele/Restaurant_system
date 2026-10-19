@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { staffApi, menuApi } from '../../services/api'
+import { useI18n } from 'vue-i18n'
+import { staffApi, menuApi, adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Clock, ChefHat, CheckCircle, Volume2, VolumeX, AlertTriangle, Flame, Utensils, X, ToggleLeft, ToggleRight, Search, User, Phone, MessageSquare } from '@lucide/vue'
 
+const { t } = useI18n()
 const ui     = useUiStore()
 const orders = ref([])
 const loading = ref(true)
@@ -22,7 +24,7 @@ async function openStockModal() {
     const { data } = await menuApi.dishes()
     dishes.value = data.data ?? []
   } catch {
-    ui.toast('Failed to load menu items', 'error')
+    ui.toast(t('kitchenPage.updateAvailabilityFailed'), 'error')
   } finally {
     loadingDishes.value = false
   }
@@ -33,10 +35,15 @@ async function toggleDishAvailability(dish) {
   dish.is_available = newStatus
   try {
     await adminApi.updateDish(dish.id, { is_available: newStatus })
-    ui.toast(`${dish.name} marked ${newStatus ? 'AVAILABLE' : 'OUT OF STOCK (86)'}`, newStatus ? 'success' : 'warning')
+    ui.toast(
+      newStatus
+        ? t('kitchenPage.markedAvailableToast', { name: dish.name })
+        : t('kitchenPage.markedSoldOutToast', { name: dish.name }),
+      newStatus ? 'success' : 'warning'
+    )
   } catch {
     dish.is_available = !newStatus
-    ui.toast('Failed to update dish availability', 'error')
+    ui.toast(t('kitchenPage.updateAvailabilityFailed'), 'error')
   }
 }
 
@@ -67,9 +74,9 @@ function playKitchenDing() {
   } catch {}
 }
 
-const newOrders      = computed(() => orders.value.filter(o => o.status === 'confirmed'))
+const newOrders       = computed(() => orders.value.filter(o => o.status === 'confirmed'))
 const preparingOrders = computed(() => orders.value.filter(o => o.status === 'preparing'))
-const readyOrders    = computed(() => orders.value.filter(o => o.status === 'ready'))
+const readyOrders     = computed(() => orders.value.filter(o => o.status === 'ready'))
 
 let lastOrdersCount = 0
 
@@ -94,9 +101,9 @@ async function updateStatus(id, status) {
   try {
     await staffApi.updateTicket(id, status)
     await fetchTickets()
-    ui.toast(`Ticket marked as ${status}`, 'success')
+    ui.toast(t('kitchenPage.ticketMarked', { status }), 'success')
   } catch {
-    ui.toast('Failed to update ticket', 'error')
+    ui.toast(t('kitchenPage.ticketUpdateFailed'), 'error')
   }
 }
 
@@ -117,7 +124,7 @@ function minutesAgo(dateStr) {
   return Math.max(0, Math.round((Date.now() - new Date(dateStr).getTime()) / 60000))
 }
 
-// REQ-8.2: Highlight elapsed preparation times vs target SLA
+// Highlight elapsed preparation times vs target SLA
 function getSlaStatus(order) {
   const elapsed = minutesAgo(order.created_at)
   const target = order.target_prep_time || 15 // minutes
@@ -128,7 +135,6 @@ function getSlaStatus(order) {
       badgeClass: 'badge-green',
       cardBorder: 'border-l-4 border-green-500',
       textClass: 'text-green-600 dark:text-green-400',
-      label: 'Normal (< 50%)',
     }
   } else if (elapsed <= target) {
     return {
@@ -136,7 +142,6 @@ function getSlaStatus(order) {
       badgeClass: 'badge-orange',
       cardBorder: 'border-l-4 border-amber-500 bg-amber-50/20 dark:bg-amber-950/20',
       textClass: 'text-amber-600 dark:text-amber-400',
-      label: 'Warning (50-100%)',
     }
   } else {
     return {
@@ -144,7 +149,6 @@ function getSlaStatus(order) {
       badgeClass: 'badge-red animate-pulse',
       cardBorder: 'border-l-4 border-red-500 bg-red-50/30 dark:bg-red-950/30 animate-pulse',
       textClass: 'text-red-600 dark:text-red-400 font-bold',
-      label: 'SLA Breach (> 100%)',
     }
   }
 }
@@ -155,9 +159,9 @@ function getSlaStatus(order) {
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-          <ChefHat :size="26" class="text-primary-500" /> Kitchen Display System (KDS)
+          <ChefHat :size="26" class="text-primary-500" /> {{ $t('kitchenPage.title') }}
         </h1>
-        <p class="text-sm text-warm-500">Live order queue with active SLA timers and audio alerts.</p>
+        <p class="text-sm text-warm-500">{{ $t('kitchenPage.subtitle') }}</p>
       </div>
 
       <div class="flex items-center gap-3">
@@ -168,7 +172,7 @@ function getSlaStatus(order) {
         >
           <Volume2 v-if="soundEnabled" :size="15" />
           <VolumeX v-else :size="15" />
-          {{ soundEnabled ? 'Audio Alerts On' : 'Audio Muted' }}
+          {{ soundEnabled ? $t('kitchenPage.audioAlertsOn') : $t('kitchenPage.audioMuted') }}
         </button>
 
         <!-- Stock Availability control -->
@@ -177,11 +181,11 @@ function getSlaStatus(order) {
           class="btn-secondary text-xs gap-1.5 py-1.5 px-3 rounded-xl border"
         >
           <Utensils :size="14" />
-          86 / Stock Availability
+          {{ $t('kitchenPage.stockAvailabilityBtn') }}
         </button>
 
         <button @click="fetchTickets" class="btn-ghost text-xs py-1.5 px-3">
-          Refresh
+          {{ $t('kitchenPage.refresh') }}
         </button>
       </div>
     </div>
@@ -208,7 +212,7 @@ function getSlaStatus(order) {
       <div>
         <div class="flex items-center justify-between mb-4">
           <h2 class="badge badge-blue text-sm font-semibold px-3 py-1.5">
-            New Orders ({{ newOrders.length }})
+            {{ $t('kitchenPage.newOrders', { count: newOrders.length }) }}
           </h2>
         </div>
 
@@ -228,9 +232,15 @@ function getSlaStatus(order) {
             </div>
 
             <div class="text-xs text-warm-500 mb-2">
-              <span v-if="order.table" class="font-medium text-warm-800 dark:text-warm-200">Table {{ order.table.name }}</span>
-              <span v-else-if="order.type === 'delivery'" class="text-primary-600 dark:text-primary-400 font-semibold">Delivery</span>
-              <span v-else class="text-warm-700 dark:text-warm-300">Takeout / Dine</span>
+              <span v-if="order.table" class="font-medium text-warm-800 dark:text-warm-200">
+                {{ $t('kitchenPage.tableNum', { name: order.table.name }) }}
+              </span>
+              <span v-else-if="order.type === 'delivery'" class="text-primary-600 dark:text-primary-400 font-semibold">
+                {{ $t('kitchenPage.delivery') }}
+              </span>
+              <span v-else class="text-warm-700 dark:text-warm-300">
+                {{ $t('kitchenPage.takeoutOrDine') }}
+              </span>
 
               <!-- Guest Diner Contact Badge -->
               <div v-if="order.address_snapshot?.customer_name" class="mt-1 flex items-center gap-1.5 text-[11px] text-warm-700 dark:text-warm-300 font-medium bg-warm-100/70 dark:bg-warm-800/80 px-2 py-0.5 rounded-md">
@@ -258,12 +268,12 @@ function getSlaStatus(order) {
               @click="updateStatus(order.ulid, 'preparing')"
               class="btn-primary w-full py-2 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm"
             >
-              <Flame :size="14" /> Start Preparing
+              <Flame :size="14" /> {{ $t('kitchenPage.startPreparing') }}
             </button>
           </div>
 
           <div v-if="!newOrders.length" class="card p-8 text-center text-warm-400 text-xs">
-            No incoming orders pending
+            {{ $t('kitchenPage.noIncomingOrders') }}
           </div>
         </div>
       </div>
@@ -272,7 +282,7 @@ function getSlaStatus(order) {
       <div>
         <div class="flex items-center justify-between mb-4">
           <h2 class="badge badge-orange text-sm font-semibold px-3 py-1.5">
-            Cooking / Preparing ({{ preparingOrders.length }})
+            {{ $t('kitchenPage.preparingOrders', { count: preparingOrders.length }) }}
           </h2>
         </div>
 
@@ -292,9 +302,15 @@ function getSlaStatus(order) {
             </div>
 
             <div class="text-xs text-warm-500 mb-2">
-              <span v-if="order.table" class="font-medium text-warm-800 dark:text-warm-200">Table {{ order.table.name }}</span>
-              <span v-else-if="order.type === 'delivery'" class="text-primary-600 dark:text-primary-400">Delivery</span>
-              <span v-else>Takeout</span>
+              <span v-if="order.table" class="font-medium text-warm-800 dark:text-warm-200">
+                {{ $t('kitchenPage.tableNum', { name: order.table.name }) }}
+              </span>
+              <span v-else-if="order.type === 'delivery'" class="text-primary-600 dark:text-primary-400">
+                {{ $t('kitchenPage.delivery') }}
+              </span>
+              <span v-else>
+                {{ $t('kitchenPage.takeout') }}
+              </span>
             </div>
 
             <ul class="space-y-1 mb-4 bg-warm-50 dark:bg-warm-800/40 p-2.5 rounded-xl text-xs">
@@ -307,12 +323,12 @@ function getSlaStatus(order) {
               @click="updateStatus(order.ulid, 'ready')"
               class="btn-primary w-full py-2 text-xs font-semibold bg-orange-600 hover:bg-orange-700 flex items-center justify-center gap-1.5 shadow-sm"
             >
-              <CheckCircle :size="14" /> Mark Order Ready
+              <CheckCircle :size="14" /> {{ $t('kitchenPage.markReady') }}
             </button>
           </div>
 
           <div v-if="!preparingOrders.length" class="card p-8 text-center text-warm-400 text-xs">
-            No orders in progress
+            {{ $t('kitchenPage.noOrdersInProgress') }}
           </div>
         </div>
       </div>
@@ -321,7 +337,7 @@ function getSlaStatus(order) {
       <div>
         <div class="flex items-center justify-between mb-4">
           <h2 class="badge badge-green text-sm font-semibold px-3 py-1.5">
-            Ready for Pickup ({{ readyOrders.length }})
+            {{ $t('kitchenPage.readyOrders', { count: readyOrders.length }) }}
           </h2>
         </div>
 
@@ -335,11 +351,11 @@ function getSlaStatus(order) {
               <span class="font-mono text-xs font-semibold text-warm-700 dark:text-warm-300">
                 #{{ order.ulid.slice(-8) }}
               </span>
-              <span class="badge badge-green text-[10px]">Awaiting Waiter / Driver</span>
+              <span class="badge badge-green text-[10px]">{{ $t('kitchenPage.awaitingWaiterOrDriver') }}</span>
             </div>
 
             <p class="text-xs text-warm-600 dark:text-warm-400 font-medium mb-2">
-              {{ order.table ? `Table ${order.table.name}` : `Destination: ${order.type}` }}
+              {{ order.table ? $t('kitchenPage.tableNum', { name: order.table.name }) : `${$t('kitchenPage.delivery')}: ${order.type}` }}
             </p>
 
             <ul class="space-y-1 bg-warm-50 dark:bg-warm-800/40 p-2.5 rounded-xl text-xs">
@@ -350,7 +366,7 @@ function getSlaStatus(order) {
           </div>
 
           <div v-if="!readyOrders.length" class="card p-8 text-center text-warm-400 text-xs">
-            No completed tickets waiting
+            {{ $t('kitchenPage.noCompletedWaiting') }}
           </div>
         </div>
       </div>
@@ -363,9 +379,9 @@ function getSlaStatus(order) {
           <div>
             <h3 class="font-heading font-bold text-warm-900 dark:text-white flex items-center gap-2">
               <Utensils :size="18" class="text-primary-500" />
-              Kitchen Item Availability (86 Stock List)
+              {{ $t('kitchenPage.stockModalTitle') }}
             </h3>
-            <p class="text-xs text-warm-500">Toggle sold-out items to instantly update the guest digital menu.</p>
+            <p class="text-xs text-warm-500">{{ $t('kitchenPage.stockModalSubtitle') }}</p>
           </div>
           <button @click="showStockModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
         </div>
@@ -374,13 +390,13 @@ function getSlaStatus(order) {
           <input
             v-model="dishSearch"
             type="search"
-            placeholder="Search menu dishes..."
+            :placeholder="$t('kitchenPage.searchDishes')"
             class="input text-xs"
           />
         </div>
 
         <div v-if="loadingDishes" class="p-8 text-center text-xs text-warm-400">
-          Loading catalog items...
+          {{ $t('kitchenPage.loadingCatalog') }}
         </div>
 
         <div v-else class="flex-1 overflow-y-auto divide-y divide-warm-100 dark:divide-warm-800 pr-1 space-y-1">
@@ -398,7 +414,7 @@ function getSlaStatus(order) {
               ></div>
               <div>
                 <p class="font-semibold text-xs text-warm-900 dark:text-white">{{ dish.name }}</p>
-                <p class="text-[11px] text-warm-500">${{ Number(dish.price).toFixed(2) }} · Prep: {{ dish.preparation_time ?? 15 }}m</p>
+                <p class="text-[11px] text-warm-500">ETB {{ Number(dish.price).toFixed(2) }} · Prep: {{ dish.preparation_time ?? 15 }}m</p>
               </div>
             </div>
 
@@ -413,17 +429,17 @@ function getSlaStatus(order) {
             >
               <ToggleRight v-if="dish.is_available" :size="16" class="text-emerald-600" />
               <ToggleLeft v-else :size="16" class="text-red-500" />
-              {{ dish.is_available ? 'Available' : '86 / Sold Out' }}
+              {{ dish.is_available ? $t('kitchenPage.available') : $t('kitchenPage.soldOut') }}
             </button>
           </div>
 
           <div v-if="filteredDishes.length === 0" class="text-center py-6 text-xs text-warm-400">
-            No dishes matching search query.
+            {{ $t('kitchenPage.noDishesFound') }}
           </div>
         </div>
 
         <div class="pt-3 border-t border-warm-100 dark:border-warm-800 text-right mt-3">
-          <button @click="showStockModal = false" class="btn-primary text-xs">Done</button>
+          <button @click="showStockModal = false" class="btn-primary text-xs">{{ $t('kitchenPage.done') }}</button>
         </div>
       </div>
     </div>

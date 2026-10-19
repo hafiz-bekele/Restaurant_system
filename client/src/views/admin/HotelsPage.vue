@@ -3,8 +3,10 @@ import { ref } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { useI18n } from 'vue-i18n'
 import { Building2, Plus, Edit2, Trash2, X, CheckCircle, Globe, Phone, Mail, MapPin } from '@lucide/vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
@@ -66,28 +68,28 @@ async function saveHotel() {
   try {
     if (editingHotel.value) {
       await adminApi.updateHotel(editingHotel.value.id, form.value)
-      ui.toast('Hotel property updated', 'success')
+      ui.toast(t('adminHotels.toastUpdated'), 'success')
     } else {
       await adminApi.createHotel(form.value)
-      ui.toast('New hotel tenant registered', 'success')
+      ui.toast(t('adminHotels.toastCreated'), 'success')
     }
     qc.invalidateQueries({ queryKey: ['admin', 'hotels'] })
     showModal.value = false
   } catch (e) {
-    ui.toast(e.response?.data?.message || 'Failed to save hotel', 'error')
+    ui.toast(e.response?.data?.message || t('adminHotels.toastFailed'), 'error')
   } finally {
     saving.value = false
   }
 }
 
 async function deleteHotel(hotel) {
-  if (!confirm(`Are you sure you want to delete "${hotel.name}"? This removes tenant scoping for this property.`)) return
+  if (!confirm(t('adminHotels.confirmDelete', { name: hotel.name }))) return
   try {
     await adminApi.deleteHotel(hotel.id)
     qc.invalidateQueries({ queryKey: ['admin', 'hotels'] })
-    ui.toast('Hotel deleted', 'success')
+    ui.toast(t('adminHotels.toastDeleted'), 'success')
   } catch {
-    ui.toast('Failed to delete hotel', 'error')
+    ui.toast(t('adminHotels.toastFailed'), 'error')
   }
 }
 </script>
@@ -99,14 +101,14 @@ async function deleteHotel(hotel) {
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
           <Building2 :size="24" class="text-primary-500" />
-          Multi-Tenant Properties (Hotels)
+          {{ $t('adminHotels.title') }}
         </h1>
         <p class="text-sm text-warm-500 dark:text-warm-400 mt-1">
-          Manage multi-property configuration and tenant scoping
+          {{ $t('adminHotels.subtitle') }}
         </p>
       </div>
       <button @click="openCreateModal" class="btn-primary gap-2 self-start sm:self-auto">
-        <Plus :size="16" /> Register New Hotel
+        <Plus :size="16" /> {{ $t('adminHotels.newPropertyBtn') }}
       </button>
     </div>
 
@@ -115,7 +117,7 @@ async function deleteHotel(hotel) {
       <input
         v-model="search"
         type="search"
-        placeholder="Search hotel name or email..."
+        :placeholder="$t('adminHotels.searchPlaceholder')"
         class="input w-full max-w-sm"
       />
     </div>
@@ -149,8 +151,7 @@ async function deleteHotel(hotel) {
 
     <div v-else-if="hotels().length === 0" class="card text-center py-12">
       <Building2 :size="48" class="mx-auto text-warm-300 dark:text-warm-700 mb-3" />
-      <h3 class="text-lg font-bold text-warm-800 dark:text-warm-200">No properties found</h3>
-      <p class="text-sm text-warm-500 mt-1">Register your first hotel tenant to begin multi-property operations.</p>
+      <h3 class="text-lg font-bold text-warm-800 dark:text-warm-200">{{ $t('adminHotels.noHotelsFound') }}</h3>
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -172,22 +173,22 @@ async function deleteHotel(hotel) {
               </div>
             </div>
             <span :class="['badge text-xs', hotel.is_active ? 'badge-green' : 'badge-red']">
-              {{ hotel.is_active ? 'Active' : 'Inactive' }}
+              {{ hotel.is_active ? $t('adminHotels.activeBadge') : $t('adminHotels.inactiveBadge') }}
             </span>
           </div>
 
           <!-- Financial Configurations -->
           <div class="grid grid-cols-3 gap-2 p-3 bg-warm-50 dark:bg-warm-850 rounded-xl mb-4 text-center">
             <div>
-              <span class="text-[10px] text-warm-400 uppercase font-semibold">Currency</span>
+              <span class="text-[10px] text-warm-400 uppercase font-semibold">{{ $t('adminHotels.currencyLabel') }}</span>
               <p class="text-sm font-bold text-warm-800 dark:text-warm-200">{{ hotel.currency }}</p>
             </div>
             <div>
-              <span class="text-[10px] text-warm-400 uppercase font-semibold">VAT Tax</span>
+              <span class="text-[10px] text-warm-400 uppercase font-semibold">{{ $t('adminHotels.vatLabel') }}</span>
               <p class="text-sm font-bold text-primary-600 dark:text-primary-400">{{ Number(hotel.vat_rate).toFixed(1) }}%</p>
             </div>
             <div>
-              <span class="text-[10px] text-warm-400 uppercase font-semibold">Service Fee</span>
+              <span class="text-[10px] text-warm-400 uppercase font-semibold">{{ $t('adminHotels.serviceChargeLabel') }}</span>
               <p class="text-sm font-bold text-primary-600 dark:text-primary-400">{{ Number(hotel.service_charge_rate).toFixed(1) }}%</p>
             </div>
           </div>
@@ -219,9 +220,9 @@ async function deleteHotel(hotel) {
         <!-- Action Buttons -->
         <div class="flex items-center gap-2 pt-4 mt-4 border-t border-warm-100 dark:border-warm-800">
           <button @click="openEditModal(hotel)" class="btn-secondary flex-1 py-1.5 text-xs justify-center gap-1.5">
-            <Edit2 :size="14" /> Edit
+            <Edit2 :size="14" /> {{ $t('adminHotels.editBtn') }}
           </button>
-          <button @click="deleteHotel(hotel)" class="btn-ghost text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 p-2 rounded-xl" title="Delete Hotel">
+          <button @click="deleteHotel(hotel)" class="btn-ghost text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 p-2 rounded-xl" :title="$t('adminHotels.deleteBtn')">
             <Trash2 :size="15" />
           </button>
         </div>
@@ -234,20 +235,20 @@ async function deleteHotel(hotel) {
         <div class="flex items-center justify-between pb-4 border-b border-warm-100 dark:border-warm-800 mb-4">
           <h2 class="font-heading text-lg font-bold text-warm-900 dark:text-white flex items-center gap-2">
             <Building2 :size="20" class="text-primary-500" />
-            {{ editingHotel ? 'Edit Hotel Tenant' : 'Register New Hotel Tenant' }}
+            {{ editingHotel ? $t('adminHotels.modalEditTitle') : $t('adminHotels.modalAddTitle') }}
           </h2>
           <button @click="showModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
         </div>
 
         <form @submit.prevent="saveHotel" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Hotel / Property Name *</label>
+            <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminHotels.propertyName') }} *</label>
             <input v-model="form.name" type="text" required class="input" placeholder="e.g. Grand Palace Hotel & Resort" />
           </div>
 
           <div class="grid grid-cols-3 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Currency</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminHotels.currency') }}</label>
               <select v-model="form.currency" class="input">
                 <option value="ETB">ETB (Birr)</option>
                 <option value="USD">USD ($)</option>
@@ -255,40 +256,40 @@ async function deleteHotel(hotel) {
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">VAT Rate (%)</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminHotels.vatRate') }}</label>
               <input v-model.number="form.vat_rate" type="number" step="0.01" min="0" max="100" class="input" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Service Fee (%)</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminHotels.serviceChargeRate') }}</label>
               <input v-model.number="form.service_charge_rate" type="number" step="0.01" min="0" max="100" class="input" />
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Phone</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminHotels.phone') }}</label>
               <input v-model="form.phone" type="text" class="input" placeholder="+251 91 123 4567" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Email</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminHotels.email') }}</label>
               <input v-model="form.email" type="email" class="input" placeholder="info@hotel.com" />
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Physical Address</label>
+            <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminHotels.address') }}</label>
             <textarea v-model="form.address" rows="2" class="input" placeholder="Bole Sub-City, Addis Ababa, Ethiopia"></textarea>
           </div>
 
           <div class="flex items-center gap-2 pt-2">
             <input id="isActiveCheckbox" v-model="form.is_active" type="checkbox" class="rounded text-primary-600 focus:ring-primary-500" />
-            <label for="isActiveCheckbox" class="text-xs font-semibold text-warm-800 dark:text-warm-200">Property is active and accepting bookings</label>
+            <label for="isActiveCheckbox" class="text-xs font-semibold text-warm-800 dark:text-warm-200">{{ $t('adminHotels.isActive') }}</label>
           </div>
 
           <div class="flex justify-end gap-3 pt-4 border-t border-warm-100 dark:border-warm-800">
-            <button type="button" @click="showModal = false" class="btn-ghost">Cancel</button>
+            <button type="button" @click="showModal = false" class="btn-ghost">{{ $t('adminHotels.cancel') }}</button>
             <button type="submit" :disabled="saving" class="btn-primary">
-              {{ saving ? 'Saving Property...' : (editingHotel ? 'Save Changes' : 'Create Property') }}
+              {{ saving ? $t('adminHotels.saving') : (editingHotel ? $t('adminHotels.saveProperty') : $t('adminHotels.saveProperty')) }}
             </button>
           </div>
         </form>

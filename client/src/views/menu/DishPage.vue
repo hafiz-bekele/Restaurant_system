@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useI18n } from 'vue-i18n'
 import { menuApi, reviewApi } from '../../services/api'
 import { useCartStore } from '../../stores/cart'
 import { useUiStore }   from '../../stores/ui'
@@ -9,6 +10,7 @@ import { useAuthStore } from '../../stores/auth'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import { Star, Clock, Leaf, Plus, Minus, MessageSquare, ThumbsUp, Send, CheckCircle2 } from '@lucide/vue'
 
+const { t }       = useI18n()
 const route       = useRoute()
 const router      = useRouter()
 const queryClient = useQueryClient()
@@ -26,13 +28,13 @@ const ratingHover = ref(0)
 const newRating   = ref(5)
 const newComment  = ref('')
 
-const ratingLabels = {
-  1: 'Poor — Did not enjoy',
-  2: 'Fair — Needs improvement',
-  3: 'Good — Met expectations',
-  4: 'Very Good — Really enjoyed',
-  5: 'Exceptional — Absolutely loved it!',
-}
+const ratingLabels = computed(() => ({
+  1: t('dish.rating1'),
+  2: t('dish.rating2'),
+  3: t('dish.rating3'),
+  4: t('dish.rating4'),
+  5: t('dish.rating5'),
+}))
 
 // Fetch dish details
 const { data: dish, isLoading } = useQuery({
@@ -197,9 +199,9 @@ function getInitials(name) {
           <div>
             <div class="flex flex-wrap gap-2 mb-3">
               <span v-if="dish.category?.name" class="badge badge-orange font-semibold">{{ dish.category.name }}</span>
-              <span v-if="dish.is_vegetarian" class="badge badge-green font-semibold">Vegetarian</span>
-              <span v-if="dish.is_vegan"      class="badge badge-green font-semibold">Vegan</span>
-              <span v-if="dish.spice_level > 0" class="badge badge-red font-semibold">Spice Level {{ dish.spice_level }}/3</span>
+              <span v-if="dish.is_vegetarian" class="badge badge-green font-semibold">{{ $t('menu.veg') }}</span>
+              <span v-if="dish.is_vegan"      class="badge badge-green font-semibold">{{ $t('menu.vegan') }}</span>
+              <span v-if="dish.spice_level > 0" class="badge badge-red font-semibold">{{ $t('dish.spiceLevel', { level: dish.spice_level }) }}</span>
             </div>
 
             <h1 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">{{ dish.name }}</h1>
@@ -209,11 +211,11 @@ function getInitials(name) {
             <div class="flex items-center gap-5 text-sm text-warm-500 dark:text-warm-400 mb-6 pb-6 border-b border-warm-100 dark:border-warm-800">
               <div class="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-xl font-medium">
                 <Star :size="16" class="text-amber-500 fill-amber-500" />
-                <span class="font-bold">{{ summaryStats.avg > 0 ? summaryStats.avg.toFixed(1) : 'New' }}</span>
-                <span v-if="summaryStats.total > 0" class="text-xs text-amber-600/80 dark:text-amber-400/80">({{ summaryStats.total }} reviews)</span>
+                <span class="font-bold">{{ summaryStats.avg > 0 ? summaryStats.avg.toFixed(1) : $t('dish.newBadge') }}</span>
+                <span v-if="summaryStats.total > 0" class="text-xs text-amber-600/80 dark:text-amber-400/80">{{ $t('dish.reviewsCount', { count: summaryStats.total }) }}</span>
               </div>
-              <span v-if="dish.prep_time" class="flex items-center gap-1.5"><Clock :size="16" class="text-warm-400" />{{ dish.prep_time }} mins prep</span>
-              <span v-if="dish.calories" class="flex items-center gap-1.5"><Leaf :size="16" class="text-warm-400" />{{ dish.calories }} kcal</span>
+              <span v-if="dish.prep_time" class="flex items-center gap-1.5"><Clock :size="16" class="text-warm-400" />{{ $t('dish.prepTime', { time: dish.prep_time }) }}</span>
+              <span v-if="dish.calories" class="flex items-center gap-1.5"><Leaf :size="16" class="text-warm-400" />{{ $t('dish.calories', { calories: dish.calories }) }}</span>
             </div>
 
             <!-- Price & Order Actions -->
@@ -221,7 +223,7 @@ function getInitials(name) {
               <span class="font-heading text-4xl font-extrabold text-primary-600 dark:text-primary-400">
                 ${{ Number(dish.price).toFixed(2) }}
               </span>
-              <span class="text-xs uppercase tracking-wider text-warm-400 font-semibold">Per Serving</span>
+              <span class="text-xs uppercase tracking-wider text-warm-400 font-semibold">{{ $t('dish.perServing') }}</span>
             </div>
 
             <div class="flex items-center gap-4 mb-6">
@@ -248,17 +250,17 @@ function getInitials(name) {
                 :disabled="loading"
                 class="btn-primary flex-1 justify-center py-3.5 text-base font-semibold shadow-lg shadow-primary-500/20"
               >
-                {{ loading ? 'Adding...' : `Add to Cart — $${(Number(dish.price) * qty).toFixed(2)}` }}
+                {{ loading ? $t('dish.adding') : $t('dish.addToCartWithPrice', { price: (Number(dish.price) * qty).toFixed(2) }) }}
               </button>
             </div>
 
             <!-- Allergens Note -->
             <div v-if="dish.allergens?.length" class="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-200/50 dark:border-amber-900/40">
               <p class="text-xs font-bold text-amber-800 dark:text-amber-400 mb-1 flex items-center gap-1.5">
-                <Leaf :size="14" /> Dietary & Allergen Information
+                <Leaf :size="14" /> {{ $t('dish.dietaryAllergens') }}
               </p>
               <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                Contains: {{ dish.allergens.map(a => a.name).join(', ') }}
+                {{ $t('dish.contains') }} {{ dish.allergens.map(a => a.name).join(', ') }}
               </p>
             </div>
           </div>
@@ -270,10 +272,10 @@ function getInitials(name) {
             <div>
               <h2 class="font-heading text-2xl md:text-3xl font-bold text-warm-900 dark:text-white flex items-center gap-3">
                 <Star :size="28" class="text-amber-400 fill-amber-400" />
-                Ratings & Customer Reviews
+                {{ $t('dish.ratingsAndReviews') }}
               </h2>
               <p class="text-warm-500 dark:text-warm-400 text-sm mt-1">
-                Authentic feedback from diners who savored this dish.
+                {{ $t('dish.ratingsSubtitle') }}
               </p>
             </div>
 
@@ -282,7 +284,7 @@ function getInitials(name) {
               class="btn-secondary gap-2 self-start md:self-auto py-2.5 px-5 rounded-2xl"
             >
               <MessageSquare :size="16" />
-              <span>{{ showReviewForm ? 'Cancel Review' : 'Write a Review' }}</span>
+              <span>{{ showReviewForm ? $t('dish.cancelReview') : $t('dish.writeReview') }}</span>
             </button>
           </div>
 
@@ -292,17 +294,17 @@ function getInitials(name) {
             class="card p-6 md:p-8 mb-10 bg-gradient-to-br from-amber-500/5 via-primary-500/5 to-transparent border border-amber-500/20 rounded-3xl"
           >
             <h3 class="font-heading text-lg font-bold text-warm-900 dark:text-white mb-2">
-              Rate your dining experience with {{ dish.name }}
+              {{ $t('dish.rateExperience', { name: dish.name }) }}
             </h3>
             <p class="text-xs text-warm-500 dark:text-warm-400 mb-6">
-              Share what made this meal special — flavor profile, texture, aroma, or presentation.
+              {{ $t('dish.ratePrompt') }}
             </p>
 
             <form @submit.prevent="handleReviewSubmit" class="space-y-6">
               <!-- Interactive 5-Star Picker -->
               <div>
                 <label class="block text-xs font-semibold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-2">
-                  Your Overall Rating
+                  {{ $t('dish.overallRating') }}
                 </label>
                 <div class="flex items-center gap-2">
                   <div class="flex items-center gap-1.5">
@@ -335,29 +337,29 @@ function getInitials(name) {
               <!-- Comment Field -->
               <div>
                 <label for="review-comment" class="block text-xs font-semibold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-2">
-                  Your Review & Taste Notes (Optional)
+                  {{ $t('dish.reviewNotes') }}
                 </label>
                 <textarea
                   id="review-comment"
                   v-model="newComment"
                   rows="3"
                   maxlength="1000"
-                  placeholder="How was the flavor balance? Was it cooked to perfection? Would you order it again?"
+                  :placeholder="$t('dish.reviewPlaceholder')"
                   class="input w-full resize-none text-sm p-3.5 rounded-2xl"
                 ></textarea>
                 <div class="text-right text-xs text-warm-400 mt-1">
-                  {{ newComment.length }}/1000 characters
+                  {{ newComment.length }}/1000 {{ $t('dish.characters') }}
                 </div>
               </div>
 
               <!-- Submit Button -->
               <div class="flex items-center justify-between pt-2">
                 <p v-if="!auth.isAuthenticated" class="text-xs text-amber-600 dark:text-amber-400">
-                  You will be prompted to login to authenticate your review.
+                  {{ $t('dish.loginPrompt') }}
                 </p>
                 <div v-else class="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
                   <CheckCircle2 :size="14" />
-                  Posting as {{ auth.user?.name }}
+                  {{ $t('dish.postingAs', { name: auth.user?.name }) }}
                 </div>
 
                 <button
@@ -366,7 +368,7 @@ function getInitials(name) {
                   class="btn-primary gap-2 py-2.5 px-6 rounded-2xl shadow-md"
                 >
                   <Send :size="16" />
-                  <span>{{ submittingReview ? 'Publishing...' : 'Submit Review' }}</span>
+                  <span>{{ submittingReview ? $t('dish.publishing') : $t('dish.submitReview') }}</span>
                 </button>
               </div>
             </form>
@@ -393,7 +395,7 @@ function getInitials(name) {
                 />
               </div>
               <p class="text-xs text-warm-500 font-medium">
-                {{ summaryStats.total }} verified {{ summaryStats.total === 1 ? 'rating' : 'ratings' }}
+                {{ summaryStats.total }} {{ $t('dish.verifiedRatings') }}
               </p>
             </div>
 
@@ -451,7 +453,7 @@ function getInitials(name) {
                   </div>
                   <div>
                     <h4 class="font-heading font-semibold text-sm text-warm-900 dark:text-white">
-                      {{ rev.user?.name || 'Verified Diner' }}
+                      {{ rev.user?.name || $t('dish.verifiedDiner') }}
                     </h4>
                     <span class="text-xs text-warm-400">
                       {{ formatDate(rev.created_at) }}
@@ -476,7 +478,7 @@ function getInitials(name) {
                 {{ rev.comment }}
               </p>
               <p v-else class="text-xs text-warm-400 italic pl-13">
-                Rated {{ rev.rating }} stars without a written comment.
+                {{ $t('dish.ratedWithoutComment', { rating: rev.rating }) }}
               </p>
             </div>
           </div>
@@ -490,17 +492,17 @@ function getInitials(name) {
               <Star :size="32" class="fill-amber-400/30" />
             </div>
             <h3 class="font-heading text-lg font-bold text-warm-900 dark:text-white mb-1">
-              No reviews yet for {{ dish.name }}
+              {{ $t('dish.noReviewsYet', { name: dish.name }) }}
             </h3>
             <p class="text-xs text-warm-500 dark:text-warm-400 max-w-md mx-auto mb-6">
-              Be the first to share your thoughts on flavor, presentation, and dining satisfaction!
+              {{ $t('dish.beFirstReview') }}
             </p>
             <button
               @click="showReviewForm = true"
               class="btn-primary py-2.5 px-6 rounded-2xl text-xs gap-2"
             >
               <Star :size="14" class="fill-current" />
-              <span>Write the First Review</span>
+              <span>{{ $t('dish.writeFirstReview') }}</span>
             </button>
           </div>
         </section>
@@ -545,7 +547,7 @@ function getInitials(name) {
           :disabled="loading"
           class="btn-primary py-2.5 px-4 text-xs font-semibold shadow-md whitespace-nowrap"
         >
-          {{ loading ? '...' : 'Add to Cart' }}
+          {{ loading ? '...' : $t('dish.addToCart') }}
         </button>
       </div>
     </div>

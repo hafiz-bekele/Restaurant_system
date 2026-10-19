@@ -1,14 +1,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { guestApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import RoomCardSkeleton from '../../components/ui/RoomCardSkeleton.vue'
 import { BedDouble, Users, CalendarCheck, CheckCircle, X } from '@lucide/vue'
 
-const route  = useRoute()
-const ui     = useUiStore()
+const { t }   = useI18n()
+const route   = useRoute()
+const ui      = useUiStore()
 
 const loading   = ref(false)
 const rooms     = ref([])
@@ -46,7 +48,7 @@ async function search() {
     rooms.value = data.data
     searched.value = true
   } catch (e) {
-    const msg = e.response?.data?.message ?? 'Failed to search rooms'
+    const msg = e.response?.data?.message ?? t('roomsPage.failedToast')
     ui.toast(msg, 'error')
   } finally {
     loading.value = false
@@ -76,9 +78,9 @@ async function confirmBooking() {
     booking.value  = data.data
     done.value     = true
     showModal.value = false
-    ui.toast('Booking confirmed!', 'success')
+    ui.toast(t('roomsPage.successToast'), 'success')
   } catch (e) {
-    ui.toast(e.response?.data?.message ?? 'Failed to book room', 'error')
+    ui.toast(e.response?.data?.message ?? t('roomsPage.failedToast'), 'error')
   } finally {
     saving.value = false
   }
@@ -88,18 +90,18 @@ async function confirmBooking() {
 <template>
   <DefaultLayout>
     <div class="page-container py-10 max-w-4xl">
-      <h1 class="font-heading text-4xl font-bold text-warm-900 dark:text-white mb-2">Book a Room</h1>
-      <p class="text-warm-500 dark:text-warm-400 mb-8">Check availability and reserve your perfect stay.</p>
+      <h1 class="font-heading text-4xl font-bold text-warm-900 dark:text-white mb-2">{{ $t('roomsPage.title') }}</h1>
+      <p class="text-warm-500 dark:text-warm-400 mb-8">{{ $t('roomsPage.subtitle') }}</p>
 
       <!-- Booking confirmed -->
       <div v-if="done" class="card p-10 text-center space-y-4">
         <CheckCircle :size="52" class="mx-auto text-green-500" />
-        <h2 class="font-heading text-2xl font-bold text-warm-900 dark:text-white">Booking Confirmed!</h2>
-        <p class="text-warm-500">Room: <strong class="text-warm-800 dark:text-white">{{ booking?.room?.room_number }}</strong></p>
-        <p class="text-warm-500">Check-in: <strong class="text-warm-800 dark:text-white">{{ booking?.check_in_date }}</strong></p>
-        <p class="text-warm-500">Check-out: <strong class="text-warm-800 dark:text-white">{{ booking?.check_out_date }}</strong></p>
-        <p class="text-warm-500">Total: <strong class="text-primary-600 dark:text-primary-400 text-lg">${{ Number(booking?.total_amount).toFixed(2) }}</strong></p>
-        <button @click="done = false; rooms = []; searched = false" class="btn-outline">Search Again</button>
+        <h2 class="font-heading text-2xl font-bold text-warm-900 dark:text-white">{{ $t('roomsPage.confirmedTitle') }}</h2>
+        <p class="text-warm-500">{{ $t('roomsPage.roomNum') }} <strong class="text-warm-800 dark:text-white">{{ booking?.room?.room_number }}</strong></p>
+        <p class="text-warm-500">{{ $t('roomsPage.checkInDate') }} <strong class="text-warm-800 dark:text-white">{{ booking?.check_in_date }}</strong></p>
+        <p class="text-warm-500">{{ $t('roomsPage.checkOutDate') }} <strong class="text-warm-800 dark:text-white">{{ booking?.check_out_date }}</strong></p>
+        <p class="text-warm-500">{{ $t('roomsPage.totalAmount') }} <strong class="text-primary-600 dark:text-primary-400 text-lg">${{ Number(booking?.total_amount).toFixed(2) }}</strong></p>
+        <button @click="done = false; rooms = []; searched = false" class="btn-outline">{{ $t('roomsPage.searchAgain') }}</button>
       </div>
 
       <!-- Search form -->
@@ -107,20 +109,20 @@ async function confirmBooking() {
         <div class="card p-6 mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
-              <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Check-in</label>
+              <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('roomsPage.checkIn') }}</label>
               <input v-model="form.check_in_date" type="date" required class="input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Check-out</label>
+              <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('roomsPage.checkOut') }}</label>
               <input v-model="form.check_out_date" type="date" required class="input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Guests</label>
+              <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('roomsPage.guests') }}</label>
               <input v-model.number="form.capacity" type="number" min="1" max="10" class="input" />
             </div>
             <div class="flex items-end">
               <button @click="search" :disabled="loading || !form.check_in_date || !form.check_out_date" class="btn-primary w-full justify-center">
-                {{ loading ? 'Searching…' : 'Search' }}
+                {{ loading ? $t('roomsPage.searching') : $t('roomsPage.search') }}
               </button>
             </div>
           </div>
@@ -133,7 +135,7 @@ async function confirmBooking() {
 
         <!-- Results -->
         <div v-else-if="searched">
-          <p v-if="!rooms.length" class="text-center py-12 text-warm-400">No rooms available for the selected dates.</p>
+          <p v-if="!rooms.length" class="text-center py-12 text-warm-400">{{ $t('roomsPage.noRooms') }}</p>
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div v-for="room in rooms" :key="room.id" class="card overflow-hidden hover:shadow-float transition-all hover:-translate-y-1">
               <img v-if="room.image" :src="room.image" :alt="`Room ${room.room_number}`" class="w-full h-44 object-cover" />
@@ -142,24 +144,24 @@ async function confirmBooking() {
               </div>
               <div class="p-4 space-y-2">
                 <div class="flex items-center justify-between">
-                  <h3 class="font-heading font-bold text-warm-900 dark:text-white">Room {{ room.room_number }}</h3>
+                  <h3 class="font-heading font-bold text-warm-900 dark:text-white">{{ $t('roomsPage.roomTitle', { number: room.room_number }) }}</h3>
                   <span class="badge badge-blue capitalize">{{ room.type }}</span>
                 </div>
                 <div class="flex items-center gap-2 text-xs text-warm-400">
-                  <Users :size="13" /> {{ room.capacity }} guests
+                  <Users :size="13" /> {{ $t('roomsPage.guestsCount', { capacity: room.capacity }) }}
                 </div>
                 <div class="flex items-center justify-between pt-2">
                   <div>
-                    <p class="text-xs text-warm-400">per night</p>
+                    <p class="text-xs text-warm-400">{{ $t('roomsPage.perNight') }}</p>
                     <p class="font-heading font-bold text-lg text-primary-600 dark:text-primary-400">${{ Number(room.price_per_night).toFixed(2) }}</p>
                   </div>
                   <div v-if="nights > 0" class="text-right">
-                    <p class="text-xs text-warm-400">{{ nights }} nights</p>
+                    <p class="text-xs text-warm-400">{{ $t('roomsPage.nightsCount', { nights }) }}</p>
                     <p class="font-semibold text-warm-900 dark:text-white">${{ (Number(room.price_per_night) * nights).toFixed(2) }}</p>
                   </div>
                 </div>
                 <button @click="openBooking(room)" class="btn-primary w-full justify-center gap-2 mt-1">
-                  <CalendarCheck :size="16" /> Book Now
+                  <CalendarCheck :size="16" /> {{ $t('roomsPage.bookNow') }}
                 </button>
               </div>
             </div>
@@ -174,30 +176,30 @@ async function confirmBooking() {
         <div v-if="showModal" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="showModal = false">
           <div class="card w-full max-w-md p-6">
             <div class="flex items-center justify-between mb-5">
-              <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">Complete Booking</h2>
+              <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">{{ $t('roomsPage.modalTitle') }}</h2>
               <button @click="showModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
             </div>
-            <p class="text-sm text-warm-500 mb-4">Room <strong class="text-warm-800 dark:text-white">{{ selected?.room_number }}</strong> · {{ nights }} nights · <strong class="text-primary-600 dark:text-primary-400">${{ (Number(selected?.price_per_night ?? 0) * nights).toFixed(2) }}</strong></p>
+            <p class="text-sm text-warm-500 mb-4">{{ $t('roomsPage.modalSummary', { number: selected?.room_number, nights, total: '$' + (Number(selected?.price_per_night ?? 0) * nights).toFixed(2) }) }}</p>
             <form @submit.prevent="confirmBooking" class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Full Name</label>
-                <input v-model="guestForm.guest_name" type="text" required class="input" placeholder="John Doe" />
+                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('roomsPage.fullName') }}</label>
+                <input v-model="guestForm.guest_name" type="text" required class="input" :placeholder="$t('roomsPage.namePlaceholder')" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Email</label>
-                <input v-model="guestForm.guest_email" type="email" required class="input" placeholder="you@example.com" />
+                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('roomsPage.email') }}</label>
+                <input v-model="guestForm.guest_email" type="email" required class="input" :placeholder="$t('roomsPage.emailPlaceholder')" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Phone</label>
-                <input v-model="guestForm.guest_phone" type="tel" required class="input" placeholder="+251 911 000 000" />
+                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('roomsPage.phone') }}</label>
+                <input v-model="guestForm.guest_phone" type="tel" required class="input" :placeholder="$t('roomsPage.phonePlaceholder')" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Special Requests</label>
-                <textarea v-model="guestForm.notes" rows="2" class="input resize-none" placeholder="Late check-in, accessibility needs…"></textarea>
+                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('roomsPage.specialRequests') }}</label>
+                <textarea v-model="guestForm.notes" rows="2" class="input resize-none" :placeholder="$t('roomsPage.requestsPlaceholder')"></textarea>
               </div>
               <div class="flex gap-3 pt-2">
-                <button type="button" @click="showModal = false" class="btn-outline flex-1">Cancel</button>
-                <button type="submit" :disabled="saving" class="btn-primary flex-1">{{ saving ? 'Booking…' : 'Confirm Booking' }}</button>
+                <button type="button" @click="showModal = false" class="btn-outline flex-1">{{ $t('roomsPage.cancel') }}</button>
+                <button type="submit" :disabled="saving" class="btn-primary flex-1">{{ saving ? $t('roomsPage.booking') : $t('roomsPage.confirmBtn') }}</button>
               </div>
             </form>
           </div>

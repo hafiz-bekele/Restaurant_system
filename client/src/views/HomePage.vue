@@ -10,6 +10,7 @@ import {
   Coffee, HelpCircle, Send, ExternalLink, Calendar, Info, X
 } from '@lucide/vue'
 import DefaultLayout from '../layouts/DefaultLayout.vue'
+import { useI18n } from 'vue-i18n'
 import { menuApi } from '../services/api'
 import { useCartStore } from '../stores/cart'
 import { useUiStore } from '../stores/ui'
@@ -17,12 +18,13 @@ import { APP_NAME } from '../config'
 import DishCard from '../components/menu/DishCard.vue'
 import DishCardSkeleton from '../components/ui/DishCardSkeleton.vue'
 
+const { t }   = useI18n()
 const router = useRouter()
 const cart   = useCartStore()
 const ui     = useUiStore()
 
 // ── Real Restaurant & Hotel Identity ─────────────────────────────────────────
-const brandName = computed(() => APP_NAME || 'Taste & Stay')
+const brandName = computed(() => t('brandName'))
 const phoneReservations = '+251 91 123 4567'
 const phoneFrontDesk    = '+251 11 662 8900'
 const locationAddress   = 'Bole Medhanialem, Namibia St., Addis Ababa, Ethiopia'
@@ -201,14 +203,14 @@ const activeDishes = computed(() => {
 })
 
 // ── Interactive Menu Filter Tabs ─────────────────────────────────────────────
-const menuTabs = [
-  'All Highlights',
-  'Chef Specials',
-  'Ethiopian Heritage',
-  'Steaks & Grills',
-  'Woodfired Pizza & Pasta',
-  'Desserts & Mixology'
-]
+const menuTabs = computed(() => [
+  { id: 'All Highlights', label: t('menu.allHighlights') },
+  { id: 'Chef Specials', label: t('menu.chefSpecials') },
+  { id: 'Ethiopian Heritage', label: t('menu.ethiopianHeritage') },
+  { id: 'Steaks & Grills', label: t('menu.steaksGrills') },
+  { id: 'Woodfired Pizza & Pasta', label: t('menu.woodfiredPizzaPasta') },
+  { id: 'Desserts & Mixology', label: t('menu.dessertsMixology') }
+])
 const activeMenuTab = ref('All Highlights')
 
 const filteredDishes = computed(() => {
@@ -261,88 +263,91 @@ function submitQuickBooking() {
 }
 
 // ── Interactive 4-Way Experience Showcase ────────────────────────────────────
-const experiences = [
+const experiences = computed(() => [
   {
     id: 'dining',
-    tabName: 'Fine Dining Room',
-    title: 'An Orchestra of Gastronomy & Candlelight',
-    subtitle: 'Step into an intimate setting where world-class culinary artistry meets warm Ethiopian hospitality.',
+    tabName: t('experiences.diningTab'),
+    title: t('experiences.diningTitle'),
+    subtitle: t('experiences.diningSub'),
     image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80',
-    badge: 'Award-Winning Ambiance',
+    badge: t('experiences.diningBadge'),
     perks: [
-      'Multi-course tasting menus paired with sommelier-curated cellar wines',
-      'Char-grilled Prime Angus steaks and fresh Atlantic seafood',
-      'Private acoustic ambient dining with attentive table service',
-      'Dedicated dessert cart & tableside flambé preparations'
+      t('experiences.diningP1'),
+      t('experiences.diningP2'),
+      t('experiences.diningP3'),
+      t('experiences.diningP4')
     ],
-    ctaText: 'Reserve a Dining Table',
+    ctaText: t('experiences.diningCta'),
     ctaLink: '/reservations'
   },
   {
     id: 'suites',
-    tabName: 'Boutique Hotel Suites',
-    title: 'Luxury Living with 24/7 Room Service',
-    subtitle: 'Unwind in designer suites where gourmet dining is charged straight to your room folio with zero hassle.',
+    tabName: t('experiences.suitesTab'),
+    title: t('experiences.suitesTitle'),
+    subtitle: t('experiences.suitesSub'),
     image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&auto=format&fit=crop&q=80',
-    badge: 'Luxury Accommodation',
+    badge: t('experiences.suitesBadge'),
     perks: [
-      'Plush King-sized beds with high-thread Egyptian cotton linens',
-      'In-room digital QR menu — hot breakfast and late-night supper in under 30 mins',
-      'Private balcony with panoramic skyline views of Addis Ababa',
-      'Marble bathrooms featuring rainforest showers and deep soaking tubs'
+      t('experiences.suitesP1'),
+      t('experiences.suitesP2'),
+      t('experiences.suitesP3'),
+      t('experiences.suitesP4')
     ],
-    ctaText: 'Explore Hotel Suites',
+    ctaText: t('experiences.suitesCta'),
     ctaLink: '/rooms'
   },
   {
     id: 'terrace',
-    tabName: 'Sky Terrace & Sunset Lounge',
-    title: 'Panoramic Skyline Views & Artisanal Mixology',
-    subtitle: 'Breathe the crisp highland air while sipping signature botanical mocktails and woodfired mezze.',
+    tabName: t('experiences.terraceTab'),
+    title: t('experiences.terraceTitle'),
+    subtitle: t('experiences.terraceSub'),
     image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80',
-    badge: 'Open-Air Sunset Lounge',
+    badge: t('experiences.terraceBadge'),
     perks: [
-      'Unobstructed 360-degree views of Mount Entoto and the Addis skyline',
-      'Artisanal spritzers, Ethiopian single-origin cold brews, and mocktails',
-      'Woodfired flatbreads, crispy calamari, and mezze platters to share',
-      'Evening fire pits and cozy outdoor lounge blankets'
+      t('experiences.terraceP1'),
+      t('experiences.terraceP2'),
+      t('experiences.terraceP3'),
+      t('experiences.terraceP4')
     ],
-    ctaText: 'View Beverage & Lounge Menu',
+    ctaText: t('experiences.terraceCta'),
     ctaLink: '/menu'
   },
   {
     id: 'qr-express',
-    tabName: 'Instant QR Contactless',
-    title: 'Dine at Your Pace — Instant Digital Ordering',
-    subtitle: 'No waiting for menus or card machines. Scan table or room QR codes to order and pay seamlessly.',
+    tabName: t('experiences.qrTab'),
+    title: t('experiences.qrTitle'),
+    subtitle: t('experiences.qrSub'),
     image: 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=1200&auto=format&fit=crop&q=80',
-    badge: 'Smart Digital Experience',
+    badge: t('experiences.qrBadge'),
     perks: [
-      'Visual interactive menu with ingredient filters and allergen alerts',
-      'Order directly to your specific table or hotel room number',
-      'Live kitchen status tracker — watch your order move from prep to delivery',
-      'Split bill or pay instantly via Chapa, Telebirr, Visa/Mastercard'
+      t('experiences.qrP1'),
+      t('experiences.qrP2'),
+      t('experiences.qrP3'),
+      t('experiences.qrP4')
     ],
-    ctaText: 'Browse Online Menu',
+    ctaText: t('experiences.qrCta'),
     ctaLink: '/menu'
   }
-]
-const activeExperience = ref(experiences[0])
+])
+const activeExperienceId = ref('dining')
+const activeExperience = computed(() => {
+  return experiences.value.find(e => e.id === activeExperienceId.value) || experiences.value[0]
+})
 
 // ── Animated Counter ─────────────────────────────────────────────────────────
 const statsVisible   = ref(false)
 const statsRef       = ref(null)
 const animatedValues = ref([0, 0, 0, 0])
 
-const statsTargets = [
-  { target: 98,  suffix: '%', label: 'Guest Satisfaction', sub: 'Based on 2,400+ verified diner reviews' },
-  { target: 15,  suffix: '+', label: 'Years of Excellence', sub: 'Proudly serving Addis Ababa since 2011' },
-  { target: 150, suffix: '+', label: 'Curated Menu Selections', sub: 'Traditional specialties & global cuisine' },
-  { target: 24,  suffix: '/7', label: 'In-Room Suite Dining', sub: 'Continuous round-the-clock room service' },
-]
+const statsTargets = computed(() => [
+  { target: 98,  suffix: '%', label: t('stats.satisfaction'), sub: t('stats.satisfactionSub') },
+  { target: 15,  suffix: '+', label: t('stats.years'), sub: t('stats.yearsSub') },
+  { target: 150, suffix: '+', label: t('stats.curated'), sub: t('stats.curatedSub') },
+  { target: 24,  suffix: '/7', label: t('stats.roomService'), sub: t('stats.roomServiceSub') },
+])
 
 function animateCounters() {
-  statsTargets.forEach((stat, i) => {
+  statsTargets.value.forEach((stat, i) => {
     const duration = 1800
     const steps    = 50
     const step     = stat.target / steps
@@ -371,87 +376,78 @@ onMounted(() => {
 onUnmounted(() => statsObserver?.disconnect())
 
 // ── Testimonials Carousel ─────────────────────────────────────────────────────
-const testimonials = [
+const testimonials = computed(() => [
   {
-    name: 'Abebe Kebede',
-    role: 'Diplomatic Mission Officer',
-    text: 'The Doro Wat Deluxe Feast was the most flavorful I have had in Addis, and my European colleagues were blown away by the Prime Angus Ribeye. The QR table ordering is seamless.',
+    name: t('reviews.r1Name'),
+    role: t('reviews.r1Role'),
+    text: t('reviews.r1Text'),
     stars: 5,
-    tag: 'Dine-In Guest'
+    tag: t('reviews.r1Tag')
   },
   {
-    name: 'Sara Mengistu',
-    role: 'Executive Suite Guest',
-    text: 'Staying at the boutique suites made my business trip effortless. Checked in at midnight and room service arrived piping hot in 20 minutes, charged straight to my room folio. Pure 5-star quality.',
+    name: t('reviews.r2Name'),
+    role: t('reviews.r2Role'),
+    text: t('reviews.r2Text'),
     stars: 5,
-    tag: 'Hotel Suite Guest'
+    tag: t('reviews.r2Tag')
   },
   {
-    name: 'David Henderson',
-    role: 'International Travel & Food Critic',
-    text: 'A masterclass in culinary harmony. They execute delicate Italian handmade pasta with the same reverence and mastery as traditional Ethiopian slow-simmered stews.',
+    name: t('reviews.r3Name'),
+    role: t('reviews.r3Role'),
+    text: t('reviews.r3Text'),
     stars: 5,
-    tag: 'Food Critic'
+    tag: t('reviews.r3Tag')
   },
   {
-    name: 'Helen Assefa',
-    role: 'Private Banquet Host',
-    text: 'We hosted our parents’ 40th anniversary in the private dining room. The personalized service, attentive sommelier, and traditional coffee ceremony created memories our family will cherish forever.',
+    name: t('reviews.r4Name'),
+    role: t('reviews.r4Role'),
+    text: t('reviews.r4Text'),
     stars: 5,
-    tag: 'Private Event'
+    tag: t('reviews.r4Tag')
   },
   {
-    name: 'Marcus Lehmann',
-    role: 'Business Traveler & Regular Diner',
-    text: 'Top tier ambiance and blistering fast WiFi. Perfect for afternoon meetings on the terrace followed by artisanal pizza and handcrafted spritzers. Highly recommended.',
+    name: t('reviews.r5Name'),
+    role: t('reviews.r5Role'),
+    text: t('reviews.r5Text'),
     stars: 5,
-    tag: 'Terrace Lounge'
+    tag: t('reviews.r5Tag')
   }
-]
+])
 const activeTestimonial = ref(0)
 let testimonialTimer
 
 function startTestimonialTimer() {
   testimonialTimer = setInterval(() => {
-    activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.length
+    if (testimonials.value.length > 0) {
+      activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.value.length
+    }
   }, 5000)
 }
 function prevTestimonial() {
   clearInterval(testimonialTimer)
-  activeTestimonial.value = (activeTestimonial.value - 1 + testimonials.length) % testimonials.length
+  if (testimonials.value.length > 0) {
+    activeTestimonial.value = (activeTestimonial.value - 1 + testimonials.value.length) % testimonials.value.length
+  }
   startTestimonialTimer()
 }
 function nextTestimonial() {
   clearInterval(testimonialTimer)
-  activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.length
+  if (testimonials.value.length > 0) {
+    activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.value.length
+  }
   startTestimonialTimer()
 }
 onMounted(startTestimonialTimer)
 onUnmounted(() => clearInterval(testimonialTimer))
 
 // ── Interactive FAQ Accordion ────────────────────────────────────────────────
-const faqs = [
-  {
-    question: 'Do I need a reservation to dine in?',
-    answer: 'While we always welcome walk-in diners in our main dining hall and sky terrace, advance reservations are strongly encouraged for Friday and weekend dinners, private dining rooms, or groups of 4 or more to guarantee your preferred seating.'
-  },
-  {
-    question: 'How does room service billing work for hotel suite guests?',
-    answer: 'Hotel guests can scan the QR code located in their suite or order online. Simply select your room number at checkout and your order will be delivered to your door and automatically added to your room folio upon check-out.'
-  },
-  {
-    question: 'Are all meat dishes 100% Halal and do you offer vegetarian / fasting options?',
-    answer: 'Yes! All meat served at Taste & Stay is 100% certified Halal. We also feature a comprehensive fasting (Yetsom) and vegan menu including authentic Shiro Tegabino, mixed vegetable platters (Beyaynetu), and plant-based pastas prepared in dedicated stations.'
-  },
-  {
-    question: 'Is valet parking available at the venue?',
-    answer: 'Yes, complimentary secure valet parking is provided for all restaurant guests, terrace lounge visitors, and hotel residents right at our main entrance on Namibia Street, Bole Medhanialem.'
-  },
-  {
-    question: 'What is your delivery coverage area and average delivery time?',
-    answer: 'We provide express hot delivery in insulated temperature-controlled carriers across Bole, Kazanchis, Old Airport, Sarbet, and CMC. Average delivery time is 25 to 35 minutes, with real-time GPS tracking available via your order link.'
-  }
-]
+const faqs = computed(() => [
+  { question: t('faqs.q1'), answer: t('faqs.a1') },
+  { question: t('faqs.q2'), answer: t('faqs.a2') },
+  { question: t('faqs.q3'), answer: t('faqs.a3') },
+  { question: t('faqs.q4'), answer: t('faqs.a4') },
+  { question: t('faqs.q5'), answer: t('faqs.a5') },
+])
 const openFaq = ref(0)
 function toggleFaq(index) {
   openFaq.value = openFaq.value === index ? -1 : index
@@ -541,40 +537,40 @@ function subscribeNewsletter() {
             <!-- Trust Badge -->
             <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-primary-300 text-xs font-semibold tracking-wider uppercase shadow-inner">
               <Sparkles :size="14" class="text-primary-400 animate-pulse" />
-              <span>Michelin-Inspired Craft • Addis Ababa, Ethiopia</span>
+              <span>{{ $t('hero.badge') }}</span>
             </div>
 
             <!-- Headline -->
             <h1 class="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-[4.2rem] font-bold text-white leading-[1.08] tracking-tight">
-              Where Exceptional <br />
+              {{ $t('hero.titlePart1') }} <br />
               <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-primary-300 to-amber-200">
-                Culinary Art
+                {{ $t('hero.titleHighlight') }}
               </span> <br />
-              Meets Luxury Hospitality
+              {{ $t('hero.titlePart2') }}
             </h1>
 
             <!-- Subtitle with Real Information -->
             <p class="text-base sm:text-lg text-white/80 max-w-2xl leading-relaxed">
-              Experience the harmony of centuries-old Ethiopian culinary tradition and contemporary international gastronomy. Fine dining, 24/7 boutique hotel suites, and contactless table ordering — all in the heart of Bole Medhanialem.
+              {{ $t('hero.subtitle') }}
             </p>
 
             <!-- Key Feature Checkmarks -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-sm text-white/85">
               <div class="flex items-center gap-2.5">
                 <CheckCircle :size="17" class="text-primary-400 shrink-0" />
-                <span>Prime Angus steaks, Doro Wat &amp; woodfired pizza</span>
+                <span>{{ $t('hero.feature1') }}</span>
               </div>
               <div class="flex items-center gap-2.5">
                 <CheckCircle :size="17" class="text-primary-400 shrink-0" />
-                <span>24/7 Suite room service charged to your folio</span>
+                <span>{{ $t('hero.feature2') }}</span>
               </div>
               <div class="flex items-center gap-2.5">
                 <CheckCircle :size="17" class="text-primary-400 shrink-0" />
-                <span>100% Certified Halal &amp; Dedicated Vegan/Fasting kitchen</span>
+                <span>{{ $t('hero.feature3') }}</span>
               </div>
               <div class="flex items-center gap-2.5">
                 <CheckCircle :size="17" class="text-primary-400 shrink-0" />
-                <span>TripAdvisor Traveler's Choice 2025 • 4.9 ★ Rating</span>
+                <span>{{ $t('hero.feature4') }}</span>
               </div>
             </div>
 
@@ -584,7 +580,7 @@ function subscribeNewsletter() {
                 to="/menu"
                 class="btn-primary text-base px-8 py-3.5 shadow-xl shadow-primary-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200"
               >
-                Explore Full Menu <ArrowRight :size="18" />
+                {{ $t('hero.exploreMenu') }} <ArrowRight :size="18" />
               </RouterLink>
 
               <RouterLink
@@ -592,7 +588,7 @@ function subscribeNewsletter() {
                 class="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-base font-semibold border-2 border-white/30 text-white hover:border-primary-400 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
               >
                 <CalendarCheck :size="18" class="text-primary-400" />
-                Reserve a Table
+                {{ $t('hero.reserveTable') }}
               </RouterLink>
 
               <RouterLink
@@ -600,7 +596,7 @@ function subscribeNewsletter() {
                 class="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white/80 hover:text-white hover:underline transition-all duration-200"
               >
                 <BedDouble :size="18" class="text-primary-400" />
-                Hotel Suites &amp; Rooms
+                {{ $t('hero.hotelSuites') }}
               </RouterLink>
             </div>
 
@@ -608,15 +604,15 @@ function subscribeNewsletter() {
             <div class="pt-2 flex flex-wrap items-center gap-4 text-xs text-white/70">
               <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-medium">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                <span>Open Now • Dinner Service Until 23:30</span>
+                <span>{{ $t('hero.openNow') }}</span>
               </div>
               <div class="flex items-center gap-1.5 text-warm-300">
                 <Clock :size="14" class="text-primary-400" />
-                <span>Avg. Table Prep: 18 mins</span>
+                <span>{{ $t('hero.avgPrep') }}</span>
               </div>
               <div class="flex items-center gap-1.5 text-warm-300">
                 <Truck :size="14" class="text-primary-400" />
-                <span>Express City Delivery: 25–35 mins</span>
+                <span>{{ $t('hero.deliveryEta') }}</span>
               </div>
             </div>
           </div>
@@ -632,7 +628,7 @@ function subscribeNewsletter() {
                   class="w-full h-full object-cover"
                 />
                 <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-primary-600/90 text-white text-[11px] font-bold tracking-wider uppercase shadow-md flex items-center gap-1">
-                  <Flame :size="12" /> Chef's Signature
+                  <Flame :size="12" /> {{ $t('hero.chefSignature') }}
                 </span>
                 <span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/75 text-white text-xs font-semibold backdrop-blur-md">
                   $36.50
@@ -640,8 +636,8 @@ function subscribeNewsletter() {
               </div>
               <div class="flex items-start justify-between gap-2">
                 <div>
-                  <h4 class="font-heading font-bold text-white text-base leading-snug">Prime Angus Ribeye (300g)</h4>
-                  <p class="text-white/60 text-xs mt-0.5 line-clamp-1">Truffle mash, garlic rosemary butter, roasted asparagus.</p>
+                  <h4 class="font-heading font-bold text-white text-base leading-snug">{{ $t('hero.ribeyeTitle') }}</h4>
+                  <p class="text-white/60 text-xs mt-0.5 line-clamp-1">{{ $t('hero.ribeyeDesc') }}</p>
                 </div>
                 <div class="flex items-center gap-1 bg-amber-400/20 px-2 py-1 rounded-lg shrink-0">
                   <Star :size="13" class="text-amber-400 fill-amber-400" />
@@ -649,12 +645,12 @@ function subscribeNewsletter() {
                 </div>
               </div>
               <div class="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between">
-                <span class="text-[11px] text-white/50">142 orders this week</span>
+                <span class="text-[11px] text-white/50">{{ $t('hero.ordersCount', { count: 142 }) }}</span>
                 <RouterLink
                   to="/menu/prime-angus-ribeye-steak"
                   class="text-xs font-semibold text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 group"
                 >
-                  Order Dish <ChevronRight :size="14" class="group-hover:translate-x-0.5 transition-transform" />
+                  {{ $t('hero.orderDish') }} <ChevronRight :size="14" class="group-hover:translate-x-0.5 transition-transform" />
                 </RouterLink>
               </div>
             </div>
@@ -667,15 +663,15 @@ function subscribeNewsletter() {
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between">
-                    <p class="font-semibold text-white text-sm">Boutique Suites &amp; Hotel</p>
-                    <span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded">Available</span>
+                    <p class="font-semibold text-white text-sm">{{ $t('hero.suitesCardTitle') }}</p>
+                    <span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded">{{ $t('hero.suitesCardBadge') }}</span>
                   </div>
-                  <p class="text-xs text-white/60 mt-0.5 truncate">King Suites with 24/7 In-Room Dining</p>
+                  <p class="text-xs text-white/60 mt-0.5 truncate">{{ $t('hero.suitesCardSubtitle') }}</p>
                 </div>
               </div>
               <div class="mt-3 flex items-center justify-between text-xs pt-2.5 border-t border-white/10">
-                <span class="text-white/60">From <strong class="text-white">$120</strong>/night</span>
-                <RouterLink to="/rooms" class="text-primary-400 font-semibold hover:underline">View Suites &rarr;</RouterLink>
+                <span class="text-white/60">{{ $t('hero.suitesFrom') }} <strong class="text-white">$120</strong>{{ $t('hero.suitesPerNight') }}</span>
+                <RouterLink to="/rooms" class="text-primary-400 font-semibold hover:underline">{{ $t('hero.viewSuites') }} &rarr;</RouterLink>
               </div>
             </div>
           </div>
@@ -699,74 +695,74 @@ function subscribeNewsletter() {
                 <CalendarCheck :size="22" />
               </div>
               <div class="text-left">
-                <p class="text-xs uppercase font-bold tracking-wider text-primary-600 dark:text-primary-400">Quick Book</p>
-                <p class="text-sm font-bold text-warm-900 dark:text-white leading-tight">Table / Dining</p>
+                <p class="text-xs uppercase font-bold tracking-wider text-primary-600 dark:text-primary-400">{{ $t('booking.quickBook') }}</p>
+                <p class="text-sm font-bold text-warm-900 dark:text-white leading-tight">{{ $t('booking.tableDining') }}</p>
               </div>
             </div>
 
             <!-- Guests -->
             <div class="flex-1">
               <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
-                <Users :size="13" class="text-primary-500" /> Number of Guests
+                <Users :size="13" class="text-primary-500" /> {{ $t('booking.guests') }}
               </label>
               <select
                 v-model.number="quickBooking.partySize"
                 class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option :value="1">1 Person (Solo Dining / Bar)</option>
-                <option :value="2">2 Guests (Couple Table)</option>
-                <option :value="4">4 Guests (Family / Friends)</option>
-                <option :value="6">6 Guests (Dinner Party)</option>
-                <option :value="8">8+ Guests (VIP Banquet)</option>
+                <option :value="1">{{ $t('booking.solo') }}</option>
+                <option :value="2">{{ $t('booking.couple') }}</option>
+                <option :value="4">{{ $t('booking.family') }}</option>
+                <option :value="6">{{ $t('booking.party') }}</option>
+                <option :value="8">{{ $t('booking.banquet') }}</option>
               </select>
             </div>
 
             <!-- Date Option -->
             <div class="flex-1">
               <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
-                <Calendar :size="13" class="text-primary-500" /> When
+                <Calendar :size="13" class="text-primary-500" /> {{ $t('booking.when') }}
               </label>
               <select
                 v-model="quickBooking.dateOption"
                 class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="tonight">Tonight (Today)</option>
-                <option value="tomorrow">Tomorrow</option>
-                <option value="weekend">This Coming Weekend</option>
+                <option value="tonight">{{ $t('booking.tonight') }}</option>
+                <option value="tomorrow">{{ $t('booking.tomorrow') }}</option>
+                <option value="weekend">{{ $t('booking.weekend') }}</option>
               </select>
             </div>
 
             <!-- Preferred Time -->
             <div class="flex-1">
               <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
-                <Clock :size="13" class="text-primary-500" /> Time Slot
+                <Clock :size="13" class="text-primary-500" /> {{ $t('booking.timeSlot') }}
               </label>
               <select
                 v-model="quickBooking.timeSlot"
                 class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="12:30">12:30 PM (Lunch Service)</option>
-                <option value="14:00">02:00 PM (Late Lunch)</option>
-                <option value="18:30">06:30 PM (Sunset Dining)</option>
-                <option value="19:30">07:30 PM (Prime Dinner)</option>
-                <option value="20:30">08:30 PM (Evening Dinner)</option>
-                <option value="21:30">09:30 PM (Late Lounge)</option>
+                <option value="12:30">{{ $t('booking.timeLunch') }}</option>
+                <option value="14:00">{{ $t('booking.timeLateLunch') }}</option>
+                <option value="18:30">{{ $t('booking.timeSunset') }}</option>
+                <option value="19:30">{{ $t('booking.timeDinner') }}</option>
+                <option value="20:30">{{ $t('booking.timeEvening') }}</option>
+                <option value="21:30">{{ $t('booking.timeLateLounge') }}</option>
               </select>
             </div>
 
             <!-- Seating Zone -->
             <div class="flex-1">
               <label class="block text-xs font-semibold text-warm-500 dark:text-warm-400 mb-1 flex items-center gap-1.5">
-                <Wine :size="13" class="text-primary-500" /> Seating Area
+                <Wine :size="13" class="text-primary-500" /> {{ $t('booking.seatingArea') }}
               </label>
               <select
                 v-model="quickBooking.seatingZone"
                 class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="Main Dining Hall">Main Dining Hall (Candlelight)</option>
-                <option value="Sky Garden Terrace">Sky Garden Terrace (Outdoor)</option>
-                <option value="Private VIP Wine Cellar">Private VIP Wine Cellar</option>
-                <option value="Boutique Suite Balcony">Boutique Suite (In-Room)</option>
+                <option value="Main Dining Hall">{{ $t('booking.zoneMain') }}</option>
+                <option value="Sky Garden Terrace">{{ $t('booking.zoneTerrace') }}</option>
+                <option value="Private VIP Wine Cellar">{{ $t('booking.zoneCellar') }}</option>
+                <option value="Boutique Suite Balcony">{{ $t('booking.zoneBalcony') }}</option>
               </select>
             </div>
 
@@ -776,7 +772,7 @@ function subscribeNewsletter() {
                 type="submit"
                 class="w-full lg:w-auto btn-primary px-7 py-3 text-sm font-bold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
               >
-                Find Table <ArrowRight :size="16" />
+                {{ $t('booking.findTable') }} <ArrowRight :size="16" />
               </button>
             </div>
 
@@ -798,12 +794,12 @@ function subscribeNewsletter() {
               </div>
               <div>
                 <div class="flex items-center justify-center md:justify-start gap-2 mb-1">
-                  <span class="px-2.5 py-0.5 rounded-full bg-primary-500/30 text-primary-300 text-[11px] font-bold uppercase tracking-wider">Special Welcome Offer</span>
-                  <span class="text-xs text-white/50">• Limited Time</span>
+                  <span class="px-2.5 py-0.5 rounded-full bg-primary-500/30 text-primary-300 text-[11px] font-bold uppercase tracking-wider">{{ $t('promo.badge') }}</span>
+                  <span class="text-xs text-white/50">• {{ $t('promo.limitedTime') }}</span>
                 </div>
-                <h3 class="font-heading font-bold text-xl sm:text-2xl text-white">Save 10% on Your First Online Order or Suite Stay</h3>
+                <h3 class="font-heading font-bold text-xl sm:text-2xl text-white">{{ $t('promo.title') }}</h3>
                 <p class="text-xs sm:text-sm text-white/70 mt-1 max-w-xl">
-                  Valid on any order or room reservation of $20 or more. Simply apply during online checkout.
+                  {{ $t('promo.subtitle') }}
                 </p>
               </div>
             </div>
@@ -819,11 +815,11 @@ function subscribeNewsletter() {
                   :title="'Copy code ' + promoCode"
                 >
                   <component :is="promoCopied ? Check : Copy" :size="14" :class="promoCopied ? 'text-emerald-400' : ''" />
-                  <span>{{ promoCopied ? 'Copied!' : 'Copy Code' }}</span>
+                  <span>{{ promoCopied ? $t('promo.copied') : $t('promo.copyCode') }}</span>
                 </button>
               </div>
               <RouterLink to="/menu" class="btn-primary text-xs font-bold py-2.5 px-5">
-                Order Now
+                {{ $t('promo.orderNow') }}
               </RouterLink>
             </div>
           </div>
@@ -837,23 +833,23 @@ function subscribeNewsletter() {
         <div class="flex flex-wrap items-center justify-center gap-8 md:gap-14 text-white/95 text-xs sm:text-sm font-semibold tracking-wide">
           <div class="flex items-center gap-2">
             <Award :size="16" />
-            <span>100% Certified Halal Kitchen</span>
+            <span>{{ $t('ticker.halal') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <Leaf :size="16" />
-            <span>Fasting &amp; Vegan (Yetsom) Specialities</span>
+            <span>{{ $t('ticker.fasting') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <ShieldCheck :size="16" />
-            <span>Farm-Fresh Organic Highland Sourcing</span>
+            <span>{{ $t('ticker.organic') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <Truck :size="16" />
-            <span>Express Hot Delivery in 25–35 Mins</span>
+            <span>{{ $t('ticker.delivery') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <BedDouble :size="16" />
-            <span>24/7 Hotel In-Room Dining Service</span>
+            <span>{{ $t('ticker.roomDining') }}</span>
           </div>
         </div>
       </div>
@@ -887,14 +883,14 @@ function subscribeNewsletter() {
         <div class="text-center max-w-2xl mx-auto mb-12">
           <div class="flex items-center justify-center gap-2 mb-3">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">The Experience</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">{{ $t('experienceSection.tag') }}</span>
             <div class="h-px w-8 bg-primary-500"></div>
           </div>
           <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-warm-900 dark:text-white mb-4">
-            Curated Hospitality, Four Ways
+            {{ $t('experienceSection.title') }}
           </h2>
           <p class="text-warm-600 dark:text-warm-300 text-base">
-            From intimate candlelight dinners to luxury suites and express contactless ordering, discover the complete {{ brandName }} ecosystem.
+            {{ $t('experienceSection.subtitle') }}
           </p>
         </div>
 
@@ -903,10 +899,10 @@ function subscribeNewsletter() {
           <button
             v-for="exp in experiences"
             :key="exp.id"
-            @click="activeExperience = exp"
+            @click="activeExperienceId = exp.id"
             :class="[
               'px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 shadow-sm cursor-pointer',
-              activeExperience.id === exp.id
+              activeExperienceId === exp.id
                 ? 'bg-primary-500 text-white shadow-primary-500/25 shadow-md scale-105'
                 : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700'
             ]"
@@ -980,13 +976,13 @@ function subscribeNewsletter() {
         <div>
           <div class="flex items-center gap-2 mb-2">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Our Gastronomy</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">{{ $t('culinary.badge') }}</span>
           </div>
           <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-warm-900 dark:text-white">
-            Chef's Signature Selections
+            {{ $t('culinary.title') }}
           </h2>
           <p class="text-warm-500 dark:text-warm-400 text-sm mt-2 max-w-xl">
-            Sourced daily from Ethiopian highlands and premium global producers. Every plate is prepared fresh to order.
+            {{ $t('culinary.subtitle') }}
           </p>
         </div>
 
@@ -994,7 +990,7 @@ function subscribeNewsletter() {
           to="/menu"
           class="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-primary-600 dark:text-primary-400 hover:gap-3 transition-all"
         >
-          View Complete Menu (150+ Items) <ArrowRight :size="16" />
+          {{ $t('culinary.viewComplete') }} <ArrowRight :size="16" />
         </RouterLink>
       </div>
 
@@ -1002,16 +998,16 @@ function subscribeNewsletter() {
       <div class="flex gap-2.5 overflow-x-auto pb-4 mb-8 -mx-4 px-4 scrollbar-hide">
         <button
           v-for="tab in menuTabs"
-          :key="tab"
-          @click="activeMenuTab = tab"
+          :key="tab.id"
+          @click="activeMenuTab = tab.id"
           :class="[
             'px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer',
-            activeMenuTab === tab
+            activeMenuTab === tab.id
               ? 'bg-primary-500 text-white shadow-md shadow-primary-500/25'
               : 'bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-200 dark:hover:bg-warm-700'
           ]"
         >
-          {{ tab }}
+          {{ tab.label }}
         </button>
       </div>
 
@@ -1031,7 +1027,7 @@ function subscribeNewsletter() {
       <!-- Mobile Button to Menu -->
       <div class="mt-10 text-center sm:hidden">
         <RouterLink to="/menu" class="btn-primary w-full justify-center">
-          Browse Full 150+ Menu <ArrowRight :size="16" />
+          {{ $t('culinary.browseMobile') }} <ArrowRight :size="16" />
         </RouterLink>
       </div>
     </section>
@@ -1061,7 +1057,7 @@ function subscribeNewsletter() {
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
               <div class="absolute bottom-4 left-4 right-4 text-xs text-white/90">
-                <span class="font-bold text-amber-300">The Traditional Jebena:</span> Clay pot brewing creates an unrivaled aromatic profile.
+                <span class="font-bold text-amber-300">{{ $t('buna.jebenaTag') }}</span> {{ $t('buna.jebenaDesc') }}
               </div>
             </div>
           </div>
@@ -1069,35 +1065,35 @@ function subscribeNewsletter() {
           <!-- Right: Authentic Cultural Story -->
           <div class="lg:col-span-7 space-y-5">
             <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary-500/20 border border-primary-500/40 text-primary-300 text-xs font-bold uppercase tracking-wider">
-              <Coffee :size="14" /> Cultural Heritage Ritual
+              <Coffee :size="14" /> {{ $t('buna.badge') }}
             </div>
 
             <h3 class="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight">
-              The Soul of Ethiopian Hospitality: <br />
-              <span class="text-primary-400">Traditional Buna Ceremony</span>
+              {{ $t('buna.title') }} <br />
+              <span class="text-primary-400">{{ $t('buna.highlight') }}</span>
             </h3>
 
             <p class="text-white/80 text-sm sm:text-base leading-relaxed">
-              In Ethiopia, coffee is not merely a beverage — it is a sacred hour of connection, celebration, and gratitude. We source single-origin organic beans directly from Yirgacheffe and Sidama cooperatives.
+              {{ $t('buna.subtitle') }}
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
-                <span class="font-bold text-amber-300 text-sm block mb-1">1. Fresh Roasting</span>
-                <p class="text-xs text-white/70">Green beans roasted over charcoal embers until fragrant and glistening.</p>
+                <span class="font-bold text-amber-300 text-sm block mb-1">{{ $t('buna.step1Title') }}</span>
+                <p class="text-xs text-white/70">{{ $t('buna.step1Desc') }}</p>
               </div>
               <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
-                <span class="font-bold text-amber-300 text-sm block mb-1">2. Clay Jebena Brew</span>
-                <p class="text-xs text-white/70">Triple-filtered slowly through clay pots with frankincense incense.</p>
+                <span class="font-bold text-amber-300 text-sm block mb-1">{{ $t('buna.step2Title') }}</span>
+                <p class="text-xs text-white/70">{{ $t('buna.step2Desc') }}</p>
               </div>
               <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
-                <span class="font-bold text-amber-300 text-sm block mb-1">3. Cini Cups &amp; Corn</span>
-                <p class="text-xs text-white/70">Served in delicate handle-less Cini cups with fresh warm popped corn.</p>
+                <span class="font-bold text-amber-300 text-sm block mb-1">{{ $t('buna.step3Title') }}</span>
+                <p class="text-xs text-white/70">{{ $t('buna.step3Desc') }}</p>
               </div>
             </div>
 
             <div class="pt-2 flex flex-wrap items-center gap-4 text-xs text-amber-300/90">
-              <span class="font-semibold">✦ Complimentary for all dine-in guests every afternoon from 15:00 to 17:30.</span>
+              <span class="font-semibold">{{ $t('buna.complimentary') }}</span>
             </div>
           </div>
 
@@ -1113,15 +1109,15 @@ function subscribeNewsletter() {
         <div class="lg:col-span-6 space-y-6">
           <div class="flex items-center gap-2">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Culinary Leadership</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">{{ $t('chef.leadership') }}</span>
           </div>
 
           <h2 class="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-warm-900 dark:text-white leading-tight">
-            "We cook with patience, precision, and immense heart."
+            {{ $t('chef.quote') }}
           </h2>
 
           <p class="text-warm-600 dark:text-warm-300 text-base leading-relaxed">
-            Under the direction of Executive Chef Marcus Vance and Master Chef Liya Bekele, our kitchen marries centuries-old Ethiopian recipes — like our signature 12-hour simmered Doro Wat — with contemporary Michelin-level gastronomy.
+            {{ $t('chef.bio') }}
           </p>
 
           <div class="space-y-4 pt-2">
@@ -1130,8 +1126,8 @@ function subscribeNewsletter() {
                 <Award :size="20" />
               </div>
               <div>
-                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">Zero-Compromise Freshness</h4>
-                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">We receive organic produce every morning at 06:00 AM from verified Debre Zeit organic cooperatives.</p>
+                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">{{ $t('chef.freshnessTitle') }}</h4>
+                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('chef.freshnessDesc') }}</p>
               </div>
             </div>
 
@@ -1140,8 +1136,8 @@ function subscribeNewsletter() {
                 <UtensilsCrossed :size="20" />
               </div>
               <div>
-                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">Everything Handcrafted In-House</h4>
-                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Sourdough fermented for 48 hours, house-made pastas rolled daily, and slow-churned butter.</p>
+                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">{{ $t('chef.handcraftedTitle') }}</h4>
+                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('chef.handcraftedDesc') }}</p>
               </div>
             </div>
 
@@ -1150,8 +1146,8 @@ function subscribeNewsletter() {
                 <ShieldCheck :size="20" />
               </div>
               <div>
-                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">Allergen &amp; Fasting Rigor</h4>
-                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Separate dedicated prep surfaces for vegetarian, fasting (Yetsom), and gluten-free dietary needs.</p>
+                <h4 class="font-heading font-bold text-warm-900 dark:text-white text-sm">{{ $t('chef.trustTitle') }}</h4>
+                <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('chef.trustDesc') }}</p>
               </div>
             </div>
           </div>
@@ -1159,7 +1155,7 @@ function subscribeNewsletter() {
           <div class="pt-4 flex items-center gap-4 border-t border-warm-200 dark:border-warm-700">
             <div>
               <p class="font-heading font-bold text-warm-900 dark:text-white text-base">Chef Marcus Vance &amp; Liya Bekele</p>
-              <p class="text-xs text-primary-600 dark:text-primary-400 font-semibold">Executive Culinary Directors</p>
+              <p class="text-xs text-primary-600 dark:text-primary-400 font-semibold">{{ $t('chef.directors') }}</p>
             </div>
             <div class="ml-auto flex items-center gap-1 text-amber-500">
               <Star v-for="i in 5" :key="i" :size="15" class="fill-amber-400" />
@@ -1178,8 +1174,8 @@ function subscribeNewsletter() {
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
             <div class="absolute bottom-6 left-6 right-6 p-5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 text-white">
-              <p class="text-xs text-amber-300 font-bold uppercase tracking-wider">Culinary Philosophy</p>
-              <p class="text-sm italic text-white/90 mt-1">"When you honor the ingredient and the guest with equal passion, food transforms from sustenance into art."</p>
+              <p class="text-xs text-amber-300 font-bold uppercase tracking-wider">{{ $t('chef.philosophyTag') }}</p>
+              <p class="text-sm italic text-white/90 mt-1">{{ $t('chef.philosophyQuote') }}</p>
             </div>
           </div>
         </div>
@@ -1193,14 +1189,14 @@ function subscribeNewsletter() {
         <div class="text-center max-w-xl mx-auto mb-14">
           <div class="flex items-center justify-center gap-2 mb-3">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Visual Gallery</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">{{ $t('gallery.badge') }}</span>
             <div class="h-px w-8 bg-primary-500"></div>
           </div>
           <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">
-            Gourmet Moments at {{ brandName }}
+            {{ $t('gallery.title', { brand: brandName }) }}
           </h2>
           <p class="text-warm-500 dark:text-warm-400 text-sm">
-            Follow our culinary journeys and tag us <strong class="text-primary-600 dark:text-primary-400">@tasteandstay_addis</strong> to be featured.
+            {{ $t('gallery.followUs') }} <strong class="text-primary-600 dark:text-primary-400">@tasteandstay_addis</strong>
           </p>
         </div>
 
@@ -1249,10 +1245,10 @@ function subscribeNewsletter() {
                 <p class="text-sm text-white/75">{{ activeLightbox.desc }}</p>
                 <div class="pt-4 flex items-center gap-3">
                   <RouterLink to="/menu" @click="activeLightbox = null" class="btn-primary text-xs py-2 px-5">
-                    Order from Menu
+                    {{ $t('gallery.orderFromMenu') }}
                   </RouterLink>
                   <RouterLink to="/reservations" @click="activeLightbox = null" class="btn-outline text-xs py-2 px-5 text-white border-white/40">
-                    Reserve Table
+                    {{ $t('gallery.reserveTable') }}
                   </RouterLink>
                 </div>
               </div>
@@ -1268,14 +1264,14 @@ function subscribeNewsletter() {
         <div class="text-center mb-14">
           <div class="flex items-center justify-center gap-2 mb-3">
             <div class="h-px w-8 bg-primary-500"></div>
-            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Verified Reviews</span>
+            <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">{{ $t('reviews.badge') }}</span>
             <div class="h-px w-8 bg-primary-500"></div>
           </div>
           <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">
-            What Our Guests Cherish
+            {{ $t('reviews.title') }}
           </h2>
           <p class="text-warm-400 text-sm max-w-md mx-auto">
-            Trusted by over 15,000 satisfied diners, diplomats, and hotel guests across Addis Ababa.
+            {{ $t('reviews.subtitle') }}
           </p>
         </div>
 
@@ -1345,14 +1341,14 @@ function subscribeNewsletter() {
       <div class="text-center mb-14">
         <div class="flex items-center justify-center gap-2 mb-3">
           <div class="h-px w-8 bg-primary-500"></div>
-          <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">Guest Essentials</span>
+          <span class="text-primary-500 font-bold text-xs uppercase tracking-[0.2em]">{{ $t('faqs.badge') }}</span>
           <div class="h-px w-8 bg-primary-500"></div>
         </div>
         <h2 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">
-          Frequently Asked Questions
+          {{ $t('faqs.title') }}
         </h2>
         <p class="text-warm-500 dark:text-warm-400 text-sm">
-          Everything you need to know about dining, reservations, valet parking, and hotel suites.
+          {{ $t('faqs.subtitle') }}
         </p>
       </div>
 
@@ -1389,13 +1385,13 @@ function subscribeNewsletter() {
       <div class="page-container">
         <div class="max-w-2xl mx-auto text-center space-y-4">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-300 text-xs font-bold uppercase tracking-wider border border-primary-500/40">
-            <Sparkles :size="14" /> VIP Connoisseur Club
+            <Sparkles :size="14" /> {{ $t('club.badge') }}
           </div>
           <h3 class="font-heading text-3xl sm:text-4xl font-bold text-white">
-            Receive Exclusive Chef Tasting Invites
+            {{ $t('club.title') }}
           </h3>
           <p class="text-sm text-white/75 leading-relaxed">
-            Join 3,500+ food connoisseurs. Get an instant 15% birthday dining voucher, secret seasonal menu drops, and sommelier masterclass invitations.
+            {{ $t('club.subtitle') }}
           </p>
 
           <form @submit.prevent="subscribeNewsletter" class="flex flex-col sm:flex-row gap-3 pt-4 max-w-md mx-auto">
@@ -1403,17 +1399,17 @@ function subscribeNewsletter() {
               v-model="newsletterEmail"
               type="email"
               required
-              placeholder="Enter your email address"
+              :placeholder="$t('club.placeholder')"
               class="flex-1 bg-white/10 border border-white/25 rounded-xl px-4 py-3 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary-400"
             />
             <button
               type="submit"
               class="btn-primary text-sm font-bold px-6 py-3 whitespace-nowrap shadow-lg shadow-primary-500/40"
             >
-              Join the Club
+              {{ $t('club.joinBtn') }}
             </button>
           </form>
-          <p class="text-[11px] text-white/50">Zero spam. You can unsubscribe in one click at any time.</p>
+          <p class="text-[11px] text-white/50">{{ $t('club.zeroSpam') }}</p>
         </div>
       </div>
     </section>
@@ -1429,11 +1425,11 @@ function subscribeNewsletter() {
               <Phone :size="22" />
             </div>
             <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">Direct Reservations</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">{{ $t('contact.directReservations') }}</p>
               <a :href="`tel:${phoneReservations}`" class="font-heading font-bold text-lg text-warm-900 dark:text-white hover:text-primary-500 transition-colors">
                 {{ phoneReservations }}
               </a>
-              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Front Desk / Suites: {{ phoneFrontDesk }}</p>
+              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('contact.frontDesk') }} {{ phoneFrontDesk }}</p>
             </div>
           </div>
 
@@ -1443,9 +1439,9 @@ function subscribeNewsletter() {
               <MapPin :size="22" />
             </div>
             <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">Our Location</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">{{ $t('contact.ourLocation') }}</p>
               <p class="font-heading font-bold text-warm-900 dark:text-white">{{ locationAddress }}</p>
-              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ locationLandmark }} • Complimentary Valet</p>
+              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('contact.landmark') }}</p>
             </div>
           </div>
 
@@ -1455,9 +1451,9 @@ function subscribeNewsletter() {
               <Clock :size="22" />
             </div>
             <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">Hours of Service</p>
-              <p class="font-heading font-bold text-warm-900 dark:text-white">Daily 07:00 – 23:30</p>
-              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Hotel Suite Room Service available 24/7</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-0.5">{{ $t('contact.hoursTitle') }}</p>
+              <p class="font-heading font-bold text-warm-900 dark:text-white">{{ $t('contact.hoursDaily') }}</p>
+              <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('contact.roomService247') }}</p>
             </div>
           </div>
 
@@ -1477,19 +1473,19 @@ function subscribeNewsletter() {
       <div class="page-container relative z-10 text-center max-w-3xl mx-auto space-y-6">
         <div class="flex items-center justify-center gap-2 mb-2">
           <div class="h-px w-8 bg-primary-400"></div>
-          <span class="text-primary-400 font-bold text-xs uppercase tracking-[0.2em]">Reserve or Order Online</span>
+          <span class="text-primary-400 font-bold text-xs uppercase tracking-[0.2em]">{{ $t('finalCta.badge') }}</span>
           <div class="h-px w-8 bg-primary-400"></div>
         </div>
 
         <h2 class="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
-          Your Unforgettable Dining Experience <br />
+          {{ $t('finalCta.title') }} <br />
           <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-amber-300">
-            Awaits You Today
+            {{ $t('finalCta.highlight') }}
           </span>
         </h2>
 
         <p class="text-white/75 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-          Whether joining us for candlelight dinner, ordering gourmet delivery to your home, or reserving a luxury boutique suite — we look forward to serving you.
+          {{ $t('finalCta.desc') }}
         </p>
 
         <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
@@ -1497,21 +1493,21 @@ function subscribeNewsletter() {
             to="/reservations"
             class="btn-primary text-base px-9 py-4 shadow-2xl shadow-primary-500/40 hover:scale-[1.02] active:scale-95 transition-all"
           >
-            <CalendarCheck :size="18" /> Reserve a Table
+            <CalendarCheck :size="18" /> {{ $t('finalCta.reserveTable') }}
           </RouterLink>
 
           <RouterLink
             to="/menu"
             class="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold border-2 border-white/30 text-white hover:border-primary-400 hover:bg-white/10 transition-all"
           >
-            Browse Full Menu <ArrowRight :size="18" />
+            {{ $t('finalCta.browseMenu') }} <ArrowRight :size="18" />
           </RouterLink>
 
           <RouterLink
             to="/rooms"
             class="inline-flex items-center gap-2 rounded-xl px-7 py-4 text-base font-semibold text-white/80 hover:text-white transition-all"
           >
-            <BedDouble :size="18" class="text-primary-400" /> Book Hotel Room
+            <BedDouble :size="18" class="text-primary-400" /> {{ $t('finalCta.bookRoom') }}
           </RouterLink>
         </div>
       </div>

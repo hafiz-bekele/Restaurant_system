@@ -65,11 +65,11 @@ function clearAll() {
       <!-- ── Page header ─────────────────────────────────────────── -->
       <div class="flex items-end justify-between mb-6 md:mb-8">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-500 mb-1">What we serve</p>
-          <h1 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white">Our Menu</h1>
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-500 mb-1">{{ $t('menu.whatWeServe') }}</p>
+          <h1 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white">{{ $t('menu.ourMenu') }}</h1>
         </div>
         <p v-if="!isLoading" class="text-sm text-warm-400 hidden sm:block">
-          {{ dishes.length }} dish{{ dishes.length !== 1 ? 'es' : '' }}
+          {{ $t('menu.dishesCount', { count: dishes.length }) }}
         </p>
       </div>
 
@@ -83,9 +83,9 @@ function clearAll() {
             <input
               v-model="search"
               type="search"
-              placeholder="Search dishes…"
+              :placeholder="$t('menu.searchPlaceholder')"
               class="input pl-9 pr-9 text-sm h-10"
-              aria-label="Search dishes"
+              :aria-label="$t('menu.searchPlaceholder')"
             />
             <button
               v-if="search"
@@ -99,10 +99,10 @@ function clearAll() {
 
           <!-- Sort (desktop only) -->
           <select v-model="sort" class="hidden sm:block input w-auto text-sm h-10 py-0 cursor-pointer">
-            <option value="popular">Most Popular</option>
-            <option value="price_asc">Price ↑</option>
-            <option value="price_desc">Price ↓</option>
-            <option value="rating">Top Rated</option>
+            <option value="popular">{{ $t('menu.sortPopular') }}</option>
+            <option value="price_asc">{{ $t('menu.sortPriceAsc') }}</option>
+            <option value="price_desc">{{ $t('menu.sortPriceDesc') }}</option>
+            <option value="rating">{{ $t('menu.sortRating') }}</option>
           </select>
 
           <!-- Filter toggle (mobile) -->
@@ -117,7 +117,7 @@ function clearAll() {
             aria-label="Toggle filters"
           >
             <SlidersHorizontal :size="16" />
-            <span>Filter</span>
+            <span>{{ $t('menu.filter') }}</span>
             <span v-if="hasActiveFilters" class="bg-white/30 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center font-bold">!</span>
           </button>
 
@@ -128,7 +128,7 @@ function clearAll() {
             class="hidden sm:flex items-center gap-1 text-xs text-warm-500 hover:text-red-500 transition-colors px-2 shrink-0"
             aria-label="Clear all filters"
           >
-            <X :size="13" /> Clear
+            <X :size="13" /> {{ $t('menu.clear') }}
           </button>
         </div>
 
@@ -141,27 +141,27 @@ function clearAll() {
         >
           <div v-if="showFilters" class="sm:hidden mt-3 space-y-3">
             <select v-model="sort" class="input text-sm h-10 py-0 w-full">
-              <option value="popular">Most Popular</option>
-              <option value="price_asc">Price: Low → High</option>
-              <option value="price_desc">Price: High → Low</option>
-              <option value="rating">Top Rated</option>
+              <option value="popular">{{ $t('menu.sortPopular') }}</option>
+              <option value="price_asc">{{ $t('menu.sortPriceAsc') }}</option>
+              <option value="price_desc">{{ $t('menu.sortPriceDesc') }}</option>
+              <option value="rating">{{ $t('menu.sortRating') }}</option>
             </select>
             <div class="flex gap-2">
               <button
                 @click="veg = !veg"
                 :class="['flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold border transition-all', veg ? 'bg-green-500 text-white border-green-500' : 'border-warm-300 dark:border-warm-700 text-warm-600 dark:text-warm-300']"
               >
-                <Leaf :size="15" /> Vegetarian
+                <Leaf :size="15" /> {{ $t('menu.veg') }}
               </button>
               <button
                 @click="vegan = !vegan"
                 :class="['flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold border transition-all', vegan ? 'bg-green-600 text-white border-green-600' : 'border-warm-300 dark:border-warm-700 text-warm-600 dark:text-warm-300']"
               >
-                <Leaf :size="15" /> Vegan
+                <Leaf :size="15" /> {{ $t('menu.vegan') }}
               </button>
             </div>
             <button v-if="hasActiveFilters" @click="clearAll" class="w-full py-2 text-sm text-red-500 font-semibold border border-red-200 dark:border-red-900/40 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
-              Clear all filters
+              {{ $t('menu.clearAll') }}
             </button>
           </div>
         </Transition>
@@ -179,7 +179,7 @@ function clearAll() {
           ]"
         >
           <span class="flex items-center gap-1.5">
-            <UtensilsCrossed :size="13" /> All
+            <UtensilsCrossed :size="13" /> {{ $t('menu.all') }}
           </span>
         </button>
 
@@ -202,20 +202,20 @@ function clearAll() {
           @click="veg = !veg"
           :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all', veg ? 'bg-green-500 text-white border-green-500 shadow-sm' : 'border-warm-300 dark:border-warm-700 text-warm-600 dark:text-warm-300 hover:border-green-400']"
         >
-          <Leaf :size="12" /> Vegetarian
+          <Leaf :size="12" /> {{ $t('menu.veg') }}
         </button>
         <button
           @click="vegan = !vegan"
           :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all', vegan ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'border-warm-300 dark:border-warm-700 text-warm-600 dark:text-warm-300 hover:border-green-400']"
         >
-          <Leaf :size="12" /> Vegan
+          <Leaf :size="12" /> {{ $t('menu.vegan') }}
         </button>
 
         <!-- Active filter chips -->
         <template v-if="hasActiveFilters">
           <span class="text-warm-300 dark:text-warm-700 text-xs">|</span>
           <button @click="clearAll" class="flex items-center gap-1 text-xs text-warm-500 hover:text-red-500 transition-colors font-medium">
-            <X :size="12" /> Clear all
+            <X :size="12" /> {{ $t('menu.clearAll') }}
           </button>
         </template>
       </div>
@@ -243,13 +243,13 @@ function clearAll() {
         <div class="w-20 h-20 rounded-2xl bg-warm-100 dark:bg-warm-800 flex items-center justify-center mb-5">
           <Search :size="36" class="text-warm-300 dark:text-warm-600" />
         </div>
-        <h3 class="font-heading font-bold text-lg text-warm-800 dark:text-warm-200 mb-2">No dishes found</h3>
+        <h3 class="font-heading font-bold text-lg text-warm-800 dark:text-warm-200 mb-2">{{ $t('menu.noDishesFound') }}</h3>
         <p class="text-sm text-warm-500 dark:text-warm-400 mb-6 max-w-xs">
-          {{ search ? `No results for "${search}".` : 'No dishes match the selected filters.' }}
-          Try adjusting your search or filters.
+          {{ search ? $t('menu.noResultsFor', { search }) : $t('menu.noDishesMatch') }}
+          {{ $t('menu.adjustFilters') }}
         </p>
         <button @click="clearAll" class="btn-outline text-sm">
-          <X :size="15" /> Clear filters
+          <X :size="15" /> {{ $t('menu.clearAll') }}
         </button>
       </div>
 

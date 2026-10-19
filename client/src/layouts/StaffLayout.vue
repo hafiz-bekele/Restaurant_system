@@ -1,28 +1,32 @@
 <script setup>
+import { computed } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ChefHat, UtensilsCrossed, CreditCard, Truck, CalendarCheck, LogOut, User } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 import { APP_NAME } from '../config'
 import ThemeToggle from '../components/ui/ThemeToggle.vue'
+import LanguageSwitcher from '../components/common/LanguageSwitcher.vue'
 
+const { t } = useI18n()
 const auth   = useAuthStore()
 const router = useRouter()
 
-const allTabs = [
-  { to: '/staff/kitchen',   icon: ChefHat,          label: 'Kitchen KDS', role: 'kitchen' },
-  { to: '/staff/waiter',    icon: UtensilsCrossed,   label: 'Waiter Floor', role: 'waiter' },
-  { to: '/staff/reception', icon: CalendarCheck,     label: 'Reception',   role: 'reception' },
-  { to: '/staff/cashier',   icon: CreditCard,        label: 'Cashier POS', role: 'cashier' },
-  { to: '/staff/delivery',  label: 'Delivery',    role: 'delivery' },
-]
+const allTabs = computed(() => [
+  { to: '/staff/kitchen',   icon: ChefHat,         label: t('staffLayout.kitchenKds'), role: 'kitchen' },
+  { to: '/staff/waiter',    icon: UtensilsCrossed, label: t('staffLayout.waiterFloor'), role: 'waiter' },
+  { to: '/staff/reception', icon: CalendarCheck,   label: t('staffLayout.reception'),   role: 'reception' },
+  { to: '/staff/cashier',   icon: CreditCard,      label: t('staffLayout.cashierPos'), role: 'cashier' },
+  { to: '/staff/delivery',  icon: Truck,           label: t('staffLayout.delivery'),   role: 'delivery' },
+])
 
-const visibleTabs = allTabs.filter(t =>
+const visibleTabs = computed(() => allTabs.value.filter(t =>
   auth.hasRole(t.role) ||
   auth.hasRole('super-admin') ||
   auth.hasRole('admin') ||
   auth.hasRole('manager') ||
   (t.role === 'reception' && auth.hasRole('waiter'))
-)
+))
 
 async function handleLogout() {
   await auth.logout()
@@ -59,23 +63,26 @@ async function handleLogout() {
 
       <!-- Right User Controls -->
       <div class="flex items-center gap-2 sm:gap-4">
+        <!-- Language Switcher for Staff -->
+        <LanguageSwitcher />
+
         <!-- Dark Mode Toggle for Staff -->
         <ThemeToggle variant="icon" size="md" />
 
         <div class="text-right hidden sm:block">
           <p class="text-xs font-bold text-warm-900 dark:text-white leading-tight">{{ auth.user?.name }}</p>
-          <span class="badge badge-orange text-[10px] capitalize">{{ auth.user?.roles?.[0] ?? 'Staff' }}</span>
+          <span class="badge badge-orange text-[10px] capitalize">{{ auth.user?.roles?.[0] ?? $t('staffLayout.roleStaff') }}</span>
         </div>
 
         <RouterLink v-if="auth.isAdmin" to="/admin" class="btn-ghost text-xs py-1.5 px-2.5 hidden sm:inline-flex">
-          Admin Panel
+          {{ $t('staffLayout.adminPanel') }}
         </RouterLink>
 
         <button
           @click="handleLogout"
           class="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-          title="Log Out"
-          aria-label="Log out"
+          :title="$t('staffLayout.logOut')"
+          :aria-label="$t('staffLayout.logOut')"
         >
           <LogOut :size="18" />
         </button>

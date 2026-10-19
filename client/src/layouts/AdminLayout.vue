@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings,
   Menu, X, LogOut, ChefHat, Users, Grid3x3, Calendar, Tag, Package,
@@ -10,7 +11,9 @@ import {
 import { useAuthStore } from '../stores/auth'
 import { useUiStore }   from '../stores/ui'
 import { APP_NAME } from '../config'
+import LanguageSwitcher from '../components/common/LanguageSwitcher.vue'
 
+const { t } = useI18n()
 const auth   = useAuthStore()
 const ui     = useUiStore()
 const router = useRouter()
@@ -41,51 +44,51 @@ const isSuperAdmin = computed(() => auth.hasRole('super-admin'))
 
 const roleLabel = computed(() => {
   const r = auth.user?.roles?.[0] ?? ''
-  return r === 'super-admin' ? 'Super Admin' : r.charAt(0).toUpperCase() + r.slice(1)
+  return r === 'super-admin' ? t('adminLayout.superAdmin') : r.charAt(0).toUpperCase() + r.slice(1)
 })
 
 // ── Nav ───────────────────────────────────────────────────────────────────
 const nav = computed(() => {
   const all = [
     {
-      group: 'Operations',
+      group: t('adminLayout.groups.operations'),
       items: [
-        { to: '/admin',              icon: LayoutDashboard, label: 'Dashboard' },
-        { to: '/admin/orders',       icon: ShoppingBag,     label: 'Orders' },
-        { to: '/admin/reservations', icon: Calendar,        label: 'Reservations' },
-        { to: '/admin/tables',       icon: Grid3x3,         label: 'Tables' },
-        { to: '/admin/rooms',        icon: BedDouble,       label: 'Rooms' },
+        { to: '/admin',              icon: LayoutDashboard, label: t('adminLayout.nav.dashboard') },
+        { to: '/admin/orders',       icon: ShoppingBag,     label: t('adminLayout.nav.orders') },
+        { to: '/admin/reservations', icon: Calendar,        label: t('adminLayout.nav.reservations') },
+        { to: '/admin/tables',       icon: Grid3x3,         label: t('adminLayout.nav.tables') },
+        { to: '/admin/rooms',        icon: BedDouble,       label: t('adminLayout.nav.rooms') },
       ],
     },
     {
-      group: 'Catalogue',
+      group: t('adminLayout.groups.catalogue'),
       items: [
-        { to: '/admin/menu',      icon: UtensilsCrossed, label: 'Menu' },
-        { to: '/admin/inventory', icon: Package,         label: 'Inventory' },
-        { to: '/admin/coupons',   icon: Tag,             label: 'Coupons' },
+        { to: '/admin/menu',      icon: UtensilsCrossed, label: t('adminLayout.nav.menu') },
+        { to: '/admin/inventory', icon: Package,         label: t('adminLayout.nav.inventory') },
+        { to: '/admin/coupons',   icon: Tag,             label: t('adminLayout.nav.coupons') },
       ],
     },
     {
-      group: 'Guests',
+      group: t('adminLayout.groups.guests'),
       items: [
-        { to: '/admin/reviews',    icon: Star,          label: 'Reviews' },
-        { to: '/admin/complaints', icon: AlertTriangle, label: 'Complaints' },
+        { to: '/admin/reviews',    icon: Star,          label: t('adminLayout.nav.reviews') },
+        { to: '/admin/complaints', icon: AlertTriangle, label: t('adminLayout.nav.complaints') },
       ],
     },
     {
-      group: 'Logistics',
+      group: t('adminLayout.groups.logistics'),
       items: [
-        { to: '/admin/delivery-zones', icon: Truck, label: 'Delivery Zones' },
+        { to: '/admin/delivery-zones', icon: Truck, label: t('adminLayout.nav.deliveryZones') },
       ],
     },
     {
-      group: 'Administration',
+      group: t('adminLayout.groups.administration'),
       items: [
-        { to: '/admin/users',    icon: Users,     label: 'Staff & Access' },
-        { to: '/admin/reports',  icon: BarChart2, label: 'Reports' },
-        { to: '/admin/hotels',   icon: Building2, label: 'Properties',  superAdminOnly: true },
-        { to: '/admin/audit',    icon: Shield,    label: 'Audit Log',   adminOnly: true },
-        { to: '/admin/settings', icon: Settings,  label: 'Settings',    adminOnly: true },
+        { to: '/admin/users',    icon: Users,     label: t('adminLayout.nav.users') },
+        { to: '/admin/reports',  icon: BarChart2, label: t('adminLayout.nav.reports') },
+        { to: '/admin/hotels',   icon: Building2, label: t('adminLayout.nav.hotels'),  superAdminOnly: true },
+        { to: '/admin/audit',    icon: Shield,    label: t('adminLayout.nav.audit'),   adminOnly: true },
+        { to: '/admin/settings', icon: Settings,  label: t('adminLayout.nav.settings'), adminOnly: true },
       ],
     },
   ]
@@ -106,13 +109,13 @@ function isActive(to) {
 }
 
 // ── Staff portals ─────────────────────────────────────────────────────────
-const staffPortals = [
-  { to: '/staff/kitchen',   label: 'Kitchen KDS' },
-  { to: '/staff/waiter',    label: 'Waiter Floor' },
-  { to: '/staff/cashier',   label: 'Cashier POS' },
-  { to: '/staff/reception', label: 'Reception' },
-  { to: '/staff/delivery',  label: 'Delivery' },
-]
+const staffPortals = computed(() => [
+  { to: '/staff/kitchen',   label: t('staffLayout.kitchenKds') },
+  { to: '/staff/waiter',    label: t('staffLayout.waiterFloor') },
+  { to: '/staff/cashier',   label: t('staffLayout.cashierPos') },
+  { to: '/staff/reception', label: t('staffLayout.reception') },
+  { to: '/staff/delivery',  label: t('staffLayout.delivery') },
+])
 const showPortals = ref(false)
 
 async function logout() {
@@ -166,7 +169,7 @@ async function logout() {
           v-if="isMobile"
           @click="sidebarOpen = false"
           class="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/8 transition-colors"
-          aria-label="Close"
+          :aria-label="$t('adminLayout.close')"
         >
           <X :size="17" />
         </button>
@@ -235,7 +238,7 @@ async function logout() {
           <button
             @click="logout"
             class="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
-            title="Sign out" aria-label="Sign out"
+            :title="$t('adminLayout.signOut')" :aria-label="$t('adminLayout.signOut')"
           >
             <LogOut :size="15" />
           </button>
@@ -244,7 +247,7 @@ async function logout() {
           <button
             @click="logout"
             class="p-2 rounded-xl text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Sign out" aria-label="Sign out"
+            :title="$t('adminLayout.signOut')" :aria-label="$t('adminLayout.signOut')"
           >
             <LogOut :size="16" />
           </button>
@@ -267,7 +270,7 @@ async function logout() {
           <button
             @click="isMobile ? (sidebarOpen = !sidebarOpen) : (collapsed = !collapsed)"
             class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-gray-500 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-white/8 transition-colors"
-            :aria-label="isMobile ? 'Toggle menu' : (collapsed ? 'Expand sidebar' : 'Collapse sidebar')"
+            :aria-label="isMobile ? $t('adminLayout.toggleMenu') : (collapsed ? $t('adminLayout.expandSidebar') : $t('adminLayout.collapseSidebar'))"
           >
             <Menu :size="19" />
           </button>
@@ -278,7 +281,7 @@ async function logout() {
             target="_blank"
             class="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-warm-200 dark:border-white/10 text-warm-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
           >
-            <ExternalLink :size="12" /> Storefront
+            <ExternalLink :size="12" /> {{ $t('adminLayout.storefront') }}
           </RouterLink>
 
           <!-- Staff portals dropdown -->
@@ -288,7 +291,7 @@ async function logout() {
               class="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-warm-200 dark:border-white/10 text-warm-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
             >
               <ChefHat :size="12" />
-              Staff Portals
+              {{ $t('adminLayout.staffPortals') }}
               <ChevronRight :size="11" :class="['transition-transform duration-200', showPortals ? 'rotate-90' : '']" />
             </button>
 
@@ -319,12 +322,15 @@ async function logout() {
         <!-- Right -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
 
+          <!-- Language switcher in admin topbar -->
+          <LanguageSwitcher />
+
           <!-- Inline theme toggle in topbar -->
           <button
             @click="ui.toggleDarkMode"
             class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-gray-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-white/8 transition-colors"
-            :aria-label="ui.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-            :title="ui.darkMode ? 'Light mode' : 'Dark mode'"
+            :aria-label="ui.darkMode ? $t('adminLayout.lightMode') : $t('adminLayout.darkMode')"
+            :title="ui.darkMode ? $t('adminLayout.lightMode') : $t('adminLayout.darkMode')"
           >
             <Sun v-if="ui.darkMode"  :size="18" class="text-amber-400" />
             <Moon v-else             :size="18" class="text-gray-400" />

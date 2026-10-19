@@ -2,12 +2,14 @@
 import { ref, onMounted, watch } from 'vue'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { useI18n } from 'vue-i18n'
 import {
   Star, Search, CheckCircle, EyeOff, Trash2,
   RefreshCw, MessageSquare, ThumbsUp, Filter, AlertCircle
 } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 
 const loading = ref(false)
@@ -46,7 +48,7 @@ async function fetchReviews(page = 1) {
     if (data.meta) meta.value = data.meta
     if (data.stats) stats.value = data.stats
   } catch (err) {
-    ui.toast('Failed to load customer reviews', 'error')
+    ui.toast(t('adminReviews.toastFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -58,28 +60,27 @@ async function toggleApproval(review) {
   try {
     const { data } = await adminApi.updateReview(review.id, { is_approved: targetState })
     review.is_approved = targetState
-    ui.toast(data.message || (targetState ? 'Review approved and published' : 'Review hidden'), 'success')
-    // Refresh stats
+    ui.toast(targetState ? t('adminReviews.toastApproved') : t('adminReviews.toastHidden'), 'success')
     fetchReviews(meta.value.current_page)
   } catch (err) {
-    ui.toast('Failed to update review status', 'error')
+    ui.toast(t('adminReviews.toastFailed'), 'error')
   } finally {
     updatingId.value = null
   }
 }
 
 async function deleteReview(review) {
-  if (!confirm(`Are you sure you want to delete this review by ${review.user?.name || 'Customer'}? This action cannot be undone.`)) {
+  if (!confirm(t('adminReviews.confirmDelete'))) {
     return
   }
 
   deletingId.value = review.id
   try {
     await adminApi.deleteReview(review.id)
-    ui.toast('Review deleted successfully', 'success')
+    ui.toast(t('adminReviews.toastDeleted'), 'success')
     fetchReviews(meta.value.current_page)
   } catch (err) {
-    ui.toast('Failed to delete review', 'error')
+    ui.toast(t('adminReviews.toastFailed'), 'error')
   } finally {
     deletingId.value = null
   }
@@ -130,7 +131,7 @@ function getInitials(name) {
       <div>
         <h1 class="font-heading text-2xl md:text-3xl font-bold text-warm-900 dark:text-white flex items-center gap-3">
           <Star :size="28" class="text-amber-500 fill-amber-500" />
-          Reviews & Rating Moderation
+          {{ $t('adminReviews.title') }}
         </h1>
         <p class="text-xs md:text-sm text-warm-500 dark:text-warm-400 mt-1">
           Monitor customer feedback, manage published reviews, and maintain restaurant quality standards.
@@ -143,14 +144,14 @@ function getInitials(name) {
         class="btn-secondary self-start sm:self-auto gap-2 text-xs py-2 px-4 rounded-xl shadow-sm"
       >
         <RefreshCw :size="15" :class="{ 'animate-spin': loading }" />
-        <span>Refresh</span>
+        <span>{{ $t('adminReviews.refresh') }}</span>
       </button>
     </div>
 
     <!-- Stats Cards Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="card p-5 border border-warm-200/80 dark:border-warm-800 rounded-2xl bg-white dark:bg-warm-900">
-        <p class="text-xs uppercase font-semibold text-warm-400 tracking-wider">Total Reviews</p>
+        <p class="text-xs uppercase font-semibold text-warm-400 tracking-wider">{{ $t('adminReviews.totalReviews') }}</p>
         <div class="flex items-baseline gap-2 mt-2">
           <span class="font-heading text-3xl font-extrabold text-warm-900 dark:text-white">
             {{ stats.total_reviews }}
@@ -160,7 +161,7 @@ function getInitials(name) {
       </div>
 
       <div class="card p-5 border border-amber-500/20 rounded-2xl bg-gradient-to-br from-amber-500/5 to-transparent">
-        <p class="text-xs uppercase font-semibold text-amber-600 dark:text-amber-400 tracking-wider">Average Rating</p>
+        <p class="text-xs uppercase font-semibold text-amber-600 dark:text-amber-400 tracking-wider">{{ $t('adminReviews.avgRating') }}</p>
         <div class="flex items-baseline gap-2 mt-2">
           <span class="font-heading text-3xl font-extrabold text-amber-600 dark:text-amber-400">
             {{ Number(stats.avg_rating).toFixed(1) }}★
@@ -170,7 +171,7 @@ function getInitials(name) {
       </div>
 
       <div class="card p-5 border border-emerald-500/20 rounded-2xl bg-gradient-to-br from-emerald-500/5 to-transparent">
-        <p class="text-xs uppercase font-semibold text-emerald-600 dark:text-emerald-400 tracking-wider">Approved & Live</p>
+        <p class="text-xs uppercase font-semibold text-emerald-600 dark:text-emerald-400 tracking-wider">{{ $t('adminReviews.approvedCount') }}</p>
         <div class="flex items-baseline gap-2 mt-2">
           <span class="font-heading text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
             {{ stats.approved_count }}
@@ -180,7 +181,7 @@ function getInitials(name) {
       </div>
 
       <div class="card p-5 border border-orange-500/20 rounded-2xl bg-gradient-to-br from-orange-500/5 to-transparent">
-        <p class="text-xs uppercase font-semibold text-orange-600 dark:text-orange-400 tracking-wider">Hidden / Pending</p>
+        <p class="text-xs uppercase font-semibold text-orange-600 dark:text-orange-400 tracking-wider">{{ $t('adminReviews.pendingCount') }}</p>
         <div class="flex items-baseline gap-2 mt-2">
           <span class="font-heading text-3xl font-extrabold text-orange-600 dark:text-orange-400">
             {{ stats.pending_count }}
@@ -198,7 +199,7 @@ function getInitials(name) {
         <input
           v-model="search"
           type="text"
-          placeholder="Search customer, dish, comment..."
+          :placeholder="$t('adminReviews.searchPlaceholder')"
           class="input w-full pl-10 pr-4 py-2 text-xs rounded-xl"
         />
       </div>
@@ -210,9 +211,9 @@ function getInitials(name) {
           v-model="selectedStatus"
           class="input text-xs py-2 px-3 rounded-xl"
         >
-          <option value="">All Statuses</option>
-          <option value="approved">Approved Only</option>
-          <option value="pending">Hidden / Pending Only</option>
+          <option value="">{{ $t('adminReviews.filterAllStatus') }}</option>
+          <option value="approved">{{ $t('adminReviews.filterApproved') }}</option>
+          <option value="pending">{{ $t('adminReviews.filterPending') }}</option>
         </select>
 
         <!-- Rating Filter -->
@@ -220,12 +221,12 @@ function getInitials(name) {
           v-model="selectedRating"
           class="input text-xs py-2 px-3 rounded-xl"
         >
-          <option value="">All Ratings</option>
-          <option value="5">5 Stars</option>
-          <option value="4">4 Stars</option>
-          <option value="3">3 Stars</option>
-          <option value="2">2 Stars</option>
-          <option value="1">1 Star</option>
+          <option value="">{{ $t('adminReviews.filterAllRatings') }}</option>
+          <option value="5">{{ $t('adminReviews.filterStars', { count: 5 }) }}</option>
+          <option value="4">{{ $t('adminReviews.filterStars', { count: 4 }) }}</option>
+          <option value="3">{{ $t('adminReviews.filterStars', { count: 3 }) }}</option>
+          <option value="2">{{ $t('adminReviews.filterStars', { count: 2 }) }}</option>
+          <option value="1">{{ $t('adminReviews.filterStars', { count: 1 }) }}</option>
         </select>
       </div>
     </div>
@@ -238,13 +239,13 @@ function getInitials(name) {
         <table class="w-full text-left text-xs text-warm-600 dark:text-warm-300">
           <thead class="bg-warm-50 dark:bg-warm-800/60 uppercase font-semibold text-warm-500 border-b border-warm-200 dark:border-warm-800">
             <tr>
-              <th class="py-3.5 px-5">Customer</th>
-              <th class="py-3.5 px-4">Dish</th>
-              <th class="py-3.5 px-4">Rating</th>
-              <th class="py-3.5 px-4">Comment</th>
-              <th class="py-3.5 px-4">Date</th>
-              <th class="py-3.5 px-4">Status</th>
-              <th class="py-3.5 px-5 text-right">Actions</th>
+              <th class="py-3.5 px-5">{{ $t('adminReviews.thGuest') }}</th>
+              <th class="py-3.5 px-4">{{ $t('adminReviews.thDish') }}</th>
+              <th class="py-3.5 px-4">{{ $t('adminReviews.thRating') }}</th>
+              <th class="py-3.5 px-4">{{ $t('adminReviews.thComment') }}</th>
+              <th class="py-3.5 px-4">{{ $t('adminReviews.thDate') }}</th>
+              <th class="py-3.5 px-4">{{ $t('adminReviews.thStatus') }}</th>
+              <th class="py-3.5 px-5 text-right">{{ $t('adminReviews.thActions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
@@ -261,7 +262,7 @@ function getInitials(name) {
                   </div>
                   <div>
                     <p class="font-bold text-warm-900 dark:text-white leading-tight">
-                      {{ rev.user?.name || 'Customer' }}
+                      {{ rev.user?.name || $t('adminReviews.verifiedDiner') }}
                     </p>
                     <p class="text-[11px] text-warm-400">{{ rev.user?.email || '—' }}</p>
                   </div>
@@ -321,7 +322,7 @@ function getInitials(name) {
               <!-- Status Badge -->
               <td class="py-4 px-4 whitespace-nowrap">
                 <span :class="['badge text-[11px] font-bold uppercase', rev.is_approved ? 'badge-green' : 'badge-orange']">
-                  {{ rev.is_approved ? 'Approved' : 'Hidden' }}
+                  {{ rev.is_approved ? $t('adminReviews.approvedBadge') : $t('adminReviews.pendingBadge') }}
                 </span>
               </td>
 
@@ -332,7 +333,7 @@ function getInitials(name) {
                   <button
                     @click="toggleApproval(rev)"
                     :disabled="updatingId === rev.id"
-                    :title="rev.is_approved ? 'Hide from public view' : 'Approve for public view'"
+                    :title="rev.is_approved ? $t('adminReviews.hideBtn') : $t('adminReviews.approveBtn')"
                     :class="[
                       'p-2 rounded-xl text-xs font-semibold transition-colors',
                       rev.is_approved
@@ -347,7 +348,7 @@ function getInitials(name) {
                   <button
                     @click="deleteReview(rev)"
                     :disabled="deletingId === rev.id"
-                    title="Delete review permanently"
+                    :title="$t('adminReviews.deleteBtn')"
                     class="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
                   >
                     <Trash2 :size="16" />
@@ -364,10 +365,7 @@ function getInitials(name) {
         <div class="w-14 h-14 rounded-full bg-warm-100 dark:bg-warm-800 text-warm-400 flex items-center justify-center mx-auto mb-3">
           <Star :size="28" />
         </div>
-        <h3 class="font-heading font-bold text-base text-warm-900 dark:text-white mb-1">No reviews found</h3>
-        <p class="text-xs text-warm-400 max-w-sm mx-auto">
-          No customer reviews match your active filter criteria. Try clearing your search or status filters.
-        </p>
+        <h3 class="font-heading font-bold text-base text-warm-900 dark:text-white mb-1">{{ $t('adminReviews.noReviewsFound') }}</h3>
       </div>
 
       <!-- Pagination Footer -->

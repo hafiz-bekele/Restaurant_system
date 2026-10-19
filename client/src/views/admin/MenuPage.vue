@@ -3,12 +3,14 @@ import { ref, computed, watch } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi, menuApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { useI18n } from 'vue-i18n'
 import {
   Plus, Trash2, Pencil, X, Search, Upload, Link, ImageOff,
   ChefHat, Tag, DollarSign, Star, Eye, EyeOff, RefreshCw,
 } from '@lucide/vue'
 import DishCardSkeleton from '../../components/ui/DishCardSkeleton.vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
@@ -85,7 +87,6 @@ function switchImageMode(mode) {
 
 // ── Build FormData ─────────────────────────────────────────────────────────────
 function buildPayload() {
-  // If uploading a file, use multipart; otherwise send JSON
   if (imageMode.value === 'file' && imageFile.value) {
     const fd = new FormData()
     Object.entries(form.value).forEach(([k, v]) => {
@@ -96,15 +97,15 @@ function buildPayload() {
     fd.append('image', imageFile.value)
     return fd
   }
-  // JSON payload — strip empty optional fields
   const payload = { ...form.value }
-  if (!payload.calories)  delete payload.calories
-  if (!payload.prep_time) delete payload.prep_time
   if (!payload.image_url) delete payload.image_url
+  if (!payload.description) delete payload.description
+  if (!payload.calories) delete payload.calories
+  if (!payload.prep_time) delete payload.prep_time
   return payload
 }
 
-// ── Modal open/close ─────────────────────────────────────────────────────────
+// ── Modal open / close ────────────────────────────────────────────────────────
 function openCreate() {
   editingDish.value  = null
   form.value         = emptyForm()
@@ -118,7 +119,7 @@ function openEdit(dish) {
   editingDish.value = dish
   form.value = {
     name:         dish.name         ?? '',
-    category_id:  dish.category?.id ?? '',
+    category_id:  dish.category_id  ?? '',
     price:        dish.price        ?? '',
     description:  dish.description  ?? '',
     image_url:    dish.image        ?? '',
@@ -138,17 +139,17 @@ function closeModal() {
   clearImage()
 }
 
-// ── Save ──────────────────────────────────────────────────────────────────────
+// ── Save (create or update) ───────────────────────────────────────────────────
 async function save() {
-  const name  = String(form.value.name ?? '').trim()
+  const name  = form.value.name.trim()
   const price = Number(form.value.price)
 
   if (!name) {
-    ui.toast('Dish name is required', 'error')
+    ui.toast(t('adminMenu.dishName'), 'error')
     return
   }
   if (form.value.price === '' || form.value.price === null || form.value.price === undefined) {
-    ui.toast('Price is required', 'error')
+    ui.toast(t('adminMenu.price'), 'error')
     return
   }
   if (price < 0) {
@@ -160,17 +161,17 @@ async function save() {
     const payload = buildPayload()
     if (editingDish.value) {
       await adminApi.updateDish(editingDish.value.id, payload)
-      ui.toast(`"${form.value.name}" updated successfully`, 'success')
+      ui.toast(t('adminMenu.toastUpdated', { name: form.value.name }), 'success')
     } else {
       await adminApi.createDish(payload)
-      ui.toast(`"${form.value.name}" added to menu`, 'success')
+      ui.toast(t('adminMenu.toastCreated', { name: form.value.name }), 'success')
     }
     qc.invalidateQueries({ queryKey: ['admin', 'dishes'] })
     qc.invalidateQueries({ queryKey: ['dishes', 'featured'] })
     closeModal()
   } catch (e) {
     const errors = e.response?.data?.errors
-    ui.toast(errors ? Object.values(errors).flat()[0] : 'Failed to save dish', 'error')
+    ui.toast(errors ? Object.values(errors).flat()[0] : t('adminMenu.toastSaveFailed'), 'error')
   } finally {
     saving.value = false
   }
@@ -180,20 +181,20 @@ async function toggleAvail(dish) {
   try {
     await adminApi.updateDish(dish.id, { is_available: !dish.is_available })
     qc.invalidateQueries({ queryKey: ['admin', 'dishes'] })
-    ui.toast(dish.is_available ? 'Marked unavailable' : 'Marked available', 'success')
+    ui.toast(dish.is_available ? t('adminMenu.toastMarkedUnavailable') : t('adminMenu.toastMarkedAvailable'), 'success')
   } catch {
-    ui.toast('Failed to update availability', 'error')
+    ui.toast(t('adminMenu.toastAvailabilityFailed'), 'error')
   }
 }
 
 async function deleteDish(dish) {
-  if (!confirm(`Remove "${dish.name}" from the menu? This cannot be undone.`)) return
+  if (!confirm(t('adminMenu.confirmDelete', { name: dish.name }))) return
   try {
     await adminApi.deleteDish(dish.id)
     qc.invalidateQueries({ queryKey: ['admin', 'dishes'] })
-    ui.toast(`"${dish.name}" removed`, 'success')
+    ui.toast(t('adminMenu.toastDeleted', { name: dish.name }), 'success')
   } catch {
-    ui.toast('Failed to delete dish', 'error')
+    ui.toast(t('adminMenu.toastDeleteFailed'), 'error')
   }
 }
 </script>
@@ -205,12 +206,12 @@ async function deleteDish(dish) {
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-          <ChefHat :size="24" class="text-primary-500" /> Menu Management
+          <ChefHat :size="24" class="text-primary-500" /> {{ $t('adminMenu.title') }}
         </h1>
-        <p class="text-sm text-warm-500 dark:text-warm-400 mt-0.5">Add, edit, and manage all dishes and availability</p>
+        <p class="text-sm text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('adminMenu.subtitle') }}</p>
       </div>
       <button @click="openCreate" class="btn-primary gap-2 self-start sm:self-auto shadow-sm">
-        <Plus :size="16" /> Add Dish
+        <Plus :size="16" /> {{ $t('adminMenu.addDish') }}
       </button>
     </div>
 
@@ -218,16 +219,16 @@ async function deleteDish(dish) {
     <div class="flex flex-wrap items-center gap-3">
       <div class="relative flex-1 min-w-[200px] max-w-xs">
         <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
-        <input v-model="search" type="search" placeholder="Search dishes…" class="input pl-9 text-sm" />
+        <input v-model="search" type="search" :placeholder="$t('adminMenu.searchPlaceholder')" class="input pl-9 text-sm" />
       </div>
       <select v-model="categoryFilter" class="input w-auto text-sm py-2.5">
-        <option value="">All Categories</option>
+        <option value="">{{ $t('adminMenu.allCategories') }}</option>
         <option v-for="c in categories()" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
       <button @click="qc.invalidateQueries({ queryKey: ['admin', 'dishes'] })" class="btn-ghost text-xs gap-1.5 py-2 px-3">
-        <RefreshCw :size="13" /> Refresh
+        <RefreshCw :size="13" /> {{ $t('adminMenu.refresh') }}
       </button>
-      <p class="text-xs text-warm-500 ml-auto">{{ dishes().length }} dishes</p>
+      <p class="text-xs text-warm-500 ml-auto">{{ $t('adminMenu.dishesCount', { count: dishes().length }) }}</p>
     </div>
 
     <!-- ── Loading Skeleton ─────────────────────────────────────────────────── -->
@@ -256,10 +257,10 @@ async function deleteDish(dish) {
           <!-- Badges overlay -->
           <div class="absolute top-2 left-2 flex flex-col gap-1">
             <span v-if="dish.is_featured" class="badge badge-orange text-[10px]">
-              <Star :size="9" class="mr-0.5" /> Featured
+              <Star :size="9" class="mr-0.5" /> {{ $t('adminMenu.featuredBadge') }}
             </span>
             <span :class="['badge text-[10px]', dish.is_available ? 'badge-green' : 'badge-red']">
-              {{ dish.is_available ? 'Available' : 'Unavailable' }}
+              {{ dish.is_available ? $t('adminMenu.availableBadge') : $t('adminMenu.unavailableBadge') }}
             </span>
           </div>
         </div>
@@ -268,7 +269,7 @@ async function deleteDish(dish) {
         <div class="p-4">
           <div class="flex items-start justify-between gap-2 mb-1">
             <h3 class="font-semibold text-sm text-warm-900 dark:text-white leading-tight line-clamp-1">{{ dish.name }}</h3>
-            <span class="font-bold text-primary-600 dark:text-primary-400 text-sm shrink-0">${{ Number(dish.price).toFixed(2) }}</span>
+            <span class="font-bold text-primary-600 dark:text-primary-400 text-sm shrink-0">ETB {{ Number(dish.price).toFixed(2) }}</span>
           </div>
           <p v-if="dish.category" class="text-[11px] text-warm-400 mb-2 flex items-center gap-1">
             <Tag :size="10" /> {{ dish.category.name }}
@@ -281,18 +282,18 @@ async function deleteDish(dish) {
             <button
               @click="toggleAvail(dish)"
               :class="['flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors', dish.is_available ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-800']"
-              :title="dish.is_available ? 'Mark unavailable' : 'Mark available'"
+              :title="dish.is_available ? $t('adminMenu.markUnavailable') : $t('adminMenu.markAvailable')"
             >
               <Eye v-if="dish.is_available" :size="13" />
               <EyeOff v-else :size="13" />
-              {{ dish.is_available ? 'Live' : 'Hidden' }}
+              {{ dish.is_available ? $t('adminMenu.liveToggle') : $t('adminMenu.hiddenToggle') }}
             </button>
 
             <div class="flex items-center gap-1 ml-auto">
-              <button @click="openEdit(dish)" class="p-1.5 rounded-lg text-warm-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors" title="Edit dish">
+              <button @click="openEdit(dish)" class="p-1.5 rounded-lg text-warm-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors" :title="$t('adminMenu.editDish')">
                 <Pencil :size="14" />
               </button>
-              <button @click="deleteDish(dish)" class="p-1.5 rounded-lg text-warm-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" :title="`Delete ${dish.name}`">
+              <button @click="deleteDish(dish)" class="p-1.5 rounded-lg text-warm-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" :title="`${$t('adminMenu.deleteDish')} ${dish.name}`">
                 <Trash2 :size="14" />
               </button>
             </div>
@@ -304,10 +305,10 @@ async function deleteDish(dish) {
     <!-- ── Empty state ───────────────────────────────────────────────────────── -->
     <div v-else class="card p-16 text-center">
       <ChefHat :size="48" class="mx-auto text-warm-300 dark:text-warm-600 mb-4" />
-      <p class="font-semibold text-warm-700 dark:text-warm-300 mb-1">No dishes found</p>
-      <p class="text-sm text-warm-400 mb-5">{{ search || categoryFilter ? 'Try adjusting your filters.' : 'Add your first dish to get started.' }}</p>
+      <p class="font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminMenu.noDishesFound') }}</p>
+      <p class="text-sm text-warm-400 mb-5">{{ search || categoryFilter ? $t('adminMenu.adjustFilterTip') : $t('adminMenu.adjustFilterTip') }}</p>
       <button v-if="!search && !categoryFilter" @click="openCreate" class="btn-primary mx-auto">
-        <Plus :size="16" /> Add First Dish
+        <Plus :size="16" /> {{ $t('adminMenu.addFirstDish') }}
       </button>
     </div>
 
@@ -326,10 +327,10 @@ async function deleteDish(dish) {
             <div class="flex items-center justify-between p-6 pb-4 border-b border-warm-100 dark:border-warm-800 shrink-0">
               <div>
                 <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
-                  {{ editingDish ? 'Edit Dish' : 'Add New Dish' }}
+                  {{ editingDish ? $t('adminMenu.modalEditTitle') : $t('adminMenu.modalAddTitle') }}
                 </h2>
                 <p class="text-xs text-warm-400 mt-0.5">
-                  {{ editingDish ? `Editing "${editingDish.name}"` : 'Fill in the details below to add a dish to your menu' }}
+                  {{ editingDish ? $t('adminMenu.modalEditSubtitle', { name: editingDish.name }) : $t('adminMenu.modalAddSubtitle') }}
                 </p>
               </div>
               <button @click="closeModal" class="btn-ghost p-1.5 rounded-lg shrink-0">
@@ -342,7 +343,7 @@ async function deleteDish(dish) {
 
               <!-- Image section -->
               <div>
-                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-2">Dish Image</label>
+                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-2">{{ $t('adminMenu.dishImage') }}</label>
 
                 <!-- Mode toggle -->
                 <div class="flex gap-1 p-1 bg-warm-100 dark:bg-warm-800 rounded-xl w-fit mb-3">
@@ -350,13 +351,13 @@ async function deleteDish(dish) {
                     @click="switchImageMode('url')"
                     :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all', imageMode === 'url' ? 'bg-white dark:bg-gray-900 shadow text-warm-900 dark:text-white' : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300']"
                   >
-                    <Link :size="13" /> Image URL
+                    <Link :size="13" /> {{ $t('adminMenu.imageUrlTab') }}
                   </button>
                   <button
                     @click="switchImageMode('file')"
                     :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all', imageMode === 'file' ? 'bg-white dark:bg-gray-900 shadow text-warm-900 dark:text-white' : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300']"
                   >
-                    <Upload :size="13" /> Upload File
+                    <Upload :size="13" /> {{ $t('adminMenu.uploadFileTab') }}
                   </button>
                 </div>
 
@@ -366,7 +367,7 @@ async function deleteDish(dish) {
                     v-model="form.image_url"
                     type="url"
                     class="input text-sm flex-1"
-                    placeholder="https://example.com/image.jpg"
+                    :placeholder="$t('adminMenu.urlPlaceholder')"
                   />
                 </div>
 
@@ -378,8 +379,8 @@ async function deleteDish(dish) {
                     class="border-2 border-dashed border-warm-300 dark:border-warm-700 rounded-xl p-6 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/40 dark:hover:bg-primary-900/10 transition-all duration-200"
                   >
                     <Upload :size="28" class="mx-auto text-warm-400 mb-2" />
-                    <p class="text-sm font-medium text-warm-600 dark:text-warm-300">Click to choose a file</p>
-                    <p class="text-xs text-warm-400 mt-1">PNG, JPG, WEBP — max 5 MB</p>
+                    <p class="text-sm font-medium text-warm-600 dark:text-warm-300">{{ $t('adminMenu.dropzoneText') }}</p>
+                    <p class="text-xs text-warm-400 mt-1">{{ $t('adminMenu.dropzoneHint') }}</p>
                   </div>
                 </div>
 
@@ -400,14 +401,14 @@ async function deleteDish(dish) {
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">
-                    Dish Name <span class="text-red-500">*</span>
+                    {{ $t('adminMenu.dishName') }} <span class="text-red-500">*</span>
                   </label>
-                  <input v-model="form.name" type="text" required class="input text-sm" placeholder="e.g. Grilled Salmon" />
+                  <input v-model="form.name" type="text" required class="input text-sm" placeholder="e.g. Doro Wat / Grilled Steak" />
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Category</label>
+                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminMenu.dishCategory') }}</label>
                   <select v-model="form.category_id" class="input text-sm">
-                    <option value="">— Select category —</option>
+                    <option value="">— {{ $t('adminMenu.selectCategory') }} —</option>
                     <option v-for="c in categories()" :key="c.id" :value="c.id">{{ c.name }}</option>
                   </select>
                 </div>
@@ -417,7 +418,7 @@ async function deleteDish(dish) {
               <div class="grid grid-cols-3 gap-4">
                 <div>
                   <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">
-                    Price ($) <span class="text-red-500">*</span>
+                    {{ $t('adminMenu.price') }} <span class="text-red-500">*</span>
                   </label>
                   <div class="relative">
                     <DollarSign :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
@@ -425,19 +426,19 @@ async function deleteDish(dish) {
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Calories (kcal)</label>
+                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminMenu.calories') }}</label>
                   <input v-model="form.calories" type="number" min="0" class="input text-sm" placeholder="e.g. 450" />
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Prep Time (min)</label>
+                  <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminMenu.prepTime') }}</label>
                   <input v-model="form.prep_time" type="number" min="0" class="input text-sm" placeholder="e.g. 20" />
                 </div>
               </div>
 
               <!-- Description -->
               <div>
-                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Description</label>
-                <textarea v-model="form.description" rows="3" class="input text-sm resize-none" placeholder="Brief description of the dish…"></textarea>
+                <label class="block text-sm font-semibold text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminMenu.description') }}</label>
+                <textarea v-model="form.description" rows="3" class="input text-sm resize-none" :placeholder="$t('adminMenu.descPlaceholder')"></textarea>
               </div>
 
               <!-- Toggles -->
@@ -450,8 +451,8 @@ async function deleteDish(dish) {
                     <span :class="['absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200', form.is_available ? 'translate-x-5' : 'translate-x-0.5']"></span>
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-warm-800 dark:text-warm-200">Available</p>
-                    <p class="text-xs text-warm-400">Show on customer menu</p>
+                    <p class="text-sm font-semibold text-warm-800 dark:text-warm-200">{{ $t('adminMenu.availableOnMenu') }}</p>
+                    <p class="text-xs text-warm-400">{{ $t('adminMenu.availableHint') }}</p>
                   </div>
                 </label>
                 <label class="flex items-center gap-3 cursor-pointer select-none">
@@ -462,8 +463,8 @@ async function deleteDish(dish) {
                     <span :class="['absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200', form.is_featured ? 'translate-x-5' : 'translate-x-0.5']"></span>
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-warm-800 dark:text-warm-200">Featured</p>
-                    <p class="text-xs text-warm-400">Show on homepage</p>
+                    <p class="text-sm font-semibold text-warm-800 dark:text-warm-200">{{ $t('adminMenu.markFeatured') }}</p>
+                    <p class="text-xs text-warm-400">{{ $t('adminMenu.featuredHint') }}</p>
                   </div>
                 </label>
               </div>
@@ -476,9 +477,9 @@ async function deleteDish(dish) {
                 {{ editingDish ? 'Changes save immediately.' : 'Dish will appear on the menu after saving.' }}
               </p>
               <div class="flex gap-2">
-                <button @click="closeModal" class="btn-outline text-sm py-2 px-4">Cancel</button>
+                <button @click="closeModal" class="btn-outline text-sm py-2 px-4">{{ $t('adminMenu.cancel') }}</button>
                 <button @click="save" :disabled="saving" class="btn-primary text-sm py-2 px-5 shadow-md">
-                  {{ saving ? 'Saving…' : editingDish ? 'Save Changes' : 'Add Dish' }}
+                  {{ saving ? $t('adminMenu.saving') : editingDish ? $t('adminMenu.saveChanges') : $t('adminMenu.createDish') }}
                 </button>
               </div>
             </div>

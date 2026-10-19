@@ -3,9 +3,11 @@ import { ref } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
+import { useI18n } from 'vue-i18n'
 import { AlertTriangle, X } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
+const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
@@ -32,10 +34,10 @@ const tickets = () => data.value?.data ?? []
 const statusColors = { open: 'badge-red', investigating: 'badge-orange', resolved: 'badge-green', dismissed: 'badge' }
 
 function openTicket(ticket) {
-  selected.value    = ticket
-  newStatus.value   = ticket.status
+  selected.value       = ticket
+  newStatus.value      = ticket.status
   resolutionNote.value = ticket.resolution_note ?? ''
-  showModal.value   = true
+  showModal.value      = true
 }
 
 async function saveTicket() {
@@ -43,10 +45,13 @@ async function saveTicket() {
   try {
     await adminApi.updateComplaint(selected.value.id, { status: newStatus.value, resolution_note: resolutionNote.value })
     qc.invalidateQueries({ queryKey: ['admin', 'complaints'] })
-    ui.toast('Ticket updated', 'success')
+    ui.toast(t('adminComplaints.toastUpdated'), 'success')
     showModal.value = false
-  } catch { ui.toast('Failed to update ticket', 'error') }
-  finally { saving.value = false }
+  } catch {
+    ui.toast(t('adminComplaints.toastUpdateFailed'), 'error')
+  } finally {
+    saving.value = false
+  }
 }
 
 function formatDate(dt) {
@@ -58,17 +63,17 @@ function formatDate(dt) {
   <div>
     <div class="flex items-center justify-between mb-6">
       <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-        <AlertTriangle :size="22" class="text-orange-500" /> Complaints
+        <AlertTriangle :size="22" class="text-orange-500" /> {{ $t('adminComplaints.title') }}
       </h1>
     </div>
 
     <!-- Filters -->
     <div class="flex flex-wrap gap-3 mb-6">
       <select v-model="statusFilter" class="input w-auto">
-        <option v-for="s in statusOptions" :key="s" :value="s">{{ s || 'All Statuses' }}</option>
+        <option v-for="s in statusOptions" :key="s" :value="s">{{ s ? s.toUpperCase() : $t('adminComplaints.allStatuses') }}</option>
       </select>
       <select v-model="categoryFilter" class="input w-auto">
-        <option v-for="c in categoryOptions" :key="c" :value="c">{{ c ? c.replace('_', ' ') : 'All Categories' }}</option>
+        <option v-for="c in categoryOptions" :key="c" :value="c">{{ c ? c.replace('_', ' ') : $t('adminComplaints.allCategories') }}</option>
       </select>
     </div>
 
@@ -78,13 +83,13 @@ function formatDate(dt) {
       <table class="w-full text-sm">
         <thead class="bg-warm-50 dark:bg-warm-800">
           <tr class="text-left text-warm-600 dark:text-warm-400">
-            <th class="px-5 py-3 font-medium">Ticket</th>
-            <th class="px-5 py-3 font-medium">Category</th>
-            <th class="px-5 py-3 font-medium">Subject</th>
-            <th class="px-5 py-3 font-medium">Guest</th>
-            <th class="px-5 py-3 font-medium">Status</th>
-            <th class="px-5 py-3 font-medium">Created</th>
-            <th class="px-5 py-3 font-medium">Action</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminComplaints.thTicket') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminComplaints.thCategory') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminComplaints.thSubject') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminComplaints.thGuest') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminComplaints.thStatus') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminComplaints.thCreated') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('adminComplaints.thAction') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-warm-50 dark:divide-warm-800">
@@ -98,11 +103,11 @@ function formatDate(dt) {
             </td>
             <td class="px-5 py-3 text-warm-400 text-xs whitespace-nowrap">{{ formatDate(t.created_at) }}</td>
             <td class="px-5 py-3">
-              <button @click="openTicket(t)" class="btn-ghost text-xs py-1 px-3">Manage</button>
+              <button @click="openTicket(t)" class="btn-ghost text-xs py-1 px-3">{{ $t('adminComplaints.viewUpdateBtn') }}</button>
             </td>
           </tr>
           <tr v-if="!tickets().length">
-            <td colspan="7" class="px-5 py-10 text-center text-warm-400">No complaints found</td>
+            <td colspan="7" class="px-5 py-10 text-center text-warm-400">{{ $t('adminComplaints.noComplaintsFound') }}</td>
           </tr>
         </tbody>
       </table>
@@ -128,18 +133,18 @@ function formatDate(dt) {
             <p v-if="selected?.description" class="text-sm text-warm-600 dark:text-warm-400 bg-warm-50 dark:bg-warm-800 rounded-xl p-3 mb-4">{{ selected.description }}</p>
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Status</label>
+                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminComplaints.updateStatusLabel') }}</label>
                 <select v-model="newStatus" class="input">
                   <option v-for="s in ['open','investigating','resolved','dismissed']" :key="s" :value="s">{{ s }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Resolution Note</label>
-                <textarea v-model="resolutionNote" rows="3" class="input resize-none" placeholder="What action was taken?"></textarea>
+                <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('adminComplaints.resolutionNoteLabel') }}</label>
+                <textarea v-model="resolutionNote" rows="3" class="input resize-none" :placeholder="$t('adminComplaints.resolutionPlaceholder')"></textarea>
               </div>
               <div class="flex gap-3 pt-2">
-                <button @click="showModal = false" class="btn-outline flex-1">Cancel</button>
-                <button @click="saveTicket" :disabled="saving" class="btn-primary flex-1">{{ saving ? 'Saving…' : 'Save Changes' }}</button>
+                <button @click="showModal = false" class="btn-outline flex-1">{{ $t('adminComplaints.cancel') }}</button>
+                <button @click="saveTicket" :disabled="saving" class="btn-primary flex-1">{{ saving ? $t('adminComplaints.updating') : $t('adminComplaints.updateTicket') }}</button>
               </div>
             </div>
           </div>

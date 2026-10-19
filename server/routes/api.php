@@ -132,6 +132,8 @@ Route::prefix('v1')->group(function () {
             Route::get('waiter/orders', [WaiterController::class, 'orders']);
             Route::post('waiter/orders', [WaiterController::class, 'createOrder']);
             Route::post('waiter/orders/{order}/served', [WaiterController::class, 'markServed']);
+            Route::post('waiter/orders/{order}/add-items', [WaiterController::class, 'addItems']);
+            Route::patch('waiter/tables/{table}/status', [WaiterController::class, 'updateTableStatus']);
         });
 
         // Staff — cashier / POS billing (REQ-9.x)

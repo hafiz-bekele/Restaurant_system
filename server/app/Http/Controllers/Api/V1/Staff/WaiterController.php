@@ -18,7 +18,12 @@ class WaiterController extends Controller
     public function tables(): JsonResponse
     {
         $tables = RestaurantTable::withCount([
-            'orders' => fn ($q) => $q->whereNotIn('status', ['delivered', 'cancelled']),
+            'orders' => fn ($q) => $q->where('payment_status', 'pending')->where('status', '!=', 'cancelled'),
+        ])->with([
+            'orders' => fn ($q) => $q->where('payment_status', 'pending')
+                ->where('status', '!=', 'cancelled')
+                ->with('items')
+                ->latest()
         ])->orderBy('name')->get();
 
         return $this->success($tables);
@@ -27,11 +32,17 @@ class WaiterController extends Controller
     public function orders(): JsonResponse
     {
         $orders = Order::with(['items', 'table', 'user'])
-            ->whereIn('status', [
-                OrderStatus::Confirmed->value,
-                OrderStatus::Preparing->value,
-                OrderStatus::Ready->value,
-            ])
+            ->where(function ($q) {
+                $q->whereIn('status', [
+                    OrderStatus::Confirmed->value,
+                    OrderStatus::Preparing->value,
+                    OrderStatus::Ready->value,
+                ])
+                ->orWhere(function ($q2) {
+                    $q2->where('status', OrderStatus::Delivered->value)
+                       ->where('payment_status', 'pending');
+                });
+            })
             ->latest()
             ->get();
 
@@ -121,5 +132,64 @@ class WaiterController extends Controller
 
             return $this->success(new OrderResource($order->load('items', 'table')), 'Table order created and sent to kitchen KDS', 201);
         });
+    }
+
+    public function addItems(Request $request, Order $order): JsonResponse
+    {
+        $data = $request->validate([
+            'items'            => ['required', 'array', 'min:1'],
+            'items.*.dish_id'  => ['required', 'exists:dishes,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'notes'            => ['nullable', 'string', 'max:500'],
+        ]);
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($data, $order) {
+            $addedSubtotal = 0;
+            foreach ($data['items'] as $itemData) {
+                $dish = \App\Models\Dish::findOrFail($itemData['dish_id']);
+                $itemSubtotal = $dish->price * $itemData['quantity'];
+                $addedSubtotal += $itemSubtotal;
+                $order->items()->create([
+                    'dish_id'       => $dish->id,
+                    'name_snapshot' => $dish->name,
+                    'unit_price'    => $dish->price,
+                    'quantity'      => $itemData['quantity'],
+                    'station'       => 'kitchen',
+                ]);
+            }
+
+            $newSubtotal = $order->subtotal + $addedSubtotal;
+            $newServiceCharge = round($newSubtotal * 0.10, 2);
+            $taxableBasis = $newSubtotal + $newServiceCharge;
+            $newTax = round($taxableBasis * 0.15, 2);
+            $newTotal = round($taxableBasis + $newTax, 2);
+
+            $orderNotes = $order->notes;
+            if (!empty($data['notes'])) {
+                $orderNotes = $orderNotes ? ($orderNotes . ' | Added: ' . $data['notes']) : $data['notes'];
+            }
+
+            $order->update([
+                'subtotal'       => $newSubtotal,
+                'service_charge' => $newServiceCharge,
+                'tax'            => $newTax,
+                'total'          => $newTotal,
+                'notes'          => $orderNotes,
+                'status'         => \App\Enums\OrderStatus::Confirmed,
+            ]);
+
+            return $this->success(new OrderResource($order->load('items', 'table')), 'Additional items added to table order and sent to KDS');
+        });
+    }
+
+    public function updateTableStatus(Request $request, RestaurantTable $table): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', 'in:available,occupied,reserved'],
+        ]);
+
+        $table->update(['status' => $data['status']]);
+
+        return $this->success($table, "Table {$table->name} status updated to {$data['status']}");
     }
 }

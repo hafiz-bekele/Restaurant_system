@@ -142,7 +142,9 @@ export const staffApi = {
   waiterTables:           ()                    => api.get('/waiter/tables'),
   waiterOrders:           ()                    => api.get('/waiter/orders'),
   createWaiterOrder:      (data: Record<string, any>) => api.post('/waiter/orders', data),
+  waiterAddItems:         (ulid: string, data: Record<string, any>) => api.post(`/waiter/orders/${ulid}/add-items`, data),
   markServed:             (id: number | string) => api.post(`/waiter/orders/${id}/served`),
+  waiterUpdateTableStatus:(id: number | string, status: string) => api.patch(`/waiter/tables/${id}/status`, { status }),
 
   // Cashier / Billing POS
   cashierOrders:          ()                    => api.get('/cashier/orders'),

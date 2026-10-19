@@ -616,11 +616,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4 max-w-7xl mx-auto">
-    <!-- 1. UNIFIED COMMAND HUB CARD (Master Control + Till Status + Financial Ribbon in ONE collected form) -->
-    <div class="card p-4 sm:p-5 shadow-sm space-y-3.5 border border-warm-200 dark:border-warm-800">
-      <!-- Row 1: Left (Title + Shift Status chip) | Right (Action Buttons) -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <div class="max-w-7xl mx-auto">
+    <!-- MASTER ALL-IN-ONE POS WORKSTATION CONSOLE -->
+    <div class="card overflow-hidden shadow-card border border-warm-200/90 dark:border-warm-800/90">
+      <!-- Section 1: Command Hub Header (Title, Shift Status & Till Actions) -->
+      <div class="p-4 sm:p-5 bg-white dark:bg-warm-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <div class="p-2.5 rounded-2xl bg-primary-500/10 text-primary-600 dark:text-primary-400 shrink-0">
             <CreditCard :size="22" />
@@ -694,75 +694,74 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Row 2: Integrated Financial Metrics Ribbon (Collected Horizontal Ticker) -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 pt-3 border-t border-warm-100 dark:border-warm-800">
-        <!-- Cash in Till -->
-        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400 flex items-center gap-1">
-            <DollarSign :size="11" /> {{ $t('cashierPage.cashInDrawer') }}
-          </span>
-          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
-            ETB {{ Number(currentShiftData.summary?.expected_cash || summary.cash_total || 0).toFixed(2) }}
-          </p>
-        </div>
+      <!-- Section 2: Integrated Financial Metrics Ribbon (Horizontal Ticker) -->
+      <div class="p-3 sm:px-5 sm:py-3 bg-warm-50/70 dark:bg-warm-850/60 border-t border-warm-200/70 dark:border-warm-800/70">
+        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+          <!-- Cash in Till -->
+          <div class="p-2.5 rounded-xl bg-white/90 dark:bg-warm-800/80 border border-warm-200/60 dark:border-warm-700/60 shadow-2xs">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400 flex items-center gap-1">
+              <DollarSign :size="11" /> {{ $t('cashierPage.cashInDrawer') }}
+            </span>
+            <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+              ETB {{ Number(currentShiftData.summary?.expected_cash || summary.cash_total || 0).toFixed(2) }}
+            </p>
+          </div>
 
-        <!-- Telebirr -->
-        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1">
-            <Smartphone :size="11" /> {{ $t('cashierPage.digitalCollected') }}
-          </span>
-          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
-            ETB {{ Number(summary.telebirr_total || summary.digital_total || 0).toFixed(2) }}
-          </p>
-        </div>
+          <!-- Telebirr -->
+          <div class="p-2.5 rounded-xl bg-white/90 dark:bg-warm-800/80 border border-warm-200/60 dark:border-warm-700/60 shadow-2xs">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1">
+              <Smartphone :size="11" /> {{ $t('cashierPage.digitalCollected') }}
+            </span>
+            <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+              ETB {{ Number(summary.telebirr_total || summary.digital_total || 0).toFixed(2) }}
+            </p>
+          </div>
 
-        <!-- CBE Birr -->
-        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
-            <Building2 :size="11" /> {{ $t('cashierPage.cbeCollected') }}
-          </span>
-          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
-            ETB {{ Number(summary.cbe_total || 0).toFixed(2) }}
-          </p>
-        </div>
+          <!-- CBE Birr -->
+          <div class="p-2.5 rounded-xl bg-white/90 dark:bg-warm-800/80 border border-warm-200/60 dark:border-warm-700/60 shadow-2xs">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <Building2 :size="11" /> {{ $t('cashierPage.cbeCollected') }}
+            </span>
+            <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+              ETB {{ Number(summary.cbe_total || 0).toFixed(2) }}
+            </p>
+          </div>
 
-        <!-- Card / POS -->
-        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
-            <CreditCard :size="11" /> {{ $t('cashierPage.cardCollected') }}
-          </span>
-          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
-            ETB {{ Number(summary.card_total || 0).toFixed(2) }}
-          </p>
-        </div>
+          <!-- Card / POS -->
+          <div class="p-2.5 rounded-xl bg-white/90 dark:bg-warm-800/80 border border-warm-200/60 dark:border-warm-700/60 shadow-2xs">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
+              <CreditCard :size="11" /> {{ $t('cashierPage.cardCollected') }}
+            </span>
+            <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+              ETB {{ Number(summary.card_total || 0).toFixed(2) }}
+            </p>
+          </div>
 
-        <!-- Room Charges -->
-        <div class="p-2.5 rounded-xl bg-warm-50/80 dark:bg-warm-800/40 border border-warm-200/50 dark:border-warm-700/50">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1">
-            <BedDouble :size="11" /> {{ $t('cashierPage.roomChargeCollected') }}
-          </span>
-          <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
-            ETB {{ Number(summary.room_charge_total || 0).toFixed(2) }}
-          </p>
-        </div>
+          <!-- Room Charges -->
+          <div class="p-2.5 rounded-xl bg-white/90 dark:bg-warm-800/80 border border-warm-200/60 dark:border-warm-700/60 shadow-2xs">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1">
+              <BedDouble :size="11" /> {{ $t('cashierPage.roomChargeCollected') }}
+            </span>
+            <p class="font-mono text-sm font-bold text-warm-900 dark:text-white mt-0.5">
+              ETB {{ Number(summary.room_charge_total || 0).toFixed(2) }}
+            </p>
+          </div>
 
-        <!-- Grand Total -->
-        <div class="p-2.5 rounded-xl bg-primary-50 dark:bg-primary-950/40 border border-primary-200/60 dark:border-primary-800/60">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 flex items-center justify-between">
-            <span class="flex items-center gap-1"><TrendingUp :size="11" /> {{ $t('cashierPage.grandTotal') }}</span>
-            <span class="text-[9px] opacity-80">({{ summary.orders_count }})</span>
-          </span>
-          <p class="font-mono text-sm font-bold text-primary-700 dark:text-primary-300 mt-0.5">
-            ETB {{ Number(summary.grand_total || 0).toFixed(2) }}
-          </p>
+          <!-- Grand Total -->
+          <div class="p-2.5 rounded-xl bg-primary-50 dark:bg-primary-950/40 border border-primary-200/60 dark:border-primary-800/60 shadow-2xs">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 flex items-center justify-between">
+              <span class="flex items-center gap-1"><TrendingUp :size="11" /> {{ $t('cashierPage.grandTotal') }}</span>
+              <span class="text-[9px] opacity-80">({{ summary.orders_count }})</span>
+            </span>
+            <p class="font-mono text-sm font-bold text-primary-700 dark:text-primary-300 mt-0.5">
+              ETB {{ Number(summary.grand_total || 0).toFixed(2) }}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 2. MASTER WORKSTATION CONTAINER (Collected & Consolidated POS Workspace) -->
-    <div class="card overflow-hidden shadow-sm border border-warm-200 dark:border-warm-800">
-      <!-- Master Navigation Bar: Segmented Workstation Switcher (Left) & Context Quick Controls (Right) -->
-      <div class="px-4 py-3 bg-gradient-to-r from-warm-50/80 via-white/80 to-warm-50/80 dark:from-warm-900/80 dark:via-warm-850/80 dark:to-warm-900/80 border-b border-warm-200/70 dark:border-warm-800/70 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <!-- Section 3: Master Navigation Bar: Segmented Workstation Switcher (Left) & Context Quick Controls (Right) -->
+      <div class="px-4 py-3 bg-gradient-to-r from-warm-50/80 via-white/80 to-warm-50/80 dark:from-warm-900/80 dark:via-warm-850/80 dark:to-warm-900/80 border-t border-warm-200/70 dark:border-warm-800/70 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <!-- Sleek Segmented Tab Switcher with Glassmorphic Pill -->
         <div class="inline-flex p-1 rounded-2xl bg-warm-200/50 dark:bg-warm-800/60 border border-warm-200/60 dark:border-warm-700/50 shadow-inner gap-1 self-start md:self-auto">
           <button

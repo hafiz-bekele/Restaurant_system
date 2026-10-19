@@ -12,11 +12,12 @@ const { data, isLoading } = useQuery({
 })
 const dishes = () => data.value?.data ?? []
 </script>
+
 <template>
   <DefaultLayout>
     <div class="page-container py-10">
       <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-8 flex items-center gap-3">
-        <Heart :size="28" class="text-red-500 fill-red-500" /> Favorites
+        <Heart :size="28" class="text-red-500 fill-red-500" /> {{ $t('favoritesPage.title') }}
       </h1>
       <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <DishCardSkeleton v-for="i in 4" :key="i" />
@@ -26,7 +27,7 @@ const dishes = () => data.value?.data ?? []
       </div>
       <div v-else class="text-center py-20">
         <Heart :size="48" class="mx-auto text-warm-300 mb-4" />
-        <p class="text-warm-500">No favorites yet. Start adding dishes!</p>
+        <p class="text-warm-500">{{ $t('favoritesPage.emptyTitle') }}</p>
       </div>
     </div>
   </DefaultLayout>

@@ -1,12 +1,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useUiStore }   from '../../stores/ui'
-import { ChefHat, User, Mail, Lock, ArrowLeft } from '@lucide/vue'
+import { ChefHat, ArrowLeft } from '@lucide/vue'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
 import { APP_NAME } from '../../config'
 
+const { t } = useI18n()
 const auth   = useAuthStore()
 const ui     = useUiStore()
 const router = useRouter()
@@ -20,11 +22,11 @@ async function submit() {
   loading.value = true
   try {
     await auth.register(form.value)
-    ui.toast('Account created! Welcome.', 'success')
+    ui.toast(t('auth.accountCreatedToast'), 'success')
     router.push('/')
   } catch (e) {
     const errors = e.response?.data?.errors
-    error.value = errors ? Object.values(errors).flat().join(' ') : (e.response?.data?.message ?? 'Registration failed')
+    error.value = errors ? Object.values(errors).flat().join(' ') : (e.response?.data?.message ?? t('auth.registrationFailed'))
   } finally {
     loading.value = false
   }
@@ -40,7 +42,7 @@ async function submit() {
         class="inline-flex items-center gap-1.5 text-xs font-semibold text-warm-600 dark:text-warm-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
       >
         <ArrowLeft :size="16" />
-        <span>Return to {{ APP_NAME }}</span>
+        <span>{{ $t('auth.returnTo', { name: APP_NAME }) }}</span>
       </RouterLink>
 
       <div class="flex items-center gap-2">
@@ -56,48 +58,48 @@ async function submit() {
           </div>
           <span>{{ APP_NAME }}</span>
         </RouterLink>
-        <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mt-3">Create Account</h1>
-        <p class="text-warm-500 dark:text-warm-400 mt-1 text-sm">Join us for the best dining experience</p>
+        <h1 class="font-heading text-2xl font-bold text-warm-900 dark:text-white mt-3">{{ $t('auth.createAccountTitle') }}</h1>
+        <p class="text-warm-500 dark:text-warm-400 mt-1 text-sm">{{ $t('auth.createAccountSubtitle') }}</p>
       </div>
 
       <form @submit.prevent="submit" class="space-y-4" novalidate>
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Full Name</label>
-          <input v-model="form.name" type="text" required class="input" placeholder="John Doe" autocomplete="name" />
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('auth.fullName') }}</label>
+          <input v-model="form.name" type="text" required class="input" :placeholder="$t('auth.fullNamePlaceholder')" autocomplete="name" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Email</label>
-          <input v-model="form.email" type="email" required class="input" placeholder="you@example.com" autocomplete="email" />
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('auth.email') }}</label>
+          <input v-model="form.email" type="email" required class="input" :placeholder="$t('auth.emailPlaceholder')" autocomplete="email" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Phone (optional)</label>
-          <input v-model="form.phone" type="tel" class="input" placeholder="+251 911 000 000" autocomplete="tel" />
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('auth.phoneOptional') }}</label>
+          <input v-model="form.phone" type="tel" class="input" :placeholder="$t('auth.phonePlaceholder')" autocomplete="tel" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Password</label>
-          <input v-model="form.password" type="password" required class="input" placeholder="Min. 8 characters" autocomplete="new-password" />
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('auth.password') }}</label>
+          <input v-model="form.password" type="password" required class="input" :placeholder="$t('auth.minCharacters')" autocomplete="new-password" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">Confirm Password</label>
-          <input v-model="form.password_confirmation" type="password" required class="input" placeholder="Repeat password" autocomplete="new-password" />
+          <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('auth.confirmPassword') }}</label>
+          <input v-model="form.password_confirmation" type="password" required class="input" :placeholder="$t('auth.repeatPasswordPlaceholder')" autocomplete="new-password" />
         </div>
 
         <p v-if="error" class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2">{{ error }}</p>
 
         <button type="submit" :disabled="loading" class="btn-primary w-full justify-center py-3 mt-2">
-          {{ loading ? 'Creating...' : 'Create Account' }}
+          {{ loading ? $t('auth.creating') : $t('auth.createAccountBtn') }}
         </button>
       </form>
 
       <p class="text-center text-sm text-warm-500 dark:text-warm-400 mt-6">
-        Already have an account?
-        <RouterLink to="/login" class="text-primary-600 dark:text-primary-400 font-semibold hover:underline">Sign in</RouterLink>
+        {{ $t('auth.alreadyHaveAccount') }}
+        <RouterLink to="/login" class="text-primary-600 dark:text-primary-400 font-semibold hover:underline">{{ $t('auth.signInLink') }}</RouterLink>
       </p>
     </div>
 
     <!-- Bottom subfooter -->
     <div class="py-2 text-center text-xs text-warm-400 shrink-0">
-      &copy; {{ new Date().getFullYear() }} {{ APP_NAME }}. All rights reserved.
+      &copy; {{ new Date().getFullYear() }} {{ APP_NAME }}. {{ $t('auth.allRightsReserved') }}
     </div>
   </div>
 </template>

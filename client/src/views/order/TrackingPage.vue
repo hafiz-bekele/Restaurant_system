@@ -1,15 +1,17 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { orderApi, paymentApi, reviewApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import {
   CheckCircle, Clock, ChefHat, Truck, Package, ShieldCheck,
-  RefreshCw, Smartphone, ExternalLink, Star, MessageSquare, Check, Send,
-  Printer, ReceiptText, X, QrCode, MapPin, Phone, User
+  RefreshCw, Smartphone, ExternalLink, Star, Check, Send,
+  Printer, ReceiptText, X
 } from '@lucide/vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const ui = useUiStore()
 const order = ref(null)
@@ -30,14 +32,14 @@ const hoverStars = ref({})
 const ratedDishes = ref({})
 const submittingReview = ref(false)
 
-const steps = [
-  { status: 'pending',          label: 'Order Placed',  icon: CheckCircle },
-  { status: 'confirmed',        label: 'Confirmed',     icon: CheckCircle },
-  { status: 'preparing',        label: 'Preparing',     icon: ChefHat },
-  { status: 'ready',            label: 'Ready',         icon: Package },
-  { status: 'out_for_delivery', label: 'On the Way',    icon: Truck },
-  { status: 'delivered',        label: 'Delivered',     icon: CheckCircle },
-]
+const steps = computed(() => [
+  { status: 'pending',          label: t('trackingPage.steps.pending'),          icon: CheckCircle },
+  { status: 'confirmed',        label: t('trackingPage.steps.confirmed'),        icon: CheckCircle },
+  { status: 'preparing',        label: t('trackingPage.steps.preparing'),        icon: ChefHat },
+  { status: 'ready',            label: t('trackingPage.steps.ready'),            icon: Package },
+  { status: 'out_for_delivery', label: t('trackingPage.steps.outForDelivery'),   icon: Truck },
+  { status: 'delivered',        label: t('trackingPage.steps.delivered'),        icon: CheckCircle },
+])
 
 async function fetchOrder() {
   const { data } = await orderApi.track(route.params.ulid)
@@ -54,7 +56,7 @@ async function payWithChapa() {
       window.location.href = checkoutUrl
     }
   } catch (err) {
-    ui.toast('Failed to initialize Chapa gateway', 'error')
+    ui.toast(t('trackingPage.chapaInitFailed'), 'error')
   } finally {
     paying.value = false
   }
@@ -64,16 +66,16 @@ async function verifyChapaPayment(silent = false) {
   verifying.value = true
   try {
     await paymentApi.verifyChapa({ order_ulid: route.params.ulid })
-    if (!silent) ui.toast('Chapa payment verified and confirmed!', 'success')
+    if (!silent) ui.toast(t('trackingPage.paymentVerifiedSuccess'), 'success')
     await fetchOrder()
   } catch (err) {
-    if (!silent) ui.toast('Could not verify Chapa transaction', 'error')
+    if (!silent) ui.toast(t('trackingPage.paymentVerifyFailed'), 'error')
   } finally {
     verifying.value = false
   }
 }
 
-const stepIndex = (status) => steps.findIndex(s => s.status === status)
+const stepIndex = (status) => steps.value.findIndex(s => s.status === status)
 
 function toggleRatingForm(dishId) {
   if (activeRatingDishId.value === dishId) {
@@ -97,11 +99,11 @@ async function submitDishReview(dishId) {
       comment,
     })
 
-    ui.toast('Thank you for rating your dish!', 'success')
+    ui.toast(t('trackingPage.reviewThankYou'), 'success')
     ratedDishes.value[dishId] = true
     activeRatingDishId.value = null
   } catch (err) {
-    const msg = err.response?.data?.message || 'Failed to submit rating'
+    const msg = err.response?.data?.message || t('trackingPage.reviewFailed')
     ui.toast(msg, 'error')
   } finally {
     submittingReview.value = false
@@ -133,7 +135,7 @@ onUnmounted(() => {
 <template>
   <DefaultLayout>
     <div class="page-container py-12 max-w-2xl">
-      <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-8">Order Tracking</h1>
+      <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-8">{{ $t('trackingPage.title') }}</h1>
 
       <!-- Order Tracking Loading Skeleton -->
       <div v-if="loading" class="card p-8 space-y-8">
@@ -168,7 +170,7 @@ onUnmounted(() => {
         <div class="card p-8">
           <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
             <div>
-              <p class="text-xs text-warm-500 font-semibold uppercase tracking-wider">Order Reference</p>
+              <p class="text-xs text-warm-500 font-semibold uppercase tracking-wider">{{ $t('trackingPage.orderRef') }}</p>
               <p class="font-mono font-bold text-warm-900 dark:text-white text-base">
                 {{ order.order_number || order.ulid }}
               </p>
@@ -177,10 +179,10 @@ onUnmounted(() => {
               <button
                 @click="showReceiptModal = true"
                 class="btn-secondary text-xs py-2 px-3.5 rounded-xl gap-2 shadow-sm border border-warm-200 dark:border-warm-700 hover:border-primary-400 transition-colors"
-                title="View and print official tax invoice & order receipt"
+                :title="$t('trackingPage.printReceiptTitle')"
               >
                 <Printer :size="15" class="text-primary-600 dark:text-primary-400" />
-                <span>View / Print Receipt</span>
+                <span>{{ $t('trackingPage.viewPrintReceipt') }}</span>
               </button>
               <span :class="['badge font-bold uppercase text-xs', order.status === 'delivered' ? 'badge-green' : order.status === 'cancelled' ? 'badge-red' : 'badge-orange']">
                 {{ order.status_label }}
@@ -217,11 +219,11 @@ onUnmounted(() => {
               <div class="flex items-center gap-3 text-emerald-800 dark:text-emerald-200">
                 <ShieldCheck :size="24" class="text-emerald-500 shrink-0" />
                 <div>
-                  <p class="font-bold text-sm">Payment Verified via Chapa</p>
-                  <p class="text-xs text-emerald-600 dark:text-emerald-400">Total of ETB {{ Number(order.total).toFixed(2) }} settled successfully via Telebirr / CBE / Card.</p>
+                  <p class="font-bold text-sm">{{ $t('trackingPage.paymentVerifiedTitle') }}</p>
+                  <p class="text-xs text-emerald-600 dark:text-emerald-400">{{ $t('trackingPage.paymentVerifiedDesc', { total: Number(order.total).toFixed(2) }) }}</p>
                 </div>
               </div>
-              <span class="badge badge-green text-xs font-bold uppercase">PAID</span>
+              <span class="badge badge-green text-xs font-bold uppercase">{{ $t('trackingPage.paidBadge') }}</span>
             </div>
 
             <!-- Pending State -->
@@ -230,11 +232,11 @@ onUnmounted(() => {
                 <div class="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
                   <Smartphone :size="20" class="text-amber-600" />
                   <div>
-                    <p class="font-bold text-sm">Chapa Payment Pending</p>
-                    <p class="text-xs text-amber-700 dark:text-amber-400">Please complete payment of ETB {{ Number(order.total).toFixed(2) }} via Telebirr, CBE Birr, or Card.</p>
+                    <p class="font-bold text-sm">{{ $t('trackingPage.paymentPendingTitle') }}</p>
+                    <p class="text-xs text-amber-700 dark:text-amber-400">{{ $t('trackingPage.paymentPendingDesc', { total: Number(order.total).toFixed(2) }) }}</p>
                   </div>
                 </div>
-                <span class="badge badge-orange text-xs font-bold uppercase">UNPAID</span>
+                <span class="badge badge-orange text-xs font-bold uppercase">{{ $t('trackingPage.unpaidBadge') }}</span>
               </div>
 
               <div class="flex flex-wrap gap-2 pt-1">
@@ -244,7 +246,7 @@ onUnmounted(() => {
                   class="btn-primary text-xs py-2 px-4 shadow-sm gap-1.5"
                 >
                   <ExternalLink :size="14" />
-                  <span>{{ paying ? 'Launching Chapa...' : 'Pay with Chapa (Telebirr / CBE)' }}</span>
+                  <span>{{ paying ? $t('trackingPage.launchingChapa') : $t('trackingPage.payWithChapa') }}</span>
                 </button>
                 <button
                   @click="verifyChapaPayment(false)"
@@ -252,7 +254,7 @@ onUnmounted(() => {
                   class="btn-secondary text-xs py-2 px-3.5 gap-1.5"
                 >
                   <RefreshCw :size="14" :class="{ 'animate-spin': verifying }" />
-                  <span>{{ verifying ? 'Verifying...' : 'Verify Payment Status' }}</span>
+                  <span>{{ verifying ? $t('trackingPage.verifying') : $t('trackingPage.verifyPayment') }}</span>
                 </button>
               </div>
             </div>
@@ -260,7 +262,7 @@ onUnmounted(() => {
 
           <div v-if="order.estimated_time" class="mt-6 flex items-center gap-2 text-sm text-warm-600 dark:text-warm-400 bg-warm-50 dark:bg-warm-800/50 rounded-xl px-4 py-3">
             <Clock :size="16" class="text-primary-500" />
-            Estimated delivery: ~{{ order.estimated_time }} minutes
+            {{ $t('trackingPage.estDelivery', { mins: order.estimated_time }) }}
           </div>
         </div>
 
@@ -273,10 +275,10 @@ onUnmounted(() => {
               </div>
               <div>
                 <h3 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
-                  Rate Your Culinary Experience
+                  {{ $t('trackingPage.rateExperienceTitle') }}
                 </h3>
                 <p class="text-xs text-warm-500 dark:text-warm-400">
-                  How was each dish prepared? Rate your meal to help our chefs!
+                  {{ $t('trackingPage.rateExperienceSubtitle') }}
                 </p>
               </div>
             </div>
@@ -304,10 +306,10 @@ onUnmounted(() => {
                   </div>
                   <div>
                     <h4 class="font-heading font-semibold text-sm text-warm-900 dark:text-white">
-                      {{ item.dish?.name || 'Dish' }}
+                      {{ item.dish?.name || $t('trackingPage.dishFallback') }}
                     </h4>
                     <p class="text-xs text-warm-400">
-                      Qty: {{ item.quantity }} &bull; ${{ Number(item.unit_price).toFixed(2) }}
+                      {{ $t('trackingPage.qty') }}: {{ item.quantity }} &bull; ETB {{ Number(item.unit_price).toFixed(2) }}
                     </p>
                   </div>
                 </div>
@@ -316,7 +318,7 @@ onUnmounted(() => {
                 <div>
                   <div v-if="ratedDishes[item.dish_id]" class="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800">
                     <Check :size="14" />
-                    Rated
+                    {{ $t('trackingPage.rated') }}
                   </div>
                   <button
                     v-else
@@ -324,7 +326,7 @@ onUnmounted(() => {
                     class="btn-secondary text-xs py-1.5 px-3 rounded-xl gap-1.5"
                   >
                     <Star :size="13" class="text-amber-400 fill-amber-400" />
-                    <span>{{ activeRatingDishId === item.dish_id ? 'Close' : 'Rate Dish' }}</span>
+                    <span>{{ activeRatingDishId === item.dish_id ? $t('trackingPage.closeRating') : $t('trackingPage.rateDish') }}</span>
                   </button>
                 </div>
               </div>
@@ -336,7 +338,7 @@ onUnmounted(() => {
               >
                 <div>
                   <label class="block text-xs font-semibold text-warm-500 mb-1.5 uppercase tracking-wider">
-                    Select Rating
+                    {{ $t('trackingPage.selectRating') }}
                   </label>
                   <div class="flex items-center gap-1.5">
                     <button
@@ -359,19 +361,19 @@ onUnmounted(() => {
                       />
                     </button>
                     <span class="text-xs font-bold text-amber-600 ml-2">
-                      {{ (hoverStars[item.dish_id] || ratingValues[item.dish_id] || 5) }} Stars
+                      {{ $t('trackingPage.starsCount', { count: (hoverStars[item.dish_id] || ratingValues[item.dish_id] || 5) }) }}
                     </span>
                   </div>
                 </div>
 
                 <div>
                   <label class="block text-xs font-semibold text-warm-500 mb-1.5 uppercase tracking-wider">
-                    Comments (Optional)
+                    {{ $t('trackingPage.commentsOptional') }}
                   </label>
                   <textarea
                     v-model="commentValues[item.dish_id]"
                     rows="2"
-                    placeholder="Taste, temperature, portion size..."
+                    :placeholder="$t('trackingPage.commentsPlaceholder')"
                     class="input w-full text-xs p-2.5 rounded-xl resize-none"
                   ></textarea>
                 </div>
@@ -382,7 +384,7 @@ onUnmounted(() => {
                     @click="activeRatingDishId = null"
                     class="btn-secondary text-xs py-1.5 px-3 rounded-xl"
                   >
-                    Cancel
+                    {{ $t('trackingPage.cancel') }}
                   </button>
                   <button
                     type="button"
@@ -391,7 +393,7 @@ onUnmounted(() => {
                     class="btn-primary text-xs py-1.5 px-4 rounded-xl gap-1.5"
                   >
                     <Send :size="13" />
-                    <span>{{ submittingReview ? 'Submitting...' : 'Submit Review' }}</span>
+                    <span>{{ submittingReview ? $t('trackingPage.submitting') : $t('trackingPage.submitReview') }}</span>
                   </button>
                 </div>
               </div>
@@ -413,7 +415,7 @@ onUnmounted(() => {
           <div class="no-print bg-warm-900 text-white px-6 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-2">
               <ReceiptText :size="18" class="text-primary-400" />
-              <span class="font-bold text-sm tracking-wide">Guest Receipt & Tax Invoice</span>
+              <span class="font-bold text-sm tracking-wide">{{ $t('trackingPage.receipt.modalTitle') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <button
@@ -421,7 +423,7 @@ onUnmounted(() => {
                 class="bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 <Printer :size="13" />
-                <span>Print / Save PDF</span>
+                <span>{{ $t('trackingPage.receipt.printPdf') }}</span>
               </button>
               <button
                 @click="showReceiptModal = false"
@@ -437,42 +439,42 @@ onUnmounted(() => {
             <!-- Restaurant Header -->
             <div class="text-center pb-5 border-b border-dashed border-warm-300">
               <h2 class="font-heading font-black text-2xl text-warm-900 tracking-tight">
-                Taste & Stay Bistro
+                {{ $t('brandName') }}
               </h2>
               <p class="text-xs uppercase tracking-widest text-warm-500 font-semibold mt-0.5">
-                Boutique Suites & Fine Dining
+                {{ $t('trackingPage.receipt.bistroSubtitle') }}
               </p>
               <div class="text-[11px] text-warm-600 space-y-0.5 mt-2">
-                <p>Bole Medhanialem, Next to Edna Mall &bull; Addis Ababa, Ethiopia</p>
-                <p>Tel: +251 91 123 4567 / +251 11 661 2345 &bull; TIN: 0048192014</p>
+                <p>{{ $t('trackingPage.receipt.addressLine1') }}</p>
+                <p>{{ $t('trackingPage.receipt.addressLine2') }}</p>
               </div>
             </div>
 
             <!-- Invoice & Customer Meta Grid -->
             <div class="grid grid-cols-2 gap-3 text-xs bg-warm-50 p-3.5 rounded-2xl border border-warm-200">
               <div>
-                <p class="text-warm-400 uppercase text-[10px] font-bold">Order Ref</p>
+                <p class="text-warm-400 uppercase text-[10px] font-bold">{{ $t('trackingPage.receipt.orderRef') }}</p>
                 <p class="font-mono font-bold text-warm-900">{{ order.order_number || order.ulid }}</p>
               </div>
               <div class="text-right">
-                <p class="text-warm-400 uppercase text-[10px] font-bold">Date & Time</p>
+                <p class="text-warm-400 uppercase text-[10px] font-bold">{{ $t('trackingPage.receipt.dateTime') }}</p>
                 <p class="font-medium text-warm-800">
                   {{ order.created_at ? new Date(order.created_at).toLocaleString() : new Date().toLocaleString() }}
                 </p>
               </div>
               <div>
-                <p class="text-warm-400 uppercase text-[10px] font-bold">Customer</p>
+                <p class="text-warm-400 uppercase text-[10px] font-bold">{{ $t('trackingPage.receipt.customer') }}</p>
                 <p class="font-semibold text-warm-900">
-                  {{ order.address_snapshot?.customer_name || 'Guest Diner' }}
+                  {{ order.address_snapshot?.customer_name || $t('trackingPage.receipt.guestDiner') }}
                 </p>
                 <p v-if="order.address_snapshot?.customer_phone" class="text-warm-600 text-[11px]">
                   {{ order.address_snapshot.customer_phone }}
                 </p>
               </div>
               <div class="text-right">
-                <p class="text-warm-400 uppercase text-[10px] font-bold">Order Type</p>
+                <p class="text-warm-400 uppercase text-[10px] font-bold">{{ $t('trackingPage.receipt.orderType') }}</p>
                 <span class="inline-block uppercase font-bold text-[10px] px-2 py-0.5 rounded bg-primary-100 text-primary-800 mt-0.5">
-                  {{ order.type || 'Dine-In' }}
+                  {{ order.type || $t('trackingPage.receipt.dineIn') }}
                 </span>
                 <p v-if="order.address_snapshot?.delivery_address" class="text-warm-600 text-[11px] mt-0.5 truncate max-w-[180px] ml-auto">
                   {{ order.address_snapshot.delivery_address }}
@@ -483,10 +485,10 @@ onUnmounted(() => {
             <!-- Itemized Table -->
             <div class="space-y-2">
               <div class="flex justify-between text-[11px] font-bold text-warm-500 uppercase tracking-wider border-b border-warm-200 pb-1.5">
-                <span class="flex-1">Item Description</span>
-                <span class="w-12 text-center">Qty</span>
-                <span class="w-20 text-right">Price</span>
-                <span class="w-20 text-right">Total</span>
+                <span class="flex-1">{{ $t('trackingPage.receipt.itemDescription') }}</span>
+                <span class="w-12 text-center">{{ $t('trackingPage.receipt.qty') }}</span>
+                <span class="w-20 text-right">{{ $t('trackingPage.receipt.price') }}</span>
+                <span class="w-20 text-right">{{ $t('trackingPage.receipt.total') }}</span>
               </div>
               <div class="divide-y divide-warm-100 text-xs">
                 <div
@@ -495,7 +497,7 @@ onUnmounted(() => {
                   class="py-2 flex items-center justify-between"
                 >
                   <div class="flex-1 pr-2">
-                    <p class="font-semibold text-warm-900 leading-snug">{{ item.dish?.name || 'Dish Item' }}</p>
+                    <p class="font-semibold text-warm-900 leading-snug">{{ item.dish?.name || $t('trackingPage.receipt.dishItem') }}</p>
                   </div>
                   <span class="w-12 text-center font-medium text-warm-700">{{ item.quantity }}</span>
                   <span class="w-20 text-right text-warm-600 font-mono">
@@ -511,27 +513,27 @@ onUnmounted(() => {
             <!-- Financial Totals Section -->
             <div class="border-t-2 border-warm-900 pt-3 space-y-1.5 text-xs">
               <div class="flex justify-between text-warm-600">
-                <span>Subtotal</span>
+                <span>{{ $t('trackingPage.receipt.subtotal') }}</span>
                 <span class="font-mono">ETB {{ Number(order.subtotal || order.total).toFixed(2) }}</span>
               </div>
               <div v-if="order.discount" class="flex justify-between text-emerald-600 font-medium">
-                <span>Discount Applied</span>
+                <span>{{ $t('trackingPage.receipt.discountApplied') }}</span>
                 <span class="font-mono">-ETB {{ Number(order.discount).toFixed(2) }}</span>
               </div>
               <div v-if="order.tax" class="flex justify-between text-warm-600">
-                <span>VAT (15%)</span>
+                <span>{{ $t('trackingPage.receipt.vat') }}</span>
                 <span class="font-mono">ETB {{ Number(order.tax).toFixed(2) }}</span>
               </div>
               <div v-if="order.service_charge" class="flex justify-between text-warm-600">
-                <span>Service Charge (10%)</span>
+                <span>{{ $t('trackingPage.receipt.serviceCharge') }}</span>
                 <span class="font-mono">ETB {{ Number(order.service_charge).toFixed(2) }}</span>
               </div>
               <div v-if="order.delivery_fee" class="flex justify-between text-warm-600">
-                <span>Delivery Fee</span>
+                <span>{{ $t('trackingPage.receipt.deliveryFee') }}</span>
                 <span class="font-mono">ETB {{ Number(order.delivery_fee).toFixed(2) }}</span>
               </div>
               <div class="flex justify-between items-center text-base font-black text-warm-900 border-t border-dashed border-warm-300 pt-2 mt-2">
-                <span>Grand Total</span>
+                <span>{{ $t('trackingPage.receipt.grandTotal') }}</span>
                 <span class="font-mono text-lg text-primary-600">
                   ETB {{ Number(order.total).toFixed(2) }}
                 </span>
@@ -541,16 +543,16 @@ onUnmounted(() => {
             <!-- Payment & Verification Footer -->
             <div class="pt-3 border-t border-warm-200 flex items-center justify-between text-xs">
               <div>
-                <p class="text-[10px] text-warm-400 uppercase font-bold">Payment Method & Status</p>
+                <p class="text-[10px] text-warm-400 uppercase font-bold">{{ $t('trackingPage.receipt.paymentMethodStatus') }}</p>
                 <div class="flex items-center gap-2 mt-0.5">
-                  <span class="font-bold text-warm-800 uppercase">{{ order.payment_method || 'CASH' }}</span>
+                  <span class="font-bold text-warm-800 uppercase">{{ order.payment_method || $t('trackingPage.receipt.cash') }}</span>
                   <span
                     :class="[
                       'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
                       order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                     ]"
                   >
-                    {{ order.payment_status || 'PENDING' }}
+                    {{ order.payment_status === 'paid' ? $t('trackingPage.receipt.paid') : $t('trackingPage.receipt.pending') }}
                   </span>
                 </div>
               </div>
@@ -559,15 +561,15 @@ onUnmounted(() => {
               <div class="text-right">
                 <div class="inline-flex flex-col items-center">
                   <div class="font-mono tracking-widest text-[10px] text-warm-400">||| | |||| | || |||</div>
-                  <span class="text-[9px] text-warm-500 font-mono uppercase">EXPEDITE VERIFIED</span>
+                  <span class="text-[9px] text-warm-500 font-mono uppercase">{{ $t('trackingPage.receipt.expediteVerified') }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Thank you note -->
             <div class="text-center text-[11px] text-warm-500 pt-2 border-t border-dashed border-warm-200">
-              <p class="font-medium text-warm-700">Thank you for dining with Taste & Stay!</p>
-              <p>Experience Ethiopian Hospitality & Boutique Living &bull; www.tasteandstay.et</p>
+              <p class="font-medium text-warm-700">{{ $t('trackingPage.receipt.thankYou') }}</p>
+              <p>{{ $t('trackingPage.receipt.tagline') }}</p>
             </div>
           </div>
         </div>

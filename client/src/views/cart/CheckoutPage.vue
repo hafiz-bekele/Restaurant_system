@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useCartStore } from '../../stores/cart'
 import { useAuthStore } from '../../stores/auth'
 import { useUiStore }   from '../../stores/ui'
@@ -11,6 +12,7 @@ import {
   Utensils, Smartphone, User, Phone, Mail, Sparkles, AlertCircle
 } from '@lucide/vue'
 
+const { t } = useI18n()
 const cart    = useCartStore()
 const auth    = useAuthStore()
 const ui      = useUiStore()
@@ -50,6 +52,12 @@ const selectedZone = computed(() => {
   return deliveryZones.value.find(z => z.id === form.value.delivery_zone_id)
 })
 
+const paymentMethods = computed(() => [
+  { id: 'chapa', name: t('checkoutPage.chapaTitle'), desc: t('checkoutPage.chapaDesc'), badge: t('checkoutPage.chapaBadge') },
+  { id: 'cash', name: t('checkoutPage.cashTitle'), desc: t('checkoutPage.cashDesc'), badge: t('checkoutPage.cashBadge') },
+  { id: 'stripe', name: t('checkoutPage.stripeTitle'), desc: t('checkoutPage.stripeDesc'), badge: t('checkoutPage.stripeBadge') },
+])
+
 async function loadZones() {
   zonesLoading.value = true
   try {
@@ -73,19 +81,19 @@ onMounted(async () => {
 
 async function placeOrder() {
   if (!cart.cart?.items?.length) {
-    ui.toast('Your cart is empty', 'warning')
+    ui.toast(t('checkoutPage.cartEmptyTitle'), 'warning')
     router.push('/menu')
     return
   }
 
   // Basic validation for contact info
   if (!form.value.customer_name.trim()) {
-    ui.toast('Please enter your name', 'warning')
+    ui.toast(t('checkoutPage.enterNameValidation'), 'warning')
     return
   }
 
   if (!form.value.customer_phone.trim()) {
-    ui.toast('Please provide a contact phone number', 'warning')
+    ui.toast(t('checkoutPage.enterPhoneValidation'), 'warning')
     return
   }
 
@@ -102,12 +110,12 @@ async function placeOrder() {
 
     if (form.value.type === 'delivery') {
       if (!form.value.delivery_zone_id) {
-        ui.toast('Please select a delivery zone', 'warning')
+        ui.toast(t('checkoutPage.selectZoneValidation'), 'warning')
         loading.value = false
         return
       }
       if (!form.value.address.line1?.trim()) {
-        ui.toast('Please provide your delivery street address', 'warning')
+        ui.toast(t('checkoutPage.enterAddressValidation'), 'warning')
         loading.value = false
         return
       }
@@ -121,7 +129,7 @@ async function placeOrder() {
       }
     } else if (form.value.type === 'dine_in') {
       if (!form.value.table_id) {
-        ui.toast('Please specify your table number', 'warning')
+        ui.toast(t('checkoutPage.specifyTableValidation'), 'warning')
         loading.value = false
         return
       }
@@ -130,12 +138,12 @@ async function placeOrder() {
 
     const { data } = await orderApi.create(payload)
     const newOrder = data.data
-    ui.toast('Order placed successfully!', 'success')
+    ui.toast(t('checkoutPage.orderPlacedSuccess'), 'success')
     await cart.fetchCart()
 
     // Handle Chapa Gateway Payment (Telebirr, CBE Birr, Card)
     if (form.value.payment_method === 'chapa') {
-      ui.toast('Connecting to payment gateway (Telebirr / CBE Birr / Cards)...', 'info')
+      ui.toast(t('checkoutPage.connectingPayment'), 'info')
       try {
         const { data: chapaRes } = await paymentApi.createChapaIntent(newOrder.ulid)
         const checkoutUrl = chapaRes.data?.checkout_url
@@ -145,14 +153,14 @@ async function placeOrder() {
         }
       } catch (err) {
         console.error('Failed to initialize Chapa gateway', err)
-        ui.toast('Order created. Proceeding to order tracking for payment settlement.', 'warning')
+        ui.toast(t('checkoutPage.orderTrackingSettlement'), 'warning')
       }
     }
 
     // Direct to order tracking page
     router.push(`/orders/${newOrder.ulid}/track`)
   } catch (e) {
-    const errorMsg = e.response?.data?.message || 'Failed to place order'
+    const errorMsg = e.response?.data?.message || t('checkoutPage.orderFailed')
     const fieldErrors = e.response?.data?.errors
     if (fieldErrors) {
       const firstError = Object.values(fieldErrors).flat()[0]
@@ -169,19 +177,19 @@ async function placeOrder() {
 <template>
   <DefaultLayout>
     <div class="page-container py-10 max-w-2xl">
-      <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-2">Checkout</h1>
-      <p class="text-warm-500 dark:text-warm-400 mb-6">Review your order details and payment preference. No account required!</p>
+      <h1 class="font-heading text-3xl font-bold text-warm-900 dark:text-white mb-2">{{ $t('checkoutPage.title') }}</h1>
+      <p class="text-warm-500 dark:text-warm-400 mb-6">{{ $t('checkoutPage.subtitle') }}</p>
 
       <!-- Guest Checkout Info Banner -->
       <div v-if="!auth.isAuthenticated" class="card p-4 mb-6 border-primary-200 dark:border-primary-800/60 bg-primary-50/70 dark:bg-primary-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-2.5 text-primary-900 dark:text-primary-200">
           <Sparkles :size="20" class="shrink-0 text-primary-500" />
           <p class="text-xs sm:text-sm">
-            <strong>Fast Guest Checkout:</strong> You can order &amp; pay right now without registering or signing in.
+            {{ $t('checkoutPage.guestBanner') }}
           </p>
         </div>
         <RouterLink to="/login?redirect=/checkout" class="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline shrink-0">
-          Have an account? Sign in
+          {{ $t('checkoutPage.haveAccountSignIn') }}
         </RouterLink>
       </div>
 
@@ -189,9 +197,9 @@ async function placeOrder() {
       <div v-else class="card p-3.5 mb-6 border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-between">
         <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm">
           <CheckCircle :size="16" class="text-emerald-500" />
-          <span>Ordering as <strong>{{ auth.user?.name }}</strong> ({{ auth.user?.email }})</span>
+          <span>{{ $t('checkoutPage.orderingAs') }} <strong>{{ auth.user?.name }}</strong> ({{ auth.user?.email }})</span>
         </div>
-        <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Member</span>
+        <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">{{ $t('checkoutPage.memberBadge') }}</span>
       </div>
 
       <!-- Checkout Loading Skeleton -->
@@ -217,9 +225,9 @@ async function placeOrder() {
       <!-- Empty Cart Alert -->
       <div v-else-if="!cart.cart?.items?.length" class="card p-10 text-center border border-warm-100 dark:border-warm-800">
         <ShoppingBag :size="48" class="mx-auto text-warm-300 dark:text-warm-700 mb-4" />
-        <h2 class="font-heading text-xl font-bold text-warm-900 dark:text-white mb-2">Your Cart is Empty</h2>
-        <p class="text-warm-500 dark:text-warm-400 mb-6">Add delicious dishes from our menu before checking out.</p>
-        <RouterLink to="/menu" class="btn-primary">Browse Menu</RouterLink>
+        <h2 class="font-heading text-xl font-bold text-warm-900 dark:text-white mb-2">{{ $t('checkoutPage.cartEmptyTitle') }}</h2>
+        <p class="text-warm-500 dark:text-warm-400 mb-6">{{ $t('checkoutPage.cartEmptyDesc') }}</p>
+        <RouterLink to="/menu" class="btn-primary">{{ $t('checkoutPage.browseMenu') }}</RouterLink>
       </div>
 
       <!-- Main Checkout Form -->
@@ -229,12 +237,12 @@ async function placeOrder() {
         <div>
           <h2 class="text-sm font-bold text-warm-900 dark:text-white mb-3 flex items-center gap-1.5 uppercase tracking-wider">
             <User :size="16" class="text-primary-500" />
-            <span>Contact Information</span>
+            <span>{{ $t('checkoutPage.contactInfo') }}</span>
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
-                Your Full Name <span class="text-red-500">*</span>
+                {{ $t('checkoutPage.fullName') }} <span class="text-red-500">*</span>
               </label>
               <div class="relative">
                 <User :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
@@ -242,7 +250,7 @@ async function placeOrder() {
                   v-model="form.customer_name"
                   type="text"
                   required
-                  placeholder="e.g. Abebe Kebede"
+                  :placeholder="$t('checkoutPage.namePlaceholder')"
                   class="input pl-9"
                 />
               </div>
@@ -250,7 +258,7 @@ async function placeOrder() {
 
             <div>
               <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
-                Phone Number <span class="text-red-500">*</span>
+                {{ $t('checkoutPage.phone') }} <span class="text-red-500">*</span>
               </label>
               <div class="relative">
                 <Phone :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
@@ -258,7 +266,7 @@ async function placeOrder() {
                   v-model="form.customer_phone"
                   type="tel"
                   required
-                  placeholder="+251 91 123 4567"
+                  :placeholder="$t('checkoutPage.phonePlaceholder')"
                   class="input pl-9"
                 />
               </div>
@@ -266,14 +274,14 @@ async function placeOrder() {
 
             <div class="sm:col-span-2">
               <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
-                Email Address <span class="text-xs text-warm-400 font-normal">(Optional — for order receipt &amp; live tracking)</span>
+                {{ $t('checkoutPage.email') }} <span class="text-xs text-warm-400 font-normal">{{ $t('checkoutPage.emailOptional') }}</span>
               </label>
               <div class="relative">
                 <Mail :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400 pointer-events-none" />
                 <input
                   v-model="form.customer_email"
                   type="email"
-                  placeholder="you@example.com"
+                  :placeholder="$t('checkoutPage.emailPlaceholder')"
                   class="input pl-9"
                 />
               </div>
@@ -284,7 +292,7 @@ async function placeOrder() {
         <!-- 2. Order Type -->
         <div class="pt-4 border-t border-warm-100 dark:border-warm-800">
           <label class="block text-sm font-bold text-warm-900 dark:text-white mb-2 uppercase tracking-wider">
-            Dining Option
+            {{ $t('checkoutPage.diningOption') }}
           </label>
           <div class="grid grid-cols-3 gap-3">
             <label
@@ -298,7 +306,7 @@ async function placeOrder() {
               ]"
             >
               <input type="radio" v-model="form.type" :value="type" class="sr-only" />
-              {{ type === 'delivery' ? '🛵 Delivery' : type === 'pickup' ? '🛍️ Takeout' : '🍽️ Dine In' }}
+              {{ type === 'delivery' ? $t('checkoutPage.delivery') : type === 'pickup' ? $t('checkoutPage.pickup') : $t('checkoutPage.dineIn') }}
             </label>
           </div>
         </div>
@@ -307,11 +315,11 @@ async function placeOrder() {
         <div v-if="form.type === 'delivery'" class="space-y-4 pt-2">
           <div>
             <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1.5 flex items-center gap-1.5">
-              <Truck :size="15" class="text-primary-500" /> Select Delivery Zone <span class="text-red-500">*</span>
+              <Truck :size="15" class="text-primary-500" /> {{ $t('checkoutPage.selectZone') }} <span class="text-red-500">*</span>
             </label>
             <select v-model="form.delivery_zone_id" required class="input">
               <option v-for="zone in deliveryZones" :key="zone.id" :value="zone.id">
-                {{ zone.name }} — ${{ Number(zone.fee).toFixed(2) }} (Est. ~{{ zone.eta_minutes }} mins)
+                {{ zone.name }} — ETB {{ Number(zone.fee).toFixed(2) }} ({{ $t('checkoutPage.estMins', { mins: zone.eta_minutes }) }})
               </option>
             </select>
           </div>
@@ -319,24 +327,24 @@ async function placeOrder() {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
-                Street Address / Building <span class="text-red-500">*</span>
+                {{ $t('checkoutPage.streetAddress') }} <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="form.address.line1"
                 type="text"
                 required
                 class="input"
-                placeholder="e.g. Namibia St, Bole, Apt 4B"
+                :placeholder="$t('checkoutPage.streetPlaceholder')"
               />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">City / Area</label>
+              <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">{{ $t('checkoutPage.cityArea') }}</label>
               <input
                 v-model="form.address.city"
                 type="text"
                 required
                 class="input"
-                placeholder="Addis Ababa"
+                :placeholder="$t('checkoutPage.cityPlaceholder')"
               />
             </div>
           </div>
@@ -346,7 +354,7 @@ async function placeOrder() {
         <div v-else-if="form.type === 'dine_in'" class="space-y-3 pt-2">
           <div>
             <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1.5 flex items-center gap-1.5">
-              <Utensils :size="15" class="text-primary-500" /> Table Number (1 - 20) <span class="text-red-500">*</span>
+              <Utensils :size="15" class="text-primary-500" /> {{ $t('checkoutPage.tableNumber') }} <span class="text-red-500">*</span>
             </label>
             <input
               v-model.number="form.table_id"
@@ -355,29 +363,25 @@ async function placeOrder() {
               max="20"
               required
               class="input"
-              placeholder="Enter your table number (check table QR badge)"
+              :placeholder="$t('checkoutPage.tablePlaceholder')"
             />
           </div>
         </div>
 
         <!-- Takeout Pickup instructions -->
         <div v-else-if="form.type === 'pickup'" class="p-3.5 rounded-xl bg-warm-50 dark:bg-white/5 border border-warm-200 dark:border-white/10 text-xs text-warm-600 dark:text-warm-300">
-          <p class="font-semibold text-warm-900 dark:text-white mb-0.5">Pickup Location:</p>
-          <p>Main Restaurant Host Counter, Bole Medhanialem, Namibia St. Ready in approx. 15–20 minutes.</p>
+          <p class="font-semibold text-warm-900 dark:text-white mb-0.5">{{ $t('checkoutPage.pickupLocationTitle') }}</p>
+          <p>{{ $t('checkoutPage.pickupLocationDesc') }}</p>
         </div>
 
         <!-- 3. Payment Method -->
         <div class="pt-4 border-t border-warm-100 dark:border-warm-800">
           <label class="block text-sm font-bold text-warm-900 dark:text-white mb-2 uppercase tracking-wider">
-            Payment Method
+            {{ $t('checkoutPage.paymentMethod') }}
           </label>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label
-              v-for="method in [
-                { id: 'chapa', name: 'Chapa Pay', desc: 'Telebirr, CBE Birr, Cards', badge: 'Fast Online' },
-                { id: 'cash', name: 'Cash on Arrival', desc: 'Pay cashier or delivery driver', badge: 'Cash' },
-                { id: 'stripe', name: 'Credit / Debit Card', desc: 'Visa & Mastercard', badge: 'Card' },
-              ]"
+              v-for="method in paymentMethods"
               :key="method.id"
               :class="[
                 'flex flex-col justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all text-sm',
@@ -402,37 +406,37 @@ async function placeOrder() {
 
         <!-- 4. Order Notes -->
         <div>
-          <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1.5">Special Instructions / Allergies</label>
+          <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('checkoutPage.specialInstructions') }}</label>
           <textarea
             v-model="form.notes"
             rows="2"
             class="input resize-none"
-            placeholder="e.g. Extra spicy, no onions, ring doorbell, etc."
+            :placeholder="$t('checkoutPage.notesPlaceholder')"
           ></textarea>
         </div>
 
         <!-- 5. Totals summary -->
         <div class="space-y-2 text-sm border-t border-warm-100 dark:border-warm-800 pt-4">
           <div class="flex justify-between text-warm-600 dark:text-warm-400">
-            <span>Subtotal</span>
-            <span>${{ Number(cart.totals.subtotal).toFixed(2) }}</span>
+            <span>{{ $t('checkoutPage.subtotal') }}</span>
+            <span class="font-mono">ETB {{ Number(cart.totals.subtotal).toFixed(2) }}</span>
           </div>
           <div v-if="cart.totals.discount > 0" class="flex justify-between text-green-600 font-medium">
-            <span>Discount</span>
-            <span>-${{ Number(cart.totals.discount).toFixed(2) }}</span>
+            <span>{{ $t('checkoutPage.discount') }}</span>
+            <span class="font-mono">-ETB {{ Number(cart.totals.discount).toFixed(2) }}</span>
           </div>
           <div v-if="form.type === 'delivery' && selectedZone" class="flex justify-between text-warm-600 dark:text-warm-400">
-            <span>Delivery Fee ({{ selectedZone.name }})</span>
-            <span>${{ Number(selectedZone.fee).toFixed(2) }}</span>
+            <span>{{ $t('checkoutPage.deliveryFee', { zone: selectedZone.name }) }}</span>
+            <span class="font-mono">ETB {{ Number(selectedZone.fee).toFixed(2) }}</span>
           </div>
           <div class="flex justify-between text-warm-600 dark:text-warm-400">
-            <span>Tax</span>
-            <span>${{ Number(cart.totals.tax).toFixed(2) }}</span>
+            <span>{{ $t('checkoutPage.tax') }}</span>
+            <span class="font-mono">ETB {{ Number(cart.totals.tax).toFixed(2) }}</span>
           </div>
           <div class="flex justify-between font-bold text-warm-900 dark:text-white text-lg pt-2 border-t border-warm-100 dark:border-warm-800">
-            <span>Total to Pay</span>
-            <span class="text-primary-600 dark:text-primary-400">
-              ${{ (Number(cart.totals.total) + (form.type === 'delivery' && selectedZone ? Number(selectedZone.fee) : 0)).toFixed(2) }}
+            <span>{{ $t('checkoutPage.totalToPay') }}</span>
+            <span class="text-primary-600 dark:text-primary-400 font-mono">
+              ETB {{ (Number(cart.totals.total) + (form.type === 'delivery' && selectedZone ? Number(selectedZone.fee) : 0)).toFixed(2) }}
             </span>
           </div>
         </div>
@@ -443,7 +447,7 @@ async function placeOrder() {
           :disabled="loading"
           class="btn-primary w-full justify-center py-3.5 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transition-all cursor-pointer"
         >
-          {{ loading ? 'Placing Order...' : (form.payment_method === 'chapa' ? 'Pay with Chapa (Telebirr / Card)' : 'Confirm & Place Order') }}
+          {{ loading ? $t('checkoutPage.placingOrder') : (form.payment_method === 'chapa' ? $t('checkoutPage.payWithChapa') : $t('checkoutPage.confirmOrder')) }}
         </button>
       </form>
     </div>

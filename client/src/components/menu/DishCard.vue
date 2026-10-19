@@ -84,14 +84,14 @@ async function toggleFavorite() {
         class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-warm-300 dark:text-warm-600"
       >
         <ImageOff :size="32" />
-        <span class="text-xs">No image</span>
+        <span class="text-xs">{{ $t('menu.noImage') }}</span>
       </div>
 
       <!-- Badges overlay -->
       <div class="absolute top-2.5 left-2.5 flex flex-wrap gap-1 max-w-[calc(100%-3rem)]">
-        <span v-if="dish.is_vegetarian" class="badge badge-green shadow-sm">Veg</span>
-        <span v-if="dish.is_vegan"      class="badge badge-green shadow-sm">Vegan</span>
-        <span v-if="dish.is_featured"   class="badge badge-orange shadow-sm">⭐ Featured</span>
+        <span v-if="dish.is_vegetarian" class="badge badge-green shadow-sm">{{ $t('menu.veg') }}</span>
+        <span v-if="dish.is_vegan"      class="badge badge-green shadow-sm">{{ $t('menu.vegan') }}</span>
+        <span v-if="dish.is_featured"   class="badge badge-orange shadow-sm">{{ $t('menu.featured') }}</span>
       </div>
 
       <!-- Favourite button -->
@@ -171,7 +171,7 @@ async function toggleFavorite() {
             <Check v-if="added" :size="14" key="check" />
             <Plus  v-else       :size="14" key="plus" />
           </Transition>
-          <span>{{ adding ? '…' : added ? 'Added' : 'Add' }}</span>
+          <span>{{ adding ? '…' : added ? $t('common.added') : $t('common.add') }}</span>
         </button>
       </div>
     </div>

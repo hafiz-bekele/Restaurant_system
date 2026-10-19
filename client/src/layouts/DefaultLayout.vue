@@ -24,33 +24,33 @@ const route = useRoute()
     <footer class="bg-warm-900 dark:bg-gray-950 text-warm-300 py-12 mt-16 border-t border-warm-800/60">
       <div class="page-container grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <h3 class="font-heading font-bold text-white text-lg mb-3">{{ APP_NAME }}</h3>
-          <p class="text-sm leading-relaxed text-warm-400">Crafted with passion, served with love. Experience flavours that tell a story.</p>
+          <h3 class="font-heading font-bold text-white text-lg mb-3">{{ $t('brandName') }}</h3>
+          <p class="text-sm leading-relaxed text-warm-400">{{ $t('footer.tagline') }}</p>
         </div>
         <div>
-          <h4 class="font-semibold text-white mb-3">Quick Links</h4>
+          <h4 class="font-semibold text-white mb-3">{{ $t('footer.quickLinks') }}</h4>
           <ul class="space-y-2 text-sm">
-            <li><RouterLink to="/menu"         class="hover:text-primary-400 transition-colors">Menu</RouterLink></li>
-            <li><RouterLink to="/reservations" class="hover:text-primary-400 transition-colors">Reservations</RouterLink></li>
-            <li><RouterLink to="/rooms"        class="hover:text-primary-400 transition-colors">Hotel Suites</RouterLink></li>
-            <li><RouterLink to="/about"        class="hover:text-primary-400 transition-colors">About Us</RouterLink></li>
-            <li><RouterLink to="/contact"      class="hover:text-primary-400 transition-colors">Contact</RouterLink></li>
-            <li><RouterLink to="/login"        class="hover:text-primary-400 transition-colors text-primary-400 font-medium">Staff &amp; Guest Sign In</RouterLink></li>
+            <li><RouterLink to="/menu"         class="hover:text-primary-400 transition-colors">{{ $t('nav.menu') }}</RouterLink></li>
+            <li><RouterLink to="/reservations" class="hover:text-primary-400 transition-colors">{{ $t('nav.reservations') }}</RouterLink></li>
+            <li><RouterLink to="/rooms"        class="hover:text-primary-400 transition-colors">{{ $t('nav.suites') }}</RouterLink></li>
+            <li><RouterLink to="/about"        class="hover:text-primary-400 transition-colors">{{ $t('nav.about') }}</RouterLink></li>
+            <li><RouterLink to="/contact"      class="hover:text-primary-400 transition-colors">{{ $t('nav.contact') }}</RouterLink></li>
+            <li><RouterLink to="/login"        class="hover:text-primary-400 transition-colors text-primary-400 font-medium">{{ $t('footer.staffSignIn') }}</RouterLink></li>
           </ul>
         </div>
         <div>
-          <h4 class="font-semibold text-white mb-3">Opening Hours</h4>
+          <h4 class="font-semibold text-white mb-3">{{ $t('footer.openingHours') }}</h4>
           <ul class="space-y-1 text-sm text-warm-400">
-            <li>Mon - Thu: 11:00 - 22:00</li>
-            <li>Fri - Sat: 11:00 - 23:00</li>
-            <li>Sunday: 12:00 - 21:00</li>
+            <li>{{ $t('footer.monThu') }}</li>
+            <li>{{ $t('footer.friSat') }}</li>
+            <li>{{ $t('footer.sunday') }}</li>
           </ul>
         </div>
       </div>
 
       <!-- Footer bottom bar -->
       <div class="page-container mt-10 pt-6 border-t border-warm-800 flex items-center justify-center text-xs text-warm-500">
-        &copy; {{ new Date().getFullYear() }} {{ APP_NAME }}. All rights reserved.
+        &copy; {{ new Date().getFullYear() }} {{ $t('brandName') }}. {{ $t('footer.allRightsReserved') }}
       </div>
     </footer>
 
@@ -66,7 +66,7 @@ const route = useRoute()
         :class="{ '!text-primary-600 dark:!text-primary-400 font-bold': route.path === '/' }"
       >
         <Home :size="20" />
-        <span class="text-[10px] mt-0.5">Home</span>
+        <span class="text-[10px] mt-0.5">{{ $t('nav.home') }}</span>
       </RouterLink>
 
       <RouterLink
@@ -75,7 +75,7 @@ const route = useRoute()
         :class="{ '!text-primary-600 dark:!text-primary-400 font-bold': route.path.startsWith('/menu') }"
       >
         <Utensils :size="20" />
-        <span class="text-[10px] mt-0.5">Menu</span>
+        <span class="text-[10px] mt-0.5">{{ $t('nav.menu') }}</span>
       </RouterLink>
 
       <!-- Cart Button with Dynamic Badge -->
@@ -93,7 +93,7 @@ const route = useRoute()
             {{ cart.itemCount > 9 ? '9+' : cart.itemCount }}
           </span>
         </div>
-        <span class="text-[10px] mt-0.5">Cart</span>
+        <span class="text-[10px] mt-0.5">{{ $t('cart.cart') }}</span>
       </button>
 
       <RouterLink
@@ -102,7 +102,7 @@ const route = useRoute()
         :class="{ '!text-primary-600 dark:!text-primary-400 font-bold': route.path === '/reservations' }"
       >
         <Calendar :size="20" />
-        <span class="text-[10px] mt-0.5">Reserve</span>
+        <span class="text-[10px] mt-0.5">{{ $t('nav.reservations') }}</span>
       </RouterLink>
 
       <RouterLink
@@ -111,7 +111,7 @@ const route = useRoute()
         :class="{ '!text-primary-600 dark:!text-primary-400 font-bold': route.path === '/profile' || route.path === '/login' }"
       >
         <User :size="20" />
-        <span class="text-[10px] mt-0.5">{{ auth.isAuthenticated ? 'Account' : 'Sign in' }}</span>
+        <span class="text-[10px] mt-0.5">{{ auth.isAuthenticated ? $t('nav.account') : $t('nav.login') }}</span>
       </RouterLink>
     </nav>
 

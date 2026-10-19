@@ -37,7 +37,7 @@ async function updateQty(item, delta) {
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-warm-100 dark:border-warm-800">
           <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
-            <ShoppingBag :size="20" /> Your Cart
+            <ShoppingBag :size="20" /> {{ $t('cart.title') }}
             <span v-if="cart.itemCount" class="badge badge-orange">{{ cart.itemCount }}</span>
           </h2>
           <button @click="cart.closeDrawer" class="btn-ghost p-2 rounded-xl" aria-label="Close cart">
@@ -49,8 +49,8 @@ async function updateQty(item, delta) {
         <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <div v-if="!cart.cart?.items?.length" class="flex flex-col items-center justify-center h-full text-center gap-4">
             <ShoppingBag :size="48" class="text-warm-300" />
-            <p class="text-warm-500 dark:text-warm-400">Your cart is empty</p>
-            <RouterLink to="/menu" @click="cart.closeDrawer" class="btn-primary">Browse Menu</RouterLink>
+            <p class="text-warm-500 dark:text-warm-400">{{ $t('cart.empty') }}</p>
+            <RouterLink to="/menu" @click="cart.closeDrawer" class="btn-primary">{{ $t('nav.menu') }}</RouterLink>
           </div>
 
           <div v-for="item in (cart.cart?.items ?? [])" :key="item.id" class="flex gap-4">
@@ -96,13 +96,13 @@ async function updateQty(item, delta) {
         <!-- Summary -->
         <div v-if="cart.cart?.items?.length" class="px-6 py-4 pb-8 md:pb-4 border-t border-warm-100 dark:border-warm-800 space-y-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
           <div class="space-y-1 text-sm">
-            <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>Subtotal</span><span>${{ Number(cart.totals.subtotal).toFixed(2) }}</span></div>
-            <div v-if="cart.totals.discount > 0" class="flex justify-between text-green-600"><span>Discount</span><span>-${{ Number(cart.totals.discount).toFixed(2) }}</span></div>
-            <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>Tax</span><span>${{ Number(cart.totals.tax).toFixed(2) }}</span></div>
-            <div class="flex justify-between font-bold text-warm-900 dark:text-white pt-1 border-t border-warm-100 dark:border-warm-800"><span>Total</span><span>${{ Number(cart.totals.total).toFixed(2) }}</span></div>
+            <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>{{ $t('cart.subtotal') }}</span><span>${{ Number(cart.totals.subtotal).toFixed(2) }}</span></div>
+            <div v-if="cart.totals.discount > 0" class="flex justify-between text-green-600"><span>{{ $t('cart.discount') }}</span><span>-${{ Number(cart.totals.discount).toFixed(2) }}</span></div>
+            <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>{{ $t('cart.tax') }}</span><span>${{ Number(cart.totals.tax).toFixed(2) }}</span></div>
+            <div class="flex justify-between font-bold text-warm-900 dark:text-white pt-1 border-t border-warm-100 dark:border-warm-800"><span>{{ $t('cart.total') }}</span><span>${{ Number(cart.totals.total).toFixed(2) }}</span></div>
           </div>
           <RouterLink to="/checkout" @click="cart.closeDrawer" class="btn-primary w-full justify-center py-3">
-            Proceed to Checkout
+            {{ $t('cart.checkout') }}
           </RouterLink>
         </div>
       </aside>

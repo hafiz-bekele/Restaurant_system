@@ -10,7 +10,7 @@ import {
   Clock, User, Phone, Tag, Sparkles, ShieldCheck, ArrowRight,
   Lock, Unlock, TrendingUp, Wallet, Smartphone, Split, FileText,
   Filter, SlidersHorizontal, UtensilsCrossed, Truck, Calendar,
-  Building2, ArrowUpDown, RotateCcw, Layers, ChevronDown, Globe, CalendarCheck
+  Building2, ArrowUpDown, RotateCcw, Layers, ChevronDown, ChevronUp, Globe, CalendarCheck
 } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 import { APP_NAME } from '../../config'
@@ -874,9 +874,9 @@ onUnmounted(() => {
       <!-- TAB 1: ORDERS & BILL SETTLEMENT                                          -->
       <!-- ───────────────────────────────────────────────────────────────────────── -->
       <div v-if="activeTab === 'orders'">
-        <!-- Status Filter Pills Sub-Row with Harmonious POS Styling -->
-        <div class="px-4 py-2.5 bg-gradient-to-r from-warm-50/50 via-white to-warm-50/50 dark:from-warm-900/50 dark:via-warm-850 dark:to-warm-900/50 border-b border-warm-200/60 dark:border-warm-800/60 flex flex-wrap items-center justify-between gap-2.5">
-          <div class="flex flex-wrap items-center gap-2">
+        <!-- Status Filter Pills Sub-Row with Harmonious POS Styling (Touch-Scrollable Ribbon) -->
+        <div class="px-4 py-2.5 bg-gradient-to-r from-warm-50/50 via-white to-warm-50/50 dark:from-warm-900/50 dark:via-warm-850 dark:to-warm-900/50 border-b border-warm-200/60 dark:border-warm-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div class="flex items-center gap-2 overflow-x-auto filter-scroll pb-1 sm:pb-0 flex-nowrap">
             <!-- All Orders -->
             <button
               @click="statusFilter = 'all'"
@@ -980,7 +980,7 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span class="text-[11px] font-semibold text-warm-500 dark:text-warm-400">
               {{ $t('cashierPage.showingOrdersCount', { filtered: filteredOrders.length, total: orders.length }) }}
@@ -988,238 +988,263 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Collapsible Multi-Dimensional Filter Controls Panel (Custom Interactive Options) -->
-        <div
-          v-if="showAdvancedFilters"
-          class="p-4 sm:p-5 bg-gradient-to-b from-warm-50/90 via-white to-warm-50/70 dark:from-warm-900/90 dark:via-warm-850 dark:to-warm-900/80 border-b border-warm-200/80 dark:border-warm-800/80 backdrop-blur-sm space-y-4 animate-in fade-in duration-200"
-        >
-          <!-- Category 1: Service Channel (Type) with Interactive Option Chips -->
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 flex items-center gap-1.5">
-                <UtensilsCrossed :size="13" class="text-primary-500" /> {{ $t('cashierPage.filterType') }}
-              </label>
-              <span v-if="typeFilter !== 'all'" class="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2 py-0.5 rounded-full">
-                Active Filter
-              </span>
-            </div>
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                v-for="opt in [
-                  { id: 'all', label: $t('cashierPage.filterAllTypes'), icon: Globe, iconColor: 'text-warm-400' },
-                  { id: 'dine_in', label: $t('cashierPage.filterDineIn'), icon: UtensilsCrossed, iconColor: 'text-blue-500' },
-                  { id: 'pickup', label: $t('cashierPage.filterPickup'), icon: ShoppingBag, iconColor: 'text-amber-500' },
-                  { id: 'delivery', label: $t('cashierPage.filterDelivery'), icon: Truck, iconColor: 'text-emerald-500' },
-                  { id: 'room_service', label: $t('cashierPage.filterRoomService'), icon: BedDouble, iconColor: 'text-purple-500' },
-                ]"
-                :key="opt.id"
-                type="button"
-                @click="typeFilter = opt.id"
-                :class="[
-                  'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs',
-                  typeFilter === opt.id
-                    ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25 ring-2 ring-primary-500/30 font-bold'
-                    : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70 hover:border-warm-300'
-                ]"
-              >
-                <component :is="opt.icon" :size="13" :class="typeFilter === opt.id ? 'text-white' : opt.iconColor" />
-                <span>{{ opt.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Category 2: Payment Method with Interactive Option Chips -->
-          <div class="pt-3 border-t border-warm-200/60 dark:border-warm-800/60">
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 flex items-center gap-1.5">
-                <Wallet :size="13" class="text-emerald-500" /> {{ $t('cashierPage.filterMethod') }}
-              </label>
-              <span v-if="methodFilter !== 'all'" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
-                Active Filter
-              </span>
-            </div>
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                v-for="opt in [
-                  { id: 'all', label: $t('cashierPage.filterAllMethods'), icon: Wallet, iconColor: 'text-warm-400' },
-                  { id: 'cash', label: $t('cashierPage.filterCashOnly'), icon: DollarSign, iconColor: 'text-emerald-500' },
-                  { id: 'telebirr', label: $t('cashierPage.filterTelebirrOnly'), icon: Smartphone, iconColor: 'text-blue-500' },
-                  { id: 'cbe_birr', label: $t('cashierPage.filterCbeOnly'), icon: Building2, iconColor: 'text-amber-500' },
-                  { id: 'card', label: $t('cashierPage.filterCardOnly'), icon: CreditCard, iconColor: 'text-cyan-500' },
-                  { id: 'room_charge', label: $t('cashierPage.filterRoomOnly'), icon: BedDouble, iconColor: 'text-purple-500' },
-                ]"
-                :key="opt.id"
-                type="button"
-                @click="methodFilter = opt.id"
-                :class="[
-                  'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs',
-                  methodFilter === opt.id
-                    ? 'bg-emerald-600 text-white shadow-xs shadow-emerald-500/25 ring-2 ring-emerald-500/30 font-bold'
-                    : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70 hover:border-warm-300'
-                ]"
-              >
-                <component :is="opt.icon" :size="13" :class="methodFilter === opt.id ? 'text-white' : opt.iconColor" />
-                <span>{{ opt.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Bottom Row: Date Window & Sort By -->
-          <div class="pt-3 border-t border-warm-200/60 dark:border-warm-800/60 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Category 3: Date Window -->
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 mb-2 flex items-center gap-1.5">
-                <Calendar :size="13" class="text-purple-500" /> {{ $t('cashierPage.filterDate') }}
-              </label>
-              <div class="flex flex-wrap items-center gap-1.5">
-                <button
-                  v-for="opt in [
-                    { id: 'all', label: $t('cashierPage.dateAll'), icon: Calendar },
-                    { id: 'today', label: $t('cashierPage.dateToday'), icon: Clock },
-                    { id: 'custom', label: $t('cashierPage.dateCustom'), icon: CalendarCheck },
-                  ]"
-                  :key="opt.id"
-                  type="button"
-                  @click="dateFilter = opt.id"
-                  :class="[
-                    'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs',
-                    dateFilter === opt.id
-                      ? 'bg-purple-600 text-white shadow-xs shadow-purple-500/25 ring-2 ring-purple-500/30 font-bold'
-                      : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70'
-                  ]"
-                >
-                  <component :is="opt.icon" :size="13" />
-                  <span>{{ opt.label }}</span>
-                </button>
-
-                <input
-                  v-if="dateFilter === 'custom'"
-                  v-model="customDate"
-                  type="date"
-                  class="input text-xs py-1 px-2.5 bg-white dark:bg-warm-800 font-semibold border-purple-400 focus:ring-2 focus:ring-purple-500/20 rounded-xl"
-                />
+        <!-- Collapsible Multi-Dimensional Filter Controls Panel (Smooth Accordion Slide In, Down, and Up) -->
+        <transition name="filter-slide">
+          <div
+            v-if="showAdvancedFilters"
+            class="bg-gradient-to-b from-warm-50/95 via-white to-warm-50/85 dark:from-warm-900/95 dark:via-warm-850 dark:to-warm-900/90 border-b border-warm-200/80 dark:border-warm-800/80 backdrop-blur-md shadow-inner overflow-hidden"
+          >
+            <!-- Sleek Header with Scroll Indicator & Collapse Action -->
+            <div class="px-4 py-2 bg-warm-100/70 dark:bg-warm-800/70 border-b border-warm-200/60 dark:border-warm-700/60 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2 font-bold text-warm-700 dark:text-warm-200">
+                <SlidersHorizontal :size="13" class="text-primary-500" />
+                <span>{{ $t('cashierPage.filtersTitle') }}</span>
+                <span class="text-[10px] text-warm-400 font-normal hidden sm:inline">• Scroll down/up to view all filter dimensions</span>
               </div>
-            </div>
-
-            <!-- Category 4: Sort By -->
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 mb-2 flex items-center gap-1.5">
-                <ArrowUpDown :size="13" class="text-indigo-500" /> {{ $t('cashierPage.filterSort') }}
-              </label>
-              <div class="flex flex-wrap gap-1.5">
-                <button
-                  v-for="opt in [
-                    { id: 'newest', label: $t('cashierPage.sortNewest') },
-                    { id: 'oldest', label: $t('cashierPage.sortOldest') },
-                    { id: 'amount_desc', label: $t('cashierPage.sortAmountHigh') },
-                    { id: 'amount_asc', label: $t('cashierPage.sortAmountLow') },
-                  ]"
-                  :key="opt.id"
-                  type="button"
-                  @click="sortBy = opt.id"
-                  :class="[
-                    'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs',
-                    sortBy === opt.id
-                      ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-500/25 ring-2 ring-indigo-500/30 font-bold'
-                      : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70'
-                  ]"
-                >
-                  <span>{{ opt.label }}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Drawer Footer Controls -->
-          <div class="pt-3 border-t border-warm-200/60 dark:border-warm-800/60 flex items-center justify-between">
-            <span class="text-xs text-warm-400">
-              <span v-if="activeFiltersCount > 0" class="font-semibold text-primary-600 dark:text-primary-400">
-                {{ activeFiltersCount }} filter(s) active
-              </span>
-              <span v-else>No optional filters active</span>
-            </span>
-
-            <div class="flex items-center gap-2">
-              <button
-                v-if="hasActiveFilters"
-                @click="resetFilters"
-                class="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 inline-flex items-center gap-1 transition-all cursor-pointer"
-              >
-                <RotateCcw :size="12" /> {{ $t('cashierPage.clearAll') }}
-              </button>
               <button
                 @click="showAdvancedFilters = false"
-                class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-warm-900 text-white dark:bg-warm-100 dark:text-warm-900 hover:opacity-90 transition-all cursor-pointer shadow-xs"
+                class="px-2.5 py-1 rounded-lg text-warm-600 dark:text-warm-300 hover:text-warm-900 dark:hover:text-white hover:bg-warm-200/70 dark:hover:bg-warm-700/70 transition-colors inline-flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                title="Scroll up / close filters"
               >
-                Done
+                <span>Collapse</span>
+                <ChevronUp :size="13" />
               </button>
             </div>
+
+            <!-- Scrollable Viewport (Smooth Scroll Down and Up with custom slim scrollbar) -->
+            <div class="p-4 sm:p-5 max-h-[65vh] sm:max-h-[380px] overflow-y-auto filter-scroll scroll-smooth overscroll-contain space-y-4">
+              <!-- Category 1: Service Channel (Type) with Interactive Option Chips & Horizontal Scroll -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 flex items-center gap-1.5">
+                    <UtensilsCrossed :size="13" class="text-primary-500" /> {{ $t('cashierPage.filterType') }}
+                  </label>
+                  <span v-if="typeFilter !== 'all'" class="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2 py-0.5 rounded-full">
+                    Active Filter
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5 overflow-x-auto filter-scroll pb-1 sm:flex-wrap">
+                  <button
+                    v-for="opt in [
+                      { id: 'all', label: $t('cashierPage.filterAllTypes'), icon: Globe, iconColor: 'text-warm-400' },
+                      { id: 'dine_in', label: $t('cashierPage.filterDineIn'), icon: UtensilsCrossed, iconColor: 'text-blue-500' },
+                      { id: 'pickup', label: $t('cashierPage.filterPickup'), icon: ShoppingBag, iconColor: 'text-amber-500' },
+                      { id: 'delivery', label: $t('cashierPage.filterDelivery'), icon: Truck, iconColor: 'text-emerald-500' },
+                      { id: 'room_service', label: $t('cashierPage.filterRoomService'), icon: BedDouble, iconColor: 'text-purple-500' },
+                    ]"
+                    :key="opt.id"
+                    type="button"
+                    @click="typeFilter = opt.id"
+                    :class="[
+                      'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 sm:shrink',
+                      typeFilter === opt.id
+                        ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25 ring-2 ring-primary-500/30 font-bold'
+                        : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70 hover:border-warm-300'
+                    ]"
+                  >
+                    <component :is="opt.icon" :size="13" :class="typeFilter === opt.id ? 'text-white' : opt.iconColor" />
+                    <span>{{ opt.label }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Category 2: Payment Method with Interactive Option Chips & Horizontal Scroll -->
+              <div class="pt-3 border-t border-warm-200/60 dark:border-warm-800/60">
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 flex items-center gap-1.5">
+                    <Wallet :size="13" class="text-emerald-500" /> {{ $t('cashierPage.filterMethod') }}
+                  </label>
+                  <span v-if="methodFilter !== 'all'" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                    Active Filter
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5 overflow-x-auto filter-scroll pb-1 sm:flex-wrap">
+                  <button
+                    v-for="opt in [
+                      { id: 'all', label: $t('cashierPage.filterAllMethods'), icon: Wallet, iconColor: 'text-warm-400' },
+                      { id: 'cash', label: $t('cashierPage.filterCashOnly'), icon: DollarSign, iconColor: 'text-emerald-500' },
+                      { id: 'telebirr', label: $t('cashierPage.filterTelebirrOnly'), icon: Smartphone, iconColor: 'text-blue-500' },
+                      { id: 'cbe_birr', label: $t('cashierPage.filterCbeOnly'), icon: Building2, iconColor: 'text-amber-500' },
+                      { id: 'card', label: $t('cashierPage.filterCardOnly'), icon: CreditCard, iconColor: 'text-cyan-500' },
+                      { id: 'room_charge', label: $t('cashierPage.filterRoomOnly'), icon: BedDouble, iconColor: 'text-purple-500' },
+                    ]"
+                    :key="opt.id"
+                    type="button"
+                    @click="methodFilter = opt.id"
+                    :class="[
+                      'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 sm:shrink',
+                      methodFilter === opt.id
+                        ? 'bg-emerald-600 text-white shadow-xs shadow-emerald-500/25 ring-2 ring-emerald-500/30 font-bold'
+                        : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70 hover:border-warm-300'
+                    ]"
+                  >
+                    <component :is="opt.icon" :size="13" :class="methodFilter === opt.id ? 'text-white' : opt.iconColor" />
+                    <span>{{ opt.label }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bottom Row: Date Window & Sort By -->
+              <div class="pt-3 border-t border-warm-200/60 dark:border-warm-800/60 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Category 3: Date Window -->
+                <div>
+                  <label class="block text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 mb-2 flex items-center gap-1.5">
+                    <Calendar :size="13" class="text-purple-500" /> {{ $t('cashierPage.filterDate') }}
+                  </label>
+                  <div class="flex items-center gap-1.5 overflow-x-auto filter-scroll pb-1 sm:flex-wrap">
+                    <button
+                      v-for="opt in [
+                        { id: 'all', label: $t('cashierPage.dateAll'), icon: Calendar },
+                        { id: 'today', label: $t('cashierPage.dateToday'), icon: Clock },
+                        { id: 'custom', label: $t('cashierPage.dateCustom'), icon: CalendarCheck },
+                      ]"
+                      :key="opt.id"
+                      type="button"
+                      @click="dateFilter = opt.id"
+                      :class="[
+                        'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 sm:shrink',
+                        dateFilter === opt.id
+                          ? 'bg-purple-600 text-white shadow-xs shadow-purple-500/25 ring-2 ring-purple-500/30 font-bold'
+                          : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70'
+                      ]"
+                    >
+                      <component :is="opt.icon" :size="13" />
+                      <span>{{ opt.label }}</span>
+                    </button>
+
+                    <input
+                      v-if="dateFilter === 'custom'"
+                      v-model="customDate"
+                      type="date"
+                      class="input text-xs py-1 px-2.5 bg-white dark:bg-warm-800 font-semibold border-purple-400 focus:ring-2 focus:ring-purple-500/20 rounded-xl shrink-0"
+                    />
+                  </div>
+                </div>
+
+                <!-- Category 4: Sort By -->
+                <div>
+                  <label class="block text-[11px] font-bold uppercase tracking-wider text-warm-600 dark:text-warm-300 mb-2 flex items-center gap-1.5">
+                    <ArrowUpDown :size="13" class="text-indigo-500" /> {{ $t('cashierPage.filterSort') }}
+                  </label>
+                  <div class="flex items-center gap-1.5 overflow-x-auto filter-scroll pb-1 sm:flex-wrap">
+                    <button
+                      v-for="opt in [
+                        { id: 'newest', label: $t('cashierPage.sortNewest') },
+                        { id: 'oldest', label: $t('cashierPage.sortOldest') },
+                        { id: 'amount_desc', label: $t('cashierPage.sortAmountHigh') },
+                        { id: 'amount_asc', label: $t('cashierPage.sortAmountLow') },
+                      ]"
+                      :key="opt.id"
+                      type="button"
+                      @click="sortBy = opt.id"
+                      :class="[
+                        'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 sm:shrink',
+                        sortBy === opt.id
+                          ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-500/25 ring-2 ring-indigo-500/30 font-bold'
+                          : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 border border-warm-200/80 dark:border-warm-700/80 hover:bg-warm-100/70'
+                      ]"
+                    >
+                      <span>{{ opt.label }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Drawer Footer Controls (Slide/Scroll Up Confirmation) -->
+            <div class="px-4 py-2.5 bg-warm-100/60 dark:bg-warm-850 border-t border-warm-200/60 dark:border-warm-750 flex items-center justify-between">
+              <span class="text-xs text-warm-500 dark:text-warm-400 flex items-center gap-1.5">
+                <span v-if="activeFiltersCount > 0" class="font-semibold text-primary-600 dark:text-primary-400">
+                  {{ activeFiltersCount }} active filter(s) applied
+                </span>
+                <span v-else>All standard filters active</span>
+              </span>
+
+              <div class="flex items-center gap-2">
+                <button
+                  v-if="hasActiveFilters"
+                  @click="resetFilters"
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 inline-flex items-center gap-1 transition-all cursor-pointer"
+                >
+                  <RotateCcw :size="12" /> {{ $t('cashierPage.clearAll') }}
+                </button>
+                <button
+                  @click="showAdvancedFilters = false"
+                  class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-warm-900 text-white dark:bg-warm-100 dark:text-warm-900 hover:opacity-90 transition-all cursor-pointer shadow-xs inline-flex items-center gap-1"
+                >
+                  <ChevronUp :size="13" />
+                  <span>Done</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        </transition>
 
-        <!-- Active Filter Summary & Chips Bar -->
-        <div
-          v-if="hasActiveFilters"
-          class="px-4 py-2 bg-warm-50/70 dark:bg-warm-900/40 border-b border-warm-200/60 dark:border-warm-800/60 flex flex-wrap items-center justify-between gap-2 text-xs"
-        >
-          <div class="flex flex-wrap items-center gap-1.5">
-            <span class="text-warm-500 dark:text-warm-400 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 mr-1">
-              <Filter :size="11" class="text-primary-500" /> Active:
-            </span>
-
-            <!-- Status Tag -->
-            <span
-              v-if="statusFilter !== 'all'"
-              class="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] inline-flex items-center gap-1 font-semibold"
-            >
-              <span class="capitalize">{{ statusFilter }}</span>
-              <button @click="statusFilter = 'all'" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
-            </span>
-
-            <!-- Channel Tag -->
-            <span
-              v-if="typeFilter !== 'all'"
-              class="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] inline-flex items-center gap-1 font-semibold"
-            >
-              <span>{{ typeFilter === 'dine_in' ? 'Dine-In' : typeFilter === 'pickup' ? 'Takeaway' : typeFilter === 'delivery' ? 'Delivery' : 'Room Service' }}</span>
-              <button @click="typeFilter = 'all'" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
-            </span>
-
-            <!-- Method Tag -->
-            <span
-              v-if="methodFilter !== 'all'"
-              class="px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] inline-flex items-center gap-1 font-semibold"
-            >
-              <span class="capitalize">{{ methodFilter }}</span>
-              <button @click="methodFilter = 'all'" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
-            </span>
-
-            <!-- Date Tag -->
-            <span
-              v-if="dateFilter !== 'all'"
-              class="px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[11px] inline-flex items-center gap-1 font-semibold"
-            >
-              <span>{{ dateFilter === 'today' ? 'Today' : customDate || 'Custom' }}</span>
-              <button @click="dateFilter = 'all'; customDate = ''" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
-            </span>
-
-            <!-- Search Query Tag -->
-            <span
-              v-if="searchQuery.trim()"
-              class="px-2 py-0.5 rounded-lg bg-warm-200 dark:bg-warm-700 text-warm-800 dark:text-warm-200 border border-warm-300 dark:border-warm-600 text-[11px] inline-flex items-center gap-1 font-semibold"
-            >
-              <span>"{{ searchQuery.trim() }}"</span>
-              <button @click="searchQuery = ''" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
-            </span>
-          </div>
-
-          <button
-            @click="resetFilters"
-            class="text-[11px] text-red-500 hover:text-red-700 font-bold inline-flex items-center gap-1 cursor-pointer"
+        <!-- Active Filter Summary & Chips Bar (Slides in/out smoothly) -->
+        <transition name="filter-tags">
+          <div
+            v-if="hasActiveFilters"
+            class="px-4 py-2 bg-warm-50/70 dark:bg-warm-900/40 border-b border-warm-200/60 dark:border-warm-800/60 flex flex-wrap items-center justify-between gap-2 text-xs overflow-hidden"
           >
-            <RotateCcw :size="11" /> {{ $t('cashierPage.clearAll') }}
-          </button>
-        </div>
+            <div class="flex items-center gap-1.5 overflow-x-auto filter-scroll pb-1 sm:pb-0 flex-nowrap sm:flex-wrap">
+              <span class="text-warm-500 dark:text-warm-400 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
+                <Filter :size="11" class="text-primary-500" /> Active:
+              </span>
+
+              <!-- Status Tag -->
+              <span
+                v-if="statusFilter !== 'all'"
+                class="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] inline-flex items-center gap-1 font-semibold shrink-0"
+              >
+                <span class="capitalize">{{ statusFilter }}</span>
+                <button @click="statusFilter = 'all'" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
+              </span>
+
+              <!-- Channel Tag -->
+              <span
+                v-if="typeFilter !== 'all'"
+                class="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] inline-flex items-center gap-1 font-semibold shrink-0"
+              >
+                <span>{{ typeFilter === 'dine_in' ? 'Dine-In' : typeFilter === 'pickup' ? 'Takeaway' : typeFilter === 'delivery' ? 'Delivery' : 'Room Service' }}</span>
+                <button @click="typeFilter = 'all'" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
+              </span>
+
+              <!-- Method Tag -->
+              <span
+                v-if="methodFilter !== 'all'"
+                class="px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] inline-flex items-center gap-1 font-semibold shrink-0"
+              >
+                <span class="capitalize">{{ methodFilter }}</span>
+                <button @click="methodFilter = 'all'" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
+              </span>
+
+              <!-- Date Tag -->
+              <span
+                v-if="dateFilter !== 'all'"
+                class="px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[11px] inline-flex items-center gap-1 font-semibold shrink-0"
+              >
+                <span>{{ dateFilter === 'today' ? 'Today' : customDate || 'Custom' }}</span>
+                <button @click="dateFilter = 'all'; customDate = ''" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
+              </span>
+
+              <!-- Search Query Tag -->
+              <span
+                v-if="searchQuery.trim()"
+                class="px-2 py-0.5 rounded-lg bg-warm-200 dark:bg-warm-700 text-warm-800 dark:text-warm-200 border border-warm-300 dark:border-warm-600 text-[11px] inline-flex items-center gap-1 font-semibold shrink-0"
+              >
+                <span>"{{ searchQuery.trim() }}"</span>
+                <button @click="searchQuery = ''" class="hover:opacity-75 cursor-pointer"><X :size="11" /></button>
+              </span>
+            </div>
+
+            <button
+              @click="resetFilters"
+              class="text-[11px] text-red-500 hover:text-red-700 font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <RotateCcw :size="11" /> {{ $t('cashierPage.clearAll') }}
+            </button>
+          </div>
+        </transition>
 
         <!-- Orders Table (Seated directly in master workstation container) -->
         <TableSkeleton v-if="loading" :rows="6" :cols="6" />
@@ -2305,6 +2330,83 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* ───────────────────────────────────────────────────────────────────────── */
+/* FILTER ACCORDION SLIDE IN / DOWN / UP TRANSITIONS                         */
+/* ───────────────────────────────────────────────────────────────────────── */
+.filter-slide-enter-active {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 850px;
+  opacity: 1;
+  overflow: hidden;
+  transform: translateY(0);
+}
+
+.filter-slide-leave-active {
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 850px;
+  opacity: 1;
+  overflow: hidden;
+  transform: translateY(0);
+}
+
+.filter-slide-enter-from,
+.filter-slide-leave-to {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  transform: translateY(-14px);
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  border-width: 0 !important;
+}
+
+/* Active Filter Summary Bar Slide Down / Up */
+.filter-tags-enter-active {
+  transition: all 0.25s ease-out;
+  max-height: 140px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.filter-tags-leave-active {
+  transition: all 0.2s ease-in;
+  max-height: 140px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.filter-tags-enter-from,
+.filter-tags-leave-to {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-width: 0 !important;
+}
+
+/* Custom sleek slim scrollbar for filter drawer and horizontal ribbons */
+.filter-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+.filter-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.filter-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.filter-scroll::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.35);
+  border-radius: 9999px;
+}
+.filter-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.65);
+}
+
 @media print {
   /* Hide every part of the application except the thermal receipt slip */
   body * {

@@ -147,9 +147,19 @@ export const staffApi = {
   waiterUpdateTableStatus:(id: number | string, status: string) => api.patch(`/waiter/tables/${id}/status`, { status }),
 
   // Cashier / Billing POS
-  cashierOrders:          ()                    => api.get('/cashier/orders'),
+  cashierOrders:          (params?: Record<string, any>) => api.get('/cashier/orders', { params }),
+  createPosOrder:         (data: Record<string, any>)    => api.post('/cashier/orders', data),
   confirmPayment:         (id: number | string, data?: Record<string, any>) => api.post(`/cashier/orders/${id}/confirm-payment`, data),
-  cashierSummary:         ()                    => api.get('/cashier/summary'),
+  voidOrder:              (id: number | string, reason: string) => api.post(`/cashier/orders/${id}/void`, { reason }),
+  refundOrder:            (id: number | string, data: Record<string, any>) => api.post(`/cashier/orders/${id}/refund`, data),
+  splitBill:              (id: number | string, ways?: number) => api.get(`/cashier/orders/${id}/split`, { params: { ways } }),
+  cashierMenu:            ()                             => api.get('/cashier/menu'),
+  cashierSummary:         ()                             => api.get('/cashier/summary'),
+  cashierCurrentShift:    ()                             => api.get('/cashier/shift/current'),
+  cashierOpenShift:       (data: Record<string, any>)    => api.post('/cashier/shift/open', data),
+  cashierCloseShift:      (data: Record<string, any>)    => api.post('/cashier/shift/close', data),
+  cashierDrawerAction:    (data: Record<string, any>)    => api.post('/cashier/shift/drawer-action', data),
+  cashierShiftHistory:    ()                             => api.get('/cashier/shifts'),
 
   // Delivery
   deliveryOrders:         ()                    => api.get('/delivery/orders'),

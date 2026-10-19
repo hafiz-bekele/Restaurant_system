@@ -137,10 +137,23 @@ Route::prefix('v1')->group(function () {
         });
 
         // Staff — cashier / POS billing (REQ-9.x)
-        Route::middleware('role:cashier|manager|admin|super-admin')->group(function () {
-            Route::get('cashier/orders', [CashierController::class, 'orders']);
-            Route::post('cashier/orders/{order}/confirm-payment', [CashierController::class, 'confirmPayment']);
-            Route::get('cashier/summary', [CashierController::class, 'summary']);
+        Route::middleware('role:cashier|manager|admin|super-admin')->prefix('cashier')->group(function () {
+            // Orders & POS
+            Route::get('orders', [CashierController::class, 'orders']);
+            Route::post('orders', [CashierController::class, 'createPosOrder']);
+            Route::post('orders/{order}/confirm-payment', [CashierController::class, 'confirmPayment']);
+            Route::post('orders/{order}/void', [CashierController::class, 'voidOrder']);
+            Route::post('orders/{order}/refund', [CashierController::class, 'refundOrder']);
+            Route::get('orders/{order}/split', [CashierController::class, 'splitBill']);
+            Route::get('menu', [CashierController::class, 'menu']);
+            Route::get('summary', [CashierController::class, 'summary']);
+
+            // Till & Shift Management
+            Route::get('shift/current', [CashierController::class, 'currentShift']);
+            Route::post('shift/open', [CashierController::class, 'openShift']);
+            Route::post('shift/close', [CashierController::class, 'closeShift']);
+            Route::post('shift/drawer-action', [CashierController::class, 'drawerAction']);
+            Route::get('shifts', [CashierController::class, 'shiftHistory']);
         });
 
         // Staff — delivery

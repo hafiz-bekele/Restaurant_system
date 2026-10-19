@@ -39,6 +39,16 @@ class OrderResource extends JsonResource
             'items' => $this->whenLoaded('items'),
             'status_history' => $this->whenLoaded('statusHistory'),
             'table' => $this->whenLoaded('table'),
+            'payment' => $this->whenLoaded('payment', fn () => $this->payment ? [
+                'id' => $this->payment->id,
+                'gateway' => $this->payment->gateway,
+                'transaction_id' => $this->payment->transaction_id,
+                'amount' => $this->payment->amount,
+                'currency' => $this->payment->currency,
+                'status' => $this->payment->status->value ?? $this->payment->status,
+                'payload' => $this->payment->payload,
+                'created_at' => $this->payment->created_at,
+            ] : null),
         ];
     }
 }

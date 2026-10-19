@@ -6,7 +6,7 @@ import {
   LayoutDashboard, UtensilsCrossed, ShoppingBag, BarChart2, Settings,
   Menu, X, LogOut, ChefHat, Users, Grid3x3, Calendar, Tag, Package,
   Shield, AlertTriangle, Truck, BedDouble, Building2, ExternalLink,
-  Star, ChevronRight, Sun, Moon,
+  Star, ChevronRight, Sun, Moon, CreditCard,
 } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiStore }   from '../stores/ui'
@@ -55,6 +55,7 @@ const nav = computed(() => {
       items: [
         { to: '/admin',              icon: LayoutDashboard, label: t('adminLayout.nav.dashboard') },
         { to: '/admin/orders',       icon: ShoppingBag,     label: t('adminLayout.nav.orders') },
+        { to: '/staff/cashier',      icon: CreditCard,      label: t('staffLayout.cashierPos') },
         { to: '/admin/reservations', icon: Calendar,        label: t('adminLayout.nav.reservations') },
         { to: '/admin/tables',       icon: Grid3x3,         label: t('adminLayout.nav.tables') },
         { to: '/admin/rooms',        icon: BedDouble,       label: t('adminLayout.nav.rooms') },

@@ -22,8 +22,9 @@ const error    = ref('')
 
 const demoAccounts = [
   { label: 'Admin',     email: 'admin@restaurant.com',     pass: 'password', role: 'Full Admin' },
-  { label: 'Kitchen',   email: 'kitchen@restaurant.com',   pass: 'password', role: 'Head Chef' },
+  { label: 'Cashier',   email: 'cashier@restaurant.com',   pass: 'password', role: 'POS Cashier' },
   { label: 'Waiter',    email: 'waiter@restaurant.com',    pass: 'password', role: 'Server' },
+  { label: 'Kitchen',   email: 'kitchen@restaurant.com',   pass: 'password', role: 'Head Chef' },
   { label: 'Reception', email: 'reception@restaurant.com', pass: 'password', role: 'Front Desk' },
 ]
 

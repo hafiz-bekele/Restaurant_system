@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Hotel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -33,6 +34,19 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
+        $hotel = Hotel::firstOrCreate(
+            ['slug' => 'taste-and-stay-boutique-suites'],
+            [
+                'name' => 'Taste & Stay Bistro & Boutique Suites',
+                'slug' => 'taste-and-stay-boutique-suites',
+                'address' => 'Bole Medhanialem, Next to Edna Mall, Addis Ababa, Ethiopia',
+                'phone' => '+251 91 123 4567',
+                'email' => 'hospitality@tasteandstay.et',
+                'currency' => 'ETB',
+                'is_active' => true,
+            ]
+        );
+
         $staff = [
             [
                 'email'    => 'superadmin@restaurant.com',
@@ -46,35 +60,35 @@ class AdminSeeder extends Seeder
                 'name'     => 'Hotel Admin',
                 'password' => env('SEED_ADMIN_PASSWORD', 'Adm!nP@ss#2026'),
                 'role'     => 'admin',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
             ],
             [
                 'email'    => 'manager@restaurant.com',
                 'name'     => 'Restaurant Manager',
                 'password' => env('SEED_MANAGER_PASSWORD', 'M@nager$ecure#2026'),
                 'role'     => 'manager',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
             ],
             [
                 'email'    => 'reception@restaurant.com',
                 'name'     => 'Front Desk Receptionist',
                 'password' => env('SEED_RECEPTION_PASSWORD', 'R3cept!on#2026'),
                 'role'     => 'reception',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
             ],
             [
                 'email'    => 'kitchen@restaurant.com',
                 'name'     => 'Head Chef',
                 'password' => env('SEED_KITCHEN_PASSWORD', 'K!tchen$t@ff#2026'),
                 'role'     => 'kitchen',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
             ],
             [
                 'email'    => 'waiter@restaurant.com',
                 'name'     => 'Floor Waiter',
                 'password' => env('SEED_WAITER_PASSWORD', 'W@iterFloor#2026'),
                 'role'     => 'waiter',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
                 'on_duty'  => true,
                 'section'  => 'Indoor',
             ],
@@ -83,14 +97,14 @@ class AdminSeeder extends Seeder
                 'name'     => 'Cashier',
                 'password' => env('SEED_CASHIER_PASSWORD', 'C@shierP0S#2026'),
                 'role'     => 'cashier',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
             ],
             [
                 'email'    => 'delivery@restaurant.com',
                 'name'     => 'Delivery Driver',
                 'password' => env('SEED_DELIVERY_PASSWORD', 'D3livery#2026'),
                 'role'     => 'delivery',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
             ],
             [
                 'email'    => 'customer@restaurant.com',
@@ -98,7 +112,7 @@ class AdminSeeder extends Seeder
                 'phone'    => '+251911223344',
                 'password' => env('SEED_CUSTOMER_PASSWORD', 'Cust0mer#2026'),
                 'role'     => 'customer',
-                'hotel_id' => 1,
+                'hotel_id' => $hotel->id,
             ],
         ];
 

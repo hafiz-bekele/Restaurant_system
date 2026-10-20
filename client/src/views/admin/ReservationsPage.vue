@@ -15,10 +15,11 @@ const dateFilter   = ref(new Date().toISOString().split('T')[0])
 const statusFilter = ref('')
 const search       = ref('')
 
-const statusOptions = ['', 'pending', 'confirmed', 'cancelled', 'completed', 'no_show']
+const statusOptions = ['', 'pending', 'confirmed', 'redeemed', 'cancelled', 'completed', 'no_show']
 const statusColors  = {
   pending:   'badge-orange',
   confirmed: 'badge-green',
+  redeemed:  'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200',
   cancelled: 'badge-red',
   completed: 'badge-blue',
   no_show:   'badge',
@@ -40,6 +41,12 @@ async function updateStatus(reservation, status) {
   await adminApi.updateReservation(reservation.id, { status })
   qc.invalidateQueries({ queryKey: ['admin', 'reservations'] })
   ui.toast(t('adminReservations.toastUpdated'), 'success')
+}
+
+async function redeem(reservation) {
+  await adminApi.redeemReservation(reservation.id)
+  qc.invalidateQueries({ queryKey: ['admin', 'reservations'] })
+  ui.toast('Reservation fee redeemed successfully', 'success')
 }
 
 async function cancel(reservation) {
@@ -84,6 +91,7 @@ function formatDate(dt) {
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thDateTime') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thTable') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thParty') }}</th>
+            <th class="px-5 py-3 font-medium">Fee & Policy</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thStatus') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thUpdate') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thActions') }}</th>
@@ -95,9 +103,18 @@ function formatDate(dt) {
               <p class="font-medium text-warm-900 dark:text-white">{{ r.name }}</p>
               <p class="text-xs text-warm-400">{{ r.email }}</p>
             </td>
-            <td class="px-5 py-3 text-warm-600 dark:text-warm-400 whitespace-nowrap">{{ formatDate(r.reserved_at) }}</td>
+            <td class="px-5 py-3 text-warm-600 dark:text-warm-400 whitespace-nowrap">
+              {{ formatDate(r.reserved_at) }}
+              <p class="text-[10px] text-warm-400">{{ r.duration || 60 }} mins</p>
+            </td>
             <td class="px-5 py-3 text-warm-600 dark:text-warm-400">{{ r.table?.name ?? '—' }}</td>
             <td class="px-5 py-3 text-center font-semibold text-warm-700 dark:text-warm-300">{{ r.party_size }}</td>
+            <td class="px-5 py-3">
+              <p class="font-mono font-bold text-warm-900 dark:text-white">ETB {{ Number(r.current_fee ?? r.reservation_fee ?? 50).toFixed(2) }}</p>
+              <p class="text-[10px] text-warm-400">Base: 50 ETB (+5/10s)</p>
+              <p v-if="r.status === 'redeemed'" class="text-[10px] text-purple-600 dark:text-purple-400 font-bold">✓ Redeemed</p>
+              <p v-else-if="r.seconds_until_auto_redeem > 0" class="text-[10px] text-amber-600 font-mono">Auto-redeems in {{ Math.floor(r.seconds_until_auto_redeem / 60) }}m</p>
+            </td>
             <td class="px-5 py-3">
               <span :class="['badge', statusColors[r.status] ?? 'badge']">{{ r.status }}</span>
             </td>
@@ -107,19 +124,29 @@ function formatDate(dt) {
                 @change="e => updateStatus(r, e.target.value)"
                 class="input text-xs py-1 px-2 w-auto"
               >
-                <option v-for="s in ['pending','confirmed','completed','no_show','cancelled']" :key="s" :value="s">{{ s }}</option>
+                <option v-for="s in ['pending','confirmed','redeemed','completed','no_show','cancelled']" :key="s" :value="s">{{ s }}</option>
               </select>
             </td>
             <td class="px-5 py-3">
-              <button
-                v-if="r.status !== 'cancelled'"
-                @click="cancel(r)"
-                class="text-xs text-red-400 hover:text-red-600 font-medium"
-              >{{ $t('adminReservations.cancelBtn') }}</button>
+              <div class="flex items-center gap-2">
+                <button
+                  v-if="r.status !== 'redeemed' && r.status !== 'cancelled' && r.status !== 'no_show'"
+                  @click="redeem(r)"
+                  class="text-xs text-purple-600 hover:text-purple-800 font-medium"
+                  title="Redeem fee towards dining bill"
+                >
+                  Redeem
+                </button>
+                <button
+                  v-if="r.status !== 'cancelled'"
+                  @click="cancel(r)"
+                  class="text-xs text-red-400 hover:text-red-600 font-medium"
+                >{{ $t('adminReservations.cancelBtn') }}</button>
+              </div>
             </td>
           </tr>
           <tr v-if="!reservations().length">
-            <td colspan="7" class="px-5 py-10 text-center text-warm-400">{{ $t('adminReservations.noReservationsFound') }}</td>
+            <td colspan="8" class="px-5 py-10 text-center text-warm-400">{{ $t('adminReservations.noReservationsFound') }}</td>
           </tr>
         </tbody>
       </table>

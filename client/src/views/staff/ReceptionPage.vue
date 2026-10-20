@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { staffApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
-import { CalendarCheck, Grid3x3, Unlock, UserCheck, X, Plus, AlertCircle, BedDouble, CheckCircle, Clock } from '@lucide/vue'
+import { CalendarCheck, Grid3x3, Unlock, UserCheck, X, Plus, AlertCircle, BedDouble, CheckCircle, Clock, DollarSign, Sparkles } from '@lucide/vue'
 import StatCardSkeleton from '../../components/ui/StatCardSkeleton.vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
@@ -15,6 +15,7 @@ const activeTab = ref('tables') // 'tables' | 'rooms'
 const data     = ref(null)
 const loading  = ref(true)
 const saving   = ref(false)
+const tick     = ref(0) // Live 1-second reactive ticker for elapsed fees and countdowns
 
 // Walk-in modal
 const showWalkIn   = ref(false)
@@ -67,6 +68,60 @@ async function noShow(reservation) {
   await fetchDashboard()
 }
 
+async function redeem(reservation) {
+  saving.value = true
+  try {
+    await staffApi.redeemReservation(reservation.id)
+    ui.toast(`Reservation fee for ${reservation.name} redeemed successfully!`, 'success')
+    await fetchDashboard()
+  } catch (err) {
+    ui.toast(err.response?.data?.message ?? 'Failed to redeem reservation fee', 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+function calculateLiveFee(res) {
+  // Read tick to establish reactive tracking
+  const _ = tick.value
+  if (res.is_redeemed || res.status === 'redeemed') {
+    return Number(res.redeem_amount ?? res.current_fee ?? res.reservation_fee ?? 50).toFixed(2)
+  }
+  const baseFee = 50.00
+  if (!res.reserved_at) return baseFee.toFixed(2)
+  const reservedTime = new Date(res.reserved_at).getTime()
+  const now = Date.now()
+  if (now <= reservedTime) {
+    return Number(res.reservation_fee ?? 50).toFixed(2)
+  }
+  const elapsedSeconds = Math.min(7200, Math.floor((now - reservedTime) / 1000))
+  if (elapsedSeconds <= 3600) {
+    return baseFee.toFixed(2)
+  }
+  const extraSeconds = elapsedSeconds - 3600
+  const intervals = Math.floor(extraSeconds / 10)
+  return (baseFee + (intervals * 5)).toFixed(2)
+}
+
+function getCountdownText(res) {
+  const _ = tick.value
+  if (res.is_redeemed || res.status === 'redeemed') return 'Redeemed'
+  if (!res.reserved_at) return ''
+  const reservedTime = new Date(res.reserved_at).getTime()
+  const autoRedeemTime = reservedTime + (2 * 60 * 60 * 1000)
+  const now = Date.now()
+  if (now >= autoRedeemTime) {
+    return '2h Limit Reached (Auto-Redeemed)'
+  }
+  if (now < reservedTime) {
+    return 'Scheduled: ' + (res.time || '')
+  }
+  const diffSec = Math.floor((autoRedeemTime - now) / 1000)
+  const mins = Math.floor(diffSec / 60)
+  const secs = diffSec % 60
+  return `Auto-redeems in ${mins}m ${secs < 10 ? '0' : ''}${secs}s`
+}
+
 async function releaseTable(table) {
   await staffApi.releaseTable(table.id)
   ui.toast(t('receptionPage.tableReleasedToast', { name: table.name }), 'success')
@@ -104,16 +159,25 @@ const availableTables = computed(() =>
 const statusColors = { available: 'badge-green', occupied: 'badge-red', reserved: 'badge-orange', inactive: 'badge' }
 
 let interval
+let secondTicker
 onMounted(() => {
   fetchDashboard()
   fetchRoomBookings()
   interval = setInterval(() => {
     fetchDashboard()
     if (activeTab.value === 'rooms') fetchRoomBookings()
-  }, 20000)
+  }, 15000)
+
+  // 1-second ticker for live seconds calculation & overtime increment
+  secondTicker = setInterval(() => {
+    tick.value++
+  }, 1000)
 })
 
-onUnmounted(() => clearInterval(interval))
+onUnmounted(() => {
+  if (interval) clearInterval(interval)
+  if (secondTicker) clearInterval(secondTicker)
+})
 </script>
 
 <template>
@@ -186,22 +250,26 @@ onUnmounted(() => clearInterval(interval))
 
       <template v-else-if="data">
         <!-- Summary stats -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-warm-900 dark:text-white">{{ data.summary?.total_tables ?? 0 }}</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
+          <div class="card p-3.5 text-center">
+            <p class="text-xl sm:text-2xl font-heading font-bold text-warm-900 dark:text-white">{{ data.summary?.total_tables ?? 0 }}</p>
             <p class="text-xs text-warm-500 mt-1">{{ $t('receptionPage.activeTables') }}</p>
           </div>
-          <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-green-500">{{ data.summary?.available_tables ?? 0 }}</p>
+          <div class="card p-3.5 text-center">
+            <p class="text-xl sm:text-2xl font-heading font-bold text-green-500">{{ data.summary?.available_tables ?? 0 }}</p>
             <p class="text-xs text-warm-500 mt-1">{{ $t('waiterPage.tableStatusAvailable') }}</p>
           </div>
-          <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-red-500">{{ data.summary?.occupied_tables ?? 0 }}</p>
+          <div class="card p-3.5 text-center">
+            <p class="text-xl sm:text-2xl font-heading font-bold text-red-500">{{ data.summary?.occupied_tables ?? 0 }}</p>
             <p class="text-xs text-warm-500 mt-1">{{ $t('waiterPage.tableStatusOccupied') }}</p>
           </div>
-          <div class="card p-4 text-center">
-            <p class="text-2xl font-heading font-bold text-primary-500">{{ data.summary?.today_reservations ?? 0 }}</p>
+          <div class="card p-3.5 text-center">
+            <p class="text-xl sm:text-2xl font-heading font-bold text-primary-500">{{ data.summary?.today_reservations ?? (data.reservations?.length ?? 0) }}</p>
             <p class="text-xs text-warm-500 mt-1">{{ $t('receptionPage.todayReservations') }}</p>
+          </div>
+          <div class="card p-3.5 text-center bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200/50 dark:border-purple-800/40">
+            <p class="text-xl sm:text-2xl font-heading font-bold text-purple-600 dark:text-purple-400">{{ data.summary?.redeemed_today ?? 0 }}</p>
+            <p class="text-xs text-purple-600/80 dark:text-purple-300/80 mt-1">Redeemed Today</p>
           </div>
         </div>
 
@@ -210,32 +278,90 @@ onUnmounted(() => clearInterval(interval))
           <div class="lg:col-span-1 space-y-4">
             <h2 class="font-heading font-semibold text-warm-900 dark:text-white flex items-center justify-between text-base">
               <span>{{ $t('receptionPage.todayReservations') }}</span>
-              <span class="badge badge-orange text-xs">{{ data.reservations?.length ?? 0 }}</span>
+              <span class="badge badge-orange text-xs">{{ (data.reservations ?? data.todayReservations ?? []).length }}</span>
             </h2>
 
-            <div v-if="!data.reservations?.length" class="card p-6 text-center text-warm-400 text-sm">
+            <div v-if="!(data.reservations ?? data.todayReservations ?? []).length" class="card p-6 text-center text-warm-400 text-sm">
               No reservations scheduled for today
             </div>
 
-            <div v-for="res in (data.reservations ?? [])" :key="res.id" class="card p-4 space-y-3">
+            <div
+              v-for="res in (data.reservations ?? data.todayReservations ?? [])"
+              :key="res.id"
+              class="card p-4 space-y-3 border border-warm-200/70 dark:border-warm-800"
+            >
               <div class="flex items-start justify-between">
                 <div>
                   <p class="font-semibold text-warm-900 dark:text-white text-sm">{{ res.name }}</p>
                   <p class="text-xs text-warm-500">{{ res.phone }} · {{ res.party_size }} {{ $t('receptionPage.party') }}</p>
                 </div>
-                <span class="badge badge-orange text-xs">{{ res.time }}</span>
+                <div class="text-right">
+                  <span class="badge badge-orange text-xs">{{ res.time }}</span>
+                  <p class="text-[10px] text-warm-400 mt-0.5">{{ res.duration || 60 }} mins</p>
+                </div>
               </div>
 
               <div class="flex items-center justify-between text-xs text-warm-500">
-                <span>{{ $t('kitchenPage.tableNum', { name: res.table_name ?? 'Any' }) }}</span>
-                <span :class="['badge text-[10px]', res.status === 'confirmed' ? 'badge-green' : 'badge-orange']">{{ res.status }}</span>
+                <span>{{ $t('kitchenPage.tableNum', { name: res.table_name ?? res.table?.name ?? 'Any' }) }}</span>
+                <span :class="[
+                  'badge text-[10px] font-bold uppercase tracking-wider',
+                  res.status === 'confirmed' ? 'badge-green' :
+                  res.status === 'redeemed' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200' :
+                  res.status === 'no_show' ? 'badge-red' : 'badge-orange'
+                ]">
+                  {{ res.status }}
+                </span>
               </div>
 
-              <div v-if="res.status === 'confirmed'" class="flex gap-2 pt-1 border-t border-warm-100 dark:border-warm-800">
-                <button @click="checkIn(res)" :disabled="saving" class="btn-primary flex-1 py-1 text-xs justify-center">
+              <!-- Reservation Fee & Auto-Redeem Live Widget -->
+              <div class="p-2.5 rounded-xl bg-warm-50 dark:bg-warm-800/60 border border-warm-200/60 dark:border-warm-700/60 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-medium text-warm-600 dark:text-warm-400 flex items-center gap-1">
+                    <DollarSign :size="12" class="text-primary-500" />
+                    Reservation Fee:
+                  </span>
+                  <span class="font-mono text-xs font-bold text-warm-900 dark:text-white">
+                    ETB {{ calculateLiveFee(res) }}
+                  </span>
+                </div>
+
+                <!-- Rate note and live ticker -->
+                <div class="flex items-center justify-between text-[10px] text-warm-500 flex-wrap gap-1">
+                  <span class="text-primary-600 dark:text-primary-400 font-medium">Base: 50 ETB (+5 ETB/10s after 1h)</span>
+                  <span v-if="res.status === 'redeemed'" class="text-purple-600 dark:text-purple-400 font-bold">
+                    ✓ Fee Redeemed
+                  </span>
+                  <span v-else class="text-amber-600 dark:text-amber-400 font-mono font-medium">
+                    {{ getCountdownText(res) }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-1 border-t border-warm-100 dark:border-warm-800">
+                <button
+                  v-if="res.status === 'confirmed'"
+                  @click="checkIn(res)"
+                  :disabled="saving"
+                  class="btn-primary flex-1 py-1 text-xs justify-center"
+                >
                   <UserCheck :size="13" /> {{ $t('receptionPage.checkInBtn') }}
                 </button>
-                <button @click="noShow(res)" class="btn-ghost flex-1 py-1 text-xs justify-center text-red-500 hover:text-red-600">
+
+                <button
+                  v-if="res.status !== 'redeemed' && res.status !== 'cancelled' && res.status !== 'no_show'"
+                  @click="redeem(res)"
+                  :disabled="saving"
+                  class="btn-secondary flex-1 py-1 text-xs justify-center text-purple-700 dark:text-purple-300 border-purple-200 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                  title="Redeem reservation fee credit towards dining"
+                >
+                  <Sparkles :size="12" /> Redeem Fee
+                </button>
+
+                <button
+                  v-if="res.status !== 'redeemed' && res.status !== 'cancelled' && res.status !== 'no_show'"
+                  @click="noShow(res)"
+                  class="btn-ghost py-1 px-2 text-xs justify-center text-red-500 hover:text-red-600"
+                >
                   {{ $t('receptionPage.noShowBtn') }}
                 </button>
               </div>

@@ -26,20 +26,34 @@ class ReceptionController extends Controller
      */
     public function dashboard(): JsonResponse
     {
+        app(\App\Services\ReservationService::class)->autoRedeemExpiredReservations();
+
         $todayReservations = Reservation::with(['table:id,name,area,capacity'])
             ->whereDate('reserved_at', today())
             ->whereNotIn('status', [ReservationStatus::Cancelled->value])
             ->orderBy('reserved_at')
             ->get()
             ->map(fn ($r) => [
-                'id'          => $r->id,
-                'name'        => $r->name,
-                'phone'       => $r->phone,
-                'email'       => $r->email,
-                'party_size'  => $r->party_size,
-                'reserved_at' => $r->reserved_at,
-                'status'      => $r->status instanceof ReservationStatus ? $r->status->value : $r->status,
-                'table'       => $r->table,
+                'id'                        => $r->id,
+                'name'                      => $r->name,
+                'phone'                     => $r->phone,
+                'email'                     => $r->email,
+                'party_size'                => $r->party_size,
+                'reserved_at'               => $r->reserved_at,
+                'duration'                  => $r->duration,
+                'status'                    => $r->status instanceof ReservationStatus ? $r->status->value : $r->status,
+                'reservation_fee'           => (float) ($r->reservation_fee ?? 50.00),
+                'initial_fee'               => (float) ($r->initial_fee ?? 50.00),
+                'fee_status'                => $r->fee_status ?? 'pending',
+                'redeemed_at'               => $r->redeemed_at,
+                'redeem_amount'             => $r->redeem_amount !== null ? (float) $r->redeem_amount : null,
+                'current_fee'               => (float) $r->current_fee,
+                'elapsed_seconds'           => (int) $r->elapsed_seconds,
+                'seconds_until_auto_redeem' => (int) $r->seconds_until_auto_redeem,
+                'is_redeemed'               => $r->status === ReservationStatus::Redeemed || $r->fee_status === 'redeemed',
+                'time'                      => $r->reserved_at ? $r->reserved_at->format('H:i') : null,
+                'table_name'                => $r->table?->name,
+                'table'                     => $r->table,
             ]);
 
         $tables = RestaurantTable::orderBy('area')->orderBy('name')->get()->map(fn ($t) => [
@@ -52,15 +66,17 @@ class ReceptionController extends Controller
         ]);
 
         $summary = [
-            'total_tables'    => $tables->count(),
+            'total_tables'     => $tables->count(),
             'available_tables' => $tables->where('status', 'available')->count(),
             'occupied_tables'  => $tables->where('status', 'occupied')->count(),
             'reserved_tables'  => $tables->where('status', 'reserved')->count(),
             'total_today'      => $todayReservations->count(),
             'confirmed_today'  => $todayReservations->where('status', 'confirmed')->count(),
+            'redeemed_today'   => $todayReservations->where('status', 'redeemed')->count(),
         ];
 
-        return $this->success(compact('todayReservations', 'tables', 'summary'));
+        $reservations = $todayReservations;
+        return $this->success(compact('todayReservations', 'reservations', 'tables', 'summary'));
     }
 
     /**
@@ -107,6 +123,17 @@ class ReceptionController extends Controller
         ActivityLog::record('reservation.no_show', $reservation);
 
         return $this->success(null, 'Marked as no-show');
+    }
+
+    /**
+     * Redeem the reservation fee (after 2 hours or on check-in/checkout).
+     */
+    public function redeem(Reservation $reservation): JsonResponse
+    {
+        $reservation->redeem();
+        ActivityLog::record('reservation.redeemed', $reservation, ['fee' => $reservation->redeem_amount]);
+
+        return $this->success($reservation, 'Reservation fee redeemed successfully');
     }
 
     /**

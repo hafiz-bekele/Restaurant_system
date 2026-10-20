@@ -87,6 +87,7 @@ Route::prefix('v1')->group(function () {
     Route::post('reservations', [ReservationController::class, 'store']);
     Route::get('reservations/{reservation}', [ReservationController::class, 'show']);
     Route::patch('reservations/{reservation}', [ReservationController::class, 'update']);
+    Route::post('reservations/{reservation}/redeem', [ReservationController::class, 'redeem']);
     Route::delete('reservations/{reservation}', [ReservationController::class, 'destroy']);
 
     // ── Payment webhooks & Public verification ──────────────────────────────
@@ -169,6 +170,7 @@ Route::prefix('v1')->group(function () {
             Route::post('walk-in', [ReceptionController::class, 'walkIn']);
             Route::post('reservations/{reservation}/check-in', [ReceptionController::class, 'checkIn']);
             Route::post('reservations/{reservation}/no-show', [ReceptionController::class, 'noShow']);
+            Route::post('reservations/{reservation}/redeem', [ReceptionController::class, 'redeem']);
             Route::post('tables/{table}/release', [ReceptionController::class, 'releaseTable']);
         });
 
@@ -237,6 +239,7 @@ Route::prefix('v1')->group(function () {
             Route::get('reservations', [AdminReservationController::class, 'index']);
             Route::get('reservations/{reservation}', [AdminReservationController::class, 'show']);
             Route::patch('reservations/{reservation}', [AdminReservationController::class, 'update']);
+            Route::post('reservations/{reservation}/redeem', [AdminReservationController::class, 'redeem']);
             Route::delete('reservations/{reservation}', [AdminReservationController::class, 'destroy']);
 
             // Complaints

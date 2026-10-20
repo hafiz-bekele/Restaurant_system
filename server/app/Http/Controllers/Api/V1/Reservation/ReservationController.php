@@ -42,7 +42,14 @@ class ReservationController extends Controller
 
     public function show(Reservation $reservation): JsonResponse
     {
-        return $this->success(new ReservationResource($reservation->load('table')));
+        $this->reservationService->autoRedeemExpiredReservations();
+        return $this->success(new ReservationResource($reservation->fresh('table')));
+    }
+
+    public function redeem(Reservation $reservation): JsonResponse
+    {
+        $redeemed = $this->reservationService->redeem($reservation);
+        return $this->success(new ReservationResource($redeemed), 'Reservation fee redeemed successfully');
     }
 
     public function update(UpdateReservationRequest $request, Reservation $reservation): JsonResponse

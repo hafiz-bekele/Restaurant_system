@@ -22,6 +22,7 @@ class StoreReservationRequest extends FormRequest
             'party_size'  => ['required', 'integer', 'min:1', 'max:20'],
             'reserved_at' => ['required', 'date', 'after:now'],
             'duration'    => ['nullable', 'integer', 'min:30', 'max:300'],
+            'fee_status'  => ['nullable', 'string', 'in:pending,paid,redeemed,waived'],
             'notes'       => ['nullable', 'string', 'max:500'],
         ];
     }

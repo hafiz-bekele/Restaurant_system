@@ -88,6 +88,7 @@ export const reservationApi = {
   create:       (data: Record<string, any>)    => api.post('/reservations', data),
   get:          (id: number | string)          => api.get(`/reservations/${id}`),
   update:       (id: number | string, data: Record<string, any>) => api.patch(`/reservations/${id}`, data),
+  redeem:       (id: number | string)          => api.post(`/reservations/${id}/redeem`),
   cancel:       (id: number | string)          => api.delete(`/reservations/${id}`),
 }
 
@@ -171,6 +172,7 @@ export const staffApi = {
   walkIn:                 (data: Record<string, any>) => api.post('/reception/walk-in', data),
   checkIn:                (id: number | string) => api.post(`/reception/reservations/${id}/check-in`),
   noShow:                 (id: number | string) => api.post(`/reception/reservations/${id}/no-show`),
+  redeemReservation:      (id: number | string) => api.post(`/reception/reservations/${id}/redeem`),
   releaseTable:           (id: number | string) => api.post(`/reception/tables/${id}/release`),
   roomBookings:           (params?: Record<string, any>) => api.get('/reception/room-bookings', { params }),
   updateRoomBooking:      (id: number | string, data: Record<string, any>) => api.patch(`/reception/room-bookings/${id}`, data),
@@ -224,6 +226,7 @@ export const adminApi = {
   todayReservations:      ()                             => api.get('/admin/reservations/today'),
   showReservation:        (id: number | string)          => api.get(`/admin/reservations/${id}`),
   updateReservation:      (id: number | string, data: Record<string, any>) => api.patch(`/admin/reservations/${id}`, data),
+  redeemReservation:      (id: number | string)          => api.post(`/admin/reservations/${id}/redeem`),
   deleteReservation:      (id: number | string)          => api.delete(`/admin/reservations/${id}`),
 
   // Inventory

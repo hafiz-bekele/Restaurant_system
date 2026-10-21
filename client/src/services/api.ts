@@ -206,8 +206,11 @@ export const adminApi = {
   updateCoupon:    (id: number | string, data: Record<string, any>) => api.patch(`/admin/coupons/${id}`, data),
   deleteCoupon:    (id: number | string)         => api.delete(`/admin/coupons/${id}`),
 
-  // Users
+  // Users & Staff Roster Operations
   users:           (params?: Record<string, any>) => api.get('/admin/users', { params }),
+  rosterStats:     ()                            => api.get('/admin/users/roster-stats'),
+  bulkDuty:        (data: Record<string, any>)   => api.post('/admin/users/bulk-duty', data),
+  assignSection:   (id: number | string, data: Record<string, any>) => api.patch(`/admin/users/${id}/section`, data),
   createUser:      (data: Record<string, any>)   => api.post('/admin/users', data),
   showUser:        (id: number | string)         => api.get(`/admin/users/${id}`),
   updateUser:      (id: number | string, data: Record<string, any>) => api.patch(`/admin/users/${id}`, data),

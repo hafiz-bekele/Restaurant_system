@@ -213,11 +213,14 @@ Route::prefix('v1')->group(function () {
             // Users & RBAC Permissions — static routes BEFORE {user} wildcard
             Route::get('users/roles', [AdminUserController::class, 'roles'])->middleware('permission:users.view');
             Route::get('users/permissions', [AdminUserController::class, 'permissions'])->middleware('permission:users.view|users.manage_permissions');
+            Route::get('users/roster-stats', [AdminUserController::class, 'rosterStats'])->middleware('permission:users.view');
+            Route::post('users/bulk-duty', [AdminUserController::class, 'bulkDuty'])->middleware('permission:users.edit');
             Route::get('users', [AdminUserController::class, 'index'])->middleware('permission:users.view');
             Route::post('users', [AdminUserController::class, 'store'])->middleware('permission:users.create');
             Route::get('users/{user}', [AdminUserController::class, 'show'])->middleware('permission:users.view');
             Route::patch('users/{user}', [AdminUserController::class, 'update'])->middleware('permission:users.edit');
             Route::patch('users/{user}/duty', [AdminUserController::class, 'toggleDuty'])->middleware('permission:users.edit');
+            Route::patch('users/{user}/section', [AdminUserController::class, 'assignSection'])->middleware('permission:users.edit');
             Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->middleware('permission:users.delete');
 
             // Tables — static segments BEFORE {table} wildcard

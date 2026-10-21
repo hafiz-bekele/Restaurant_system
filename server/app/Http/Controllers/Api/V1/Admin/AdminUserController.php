@@ -19,6 +19,11 @@ class AdminUserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $users = User::with(['roles', 'permissions'])
+            ->withCount([
+                'waiterAssignments as active_waiter_orders_count' => function ($q) {
+                    $q->where('status', 'assigned');
+                }
+            ])
             ->when($request->filled('role'), fn ($q) => $q->role($request->role))
             ->when($request->filled('search'), fn ($q) => $q->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
@@ -33,19 +38,20 @@ class AdminUserController extends Controller
             ->paginate(30);
 
         return $this->paginated($users->through(fn ($u) => [
-            'id'                 => $u->id,
-            'hotel_id'           => $u->hotel_id,
-            'name'               => $u->name,
-            'email'              => $u->email,
-            'phone'              => $u->phone,
-            'status'             => $u->status,
-            'roles'              => $u->getRoleNames(),
-            'permissions'        => $u->getAllPermissions()->pluck('name'),
-            'direct_permissions' => $u->getDirectPermissions()->pluck('name'),
-            'on_duty'            => (bool) $u->on_duty,
-            'section'            => $u->section,
-            'loyalty_points'     => $u->loyalty_points,
-            'created_at'         => $u->created_at,
+            'id'                  => $u->id,
+            'hotel_id'            => $u->hotel_id,
+            'name'                => $u->name,
+            'email'               => $u->email,
+            'phone'               => $u->phone,
+            'status'              => $u->status,
+            'roles'               => $u->getRoleNames(),
+            'permissions'         => $u->getAllPermissions()->pluck('name'),
+            'direct_permissions'  => $u->getDirectPermissions()->pluck('name'),
+            'on_duty'             => (bool) $u->on_duty,
+            'section'             => $u->section,
+            'active_orders_count' => (int) ($u->active_waiter_orders_count ?? 0),
+            'loyalty_points'      => $u->loyalty_points,
+            'created_at'          => $u->created_at,
         ]));
     }
 
@@ -171,5 +177,170 @@ class AdminUserController extends Controller
     public function permissions(): JsonResponse
     {
         return $this->success(Permission::orderBy('name')->get(['id', 'name']));
+    }
+
+    public function rosterStats(Request $request): JsonResponse
+    {
+        $users = User::with('roles')->get();
+
+        $totalStaff = $users->count();
+        $onDutyStaff = $users->where('on_duty', true)->count();
+
+        // Roles breakdown
+        $roleStats = [
+            'waiter'    => ['total' => 0, 'on_duty' => 0, 'active_orders' => 0],
+            'kitchen'   => ['total' => 0, 'on_duty' => 0, 'pending_tickets' => 0],
+            'cashier'   => ['total' => 0, 'on_duty' => 0, 'active_shifts' => 0],
+            'manager'   => ['total' => 0, 'on_duty' => 0],
+            'reception' => ['total' => 0, 'on_duty' => 0],
+            'delivery'  => ['total' => 0, 'on_duty' => 0],
+        ];
+
+        foreach ($users as $user) {
+            foreach ($user->roles as $role) {
+                if (isset($roleStats[$role->name])) {
+                    $roleStats[$role->name]['total']++;
+                    if ($user->on_duty) {
+                        $roleStats[$role->name]['on_duty']++;
+                    }
+                }
+            }
+        }
+
+        // Active orders for waiters & kitchen
+        $activeOrders = \App\Models\Order::whereNotIn('status', [
+            \App\Enums\OrderStatus::Delivered,
+            \App\Enums\OrderStatus::Cancelled,
+        ])->count();
+
+        $kitchenTickets = \App\Models\Order::whereIn('status', [
+            \App\Enums\OrderStatus::Confirmed,
+            \App\Enums\OrderStatus::Preparing,
+        ])->count();
+
+        $activeShifts = \App\Models\CashierShift::whereNull('closed_at')->count();
+
+        $roleStats['waiter']['active_orders'] = $activeOrders;
+        $roleStats['kitchen']['pending_tickets'] = $kitchenTickets;
+        $roleStats['cashier']['active_shifts'] = $activeShifts;
+
+        // Dining areas from RestaurantTable
+        $areas = \App\Models\RestaurantTable::where('is_active', true)
+            ->distinct()
+            ->pluck('area')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        if (empty($areas)) {
+            $areas = ['Indoor Main', 'Garden Patio', 'Sky Terrace', 'VIP Lounge'];
+        }
+
+        // Check which areas have on_duty waiters assigned
+        $onDutyWaiterSections = $users->filter(fn ($u) => $u->on_duty && $u->hasRole('waiter'))
+            ->pluck('section')
+            ->filter()
+            ->toArray();
+
+        $coverageAlerts = [];
+        foreach ($areas as $area) {
+            $covered = false;
+            foreach ($onDutyWaiterSections as $sec) {
+                if (stripos($sec, $area) !== false) {
+                    $covered = true;
+                    break;
+                }
+            }
+            if (!$covered) {
+                $coverageAlerts[] = [
+                    'type'    => 'area_unassigned',
+                    'area'    => $area,
+                    'message' => "Dining area '{$area}' currently has 0 on-duty waiters assigned.",
+                ];
+            }
+        }
+
+        if ($kitchenTickets > 0 && $roleStats['kitchen']['on_duty'] === 0) {
+            $coverageAlerts[] = [
+                'type'    => 'kitchen_unmanned',
+                'message' => "Kitchen has {$kitchenTickets} pending food orders, but 0 kitchen cooks are clocked in!",
+            ];
+        }
+
+        if ($roleStats['cashier']['on_duty'] === 0) {
+            $coverageAlerts[] = [
+                'type'    => 'cashier_closed',
+                'message' => "No cashiers are currently clocked on duty at POS.",
+            ];
+        }
+
+        return $this->success([
+            'total_staff'      => $totalStaff,
+            'on_duty_count'    => $onDutyStaff,
+            'off_duty_count'   => $totalStaff - $onDutyStaff,
+            'roles'            => $roleStats,
+            'areas'            => $areas,
+            'coverage_alerts'  => $coverageAlerts,
+        ]);
+    }
+
+    public function bulkDuty(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'role'       => ['nullable', 'string', 'exists:roles,name'],
+            'user_ids'   => ['nullable', 'array'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
+            'on_duty'    => ['required', 'boolean'],
+        ]);
+
+        $query = User::query();
+
+        if (!empty($data['role'])) {
+            $query->role($data['role']);
+        }
+
+        if (!empty($data['user_ids'])) {
+            $query->whereIn('id', $data['user_ids']);
+        }
+
+        $count = $query->update(['on_duty' => $data['on_duty']]);
+
+        ActivityLog::record('user.bulk_duty_updated', null, [
+            'role'     => $data['role'] ?? 'selected_users',
+            'count'    => $count,
+            'on_duty'  => (bool) $data['on_duty'],
+        ]);
+
+        return $this->success([
+            'affected_count' => $count,
+            'on_duty'        => (bool) $data['on_duty'],
+        ], "Updated duty status for {$count} staff members.");
+    }
+
+    public function assignSection(Request $request, User $user): JsonResponse
+    {
+        $data = $request->validate([
+            'section' => ['required', 'string', 'max:150'],
+            'on_duty' => ['nullable', 'boolean'],
+        ]);
+
+        $user->section = $data['section'];
+        if (isset($data['on_duty'])) {
+            $user->on_duty = (bool) $data['on_duty'];
+        }
+        $user->save();
+
+        ActivityLog::record('user.section_assigned', $user, [
+            'name'    => $user->name,
+            'section' => $user->section,
+            'on_duty' => (bool) $user->on_duty,
+        ]);
+
+        return $this->success([
+            'id'      => $user->id,
+            'name'    => $user->name,
+            'section' => $user->section,
+            'on_duty' => (bool) $user->on_duty,
+        ], "Assigned {$user->name} to {$user->section}");
     }
 }

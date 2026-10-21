@@ -4,23 +4,129 @@ import { useI18n } from 'vue-i18n'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
-import { Plus, Trash2, X, Key, Shield, ShieldCheck, Check, Search, Sliders, Users, AlertCircle, CheckCircle, RefreshCw, Pencil } from '@lucide/vue'
+import {
+  ShieldCheck, Shield, Plus, Trash2, X, Key, Search, Sliders, Users,
+  AlertCircle, CheckCircle, RefreshCw, Pencil, UtensilsCrossed, ChefHat,
+  CreditCard, Layers, Clock, Flame, UserCheck, AlertTriangle, ArrowRight
+} from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const { t } = useI18n()
 const ui = useUiStore()
 const qc = useQueryClient()
 
-const activeTab = ref('directory') // 'directory' | 'matrix'
+// Active Top-Level Tab ('roster' | 'directory' | 'matrix')
+const activeTab = ref('roster')
+
+// Search & Directory Filters
 const search = ref('')
 const roleFilter = ref('')
 const dutyFilter = ref('') // '' | '1' | '0'
+const waiterSectionFilter = ref('All')
+
+// Modals State
 const showModal = ref(false)
 const showEditModal = ref(false)
 const showPermissionsModal = ref(false)
+const showReassignModal = ref(false)
 const saving = ref(false)
 const permSearch = ref('')
 
+// Work section / Station / Desk presets per operational role
+const sectionPresets = {
+  waiter: [
+    'Indoor Dining (Tables 1-12)',
+    'Garden Patio (Tables 13-24)',
+    'Sky Terrace & Lounge',
+    'VIP Dining Suite',
+    'Private Banquet Room',
+  ],
+  reception: [
+    'Main Lobby Reception Desk',
+    'Boutique Suites Concierge',
+    'Night Audit & Reservations Desk',
+    'Executive Check-In Lounge',
+  ],
+  manager: [
+    'General Operations Manager',
+    'Food & Beverage (F&B) Director',
+    'Front Office & Floor Manager',
+    'Night Shift Duty Manager',
+  ],
+  kitchen: [
+    'Executive Head Chef Station',
+    'Hot Line & Charcoal Grill',
+    'Traditional Buna & Stew Station',
+    'Pastry & Cold Prep Station',
+  ],
+  cashier: [
+    'Main Dining POS Terminal',
+    'Sky Terrace POS Register',
+    'Delivery & Takeout Counter',
+  ],
+  delivery: [
+    'Bole & Airport Zone Driver',
+    'Kazanchis & Downtown Driver',
+    'Express Hotel Courier',
+  ]
+}
+
+// Reassign Station Modal Form
+const reassignForm = ref({
+  id: null,
+  name: '',
+  role: 'waiter',
+  section: '',
+  on_duty: true,
+})
+
+function openReassignModal(user) {
+  const role = user.roles?.[0] || 'waiter'
+  reassignForm.value = {
+    id: user.id,
+    name: user.name,
+    role,
+    section: user.section || sectionPresets[role]?.[0] || 'Main Floor',
+    on_duty: Boolean(user.on_duty),
+  }
+  showReassignModal.value = true
+}
+
+async function saveReassignedSection() {
+  if (!reassignForm.value.id) return
+  saving.value = true
+  try {
+    await adminApi.assignSection(reassignForm.value.id, {
+      section: reassignForm.value.section,
+      on_duty: reassignForm.value.on_duty,
+    })
+    qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
+    ui.toast(`Assigned ${reassignForm.value.name} to ${reassignForm.value.section}`, 'success')
+    showReassignModal.value = false
+  } catch (e) {
+    const errors = e.response?.data?.errors
+    ui.toast(errors ? Object.values(errors).flat()[0] : 'Failed to update section', 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+// Bulk Shift Duty Action
+async function handleBulkDuty(role, onDuty) {
+  const label = onDuty ? 'clock in' : 'clock out'
+  if (!confirm(`Are you sure you want to ${label} all ${role} staff?`)) return
+  try {
+    await adminApi.bulkDuty({ role, on_duty: onDuty })
+    qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
+    ui.toast(`Updated shift duty for ${role} staff`, 'success')
+  } catch {
+    ui.toast('Failed to update bulk shift duty', 'error')
+  }
+}
+
+// Edit User Form (Full Profile)
 const editUserForm = ref({
   id: null,
   name: '',
@@ -68,6 +174,7 @@ async function updateUserDetails() {
     }
     await adminApi.updateUser(editUserForm.value.id, payload)
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
     ui.toast('Staff member details updated successfully', 'success')
     showEditModal.value = false
   } catch (e) {
@@ -78,46 +185,7 @@ async function updateUserDetails() {
   }
 }
 
-// Work section / Station / Desk presets per operational role
-const sectionPresets = {
-  waiter: [
-    'Indoor Dining (Tables 1-12)',
-    'Garden Patio (Tables 13-24)',
-    'Sky Terrace & Lounge',
-    'VIP Dining Suite',
-    'Private Banquet Room',
-  ],
-  reception: [
-    'Main Lobby Reception Desk',
-    'Boutique Suites Concierge',
-    'Night Audit & Reservations Desk',
-    'Executive Check-In Lounge',
-  ],
-  manager: [
-    'General Operations Manager',
-    'Food & Beverage (F&B) Director',
-    'Front Office & Floor Manager',
-    'Night Shift Duty Manager',
-  ],
-  kitchen: [
-    'Executive Head Chef Station',
-    'Hot Line & Charcoal Grill',
-    'Traditional Buna & Stew Station',
-    'Pastry & Cold Prep Station',
-  ],
-  cashier: [
-    'Main Dining POS Terminal',
-    'Sky Terrace POS Register',
-    'Delivery & Takeout Counter',
-  ],
-  delivery: [
-    'Bole & Airport Zone Driver',
-    'Kazanchis & Downtown Driver',
-    'Express Hotel Courier',
-  ]
-}
-
-// Selected user for editing permissions
+// Permissions Modal State
 const selectedUser = ref(null)
 const editForm = ref({
   role: '',
@@ -234,13 +302,20 @@ const rolePresets = {
   ]
 }
 
+// Queries
 const { data: rolesData } = useQuery({
   queryKey: ['admin', 'roles'],
   queryFn:  () => adminApi.roles().then(r => r.data.data),
   staleTime: 600000,
 })
 
-const { data: usersData, isLoading } = useQuery({
+const { data: rosterData, refetch: refetchRoster } = useQuery({
+  queryKey: ['admin', 'roster-stats'],
+  queryFn:  () => adminApi.rosterStats().then(r => r.data.data),
+  refetchInterval: 12000,
+})
+
+const { data: usersData, isLoading, refetch: refetchUsers } = useQuery({
   queryKey: ['admin', 'users', search, roleFilter, dutyFilter],
   queryFn:  () => adminApi.users({
     search:  search.value  || undefined,
@@ -251,6 +326,20 @@ const { data: usersData, isLoading } = useQuery({
 })
 
 const users = () => usersData.value?.data ?? []
+
+// Categorized Staff for Roster View
+const waitersList = computed(() => {
+  let list = users().filter(u => u.roles?.includes('waiter'))
+  if (waiterSectionFilter.value !== 'All') {
+    list = list.filter(u => (u.section || '').includes(waiterSectionFilter.value))
+  }
+  return list
+})
+
+const kitchenList = computed(() => users().filter(u => u.roles?.includes('kitchen')))
+const cashiersList = computed(() => users().filter(u => u.roles?.includes('cashier')))
+const managersList = computed(() => users().filter(u => u.roles?.includes('manager') || u.roles?.includes('admin')))
+const receptionList = computed(() => users().filter(u => u.roles?.includes('reception')))
 
 function openNewUserModal(defaultRole = 'waiter') {
   newUserForm.value = {
@@ -276,6 +365,7 @@ async function toggleUserDuty(user) {
   try {
     await adminApi.toggleUserDuty(user.id)
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
     ui.toast(
       t('adminUsers.toastDutyToggled', {
         name: user.name,
@@ -293,6 +383,7 @@ async function createUser() {
   try {
     await adminApi.createUser(newUserForm.value)
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
     ui.toast(
       t('adminUsers.toastOnboarded', {
         name: newUserForm.value.name,
@@ -356,6 +447,7 @@ async function savePermissionsAndRole() {
       permissions: editForm.value.permissions,
     })
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
     ui.toast(t('adminUsers.toastPermsUpdated', { name: selectedUser.value.name }), 'success')
     showPermissionsModal.value = false
   } catch (e) {
@@ -369,6 +461,7 @@ async function savePermissionsAndRole() {
 async function updateStatus(user, status) {
   await adminApi.updateUser(user.id, { status })
   qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+  qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
   ui.toast(t('adminUsers.toastStatusUpdated', { name: user.name }), 'success')
 }
 
@@ -376,6 +469,7 @@ async function deleteUser(user) {
   if (!confirm(t('adminUsers.confirmDeactivate', { name: user.name }))) return
   await adminApi.deleteUser(user.id)
   qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+  qc.invalidateQueries({ queryKey: ['admin', 'roster-stats'] })
   ui.toast(t('adminUsers.toastUserRemoved'))
 }
 
@@ -418,41 +512,445 @@ function roleBadgeClass(role) {
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
-        <button @click="openNewUserModal" class="btn-primary text-xs gap-1.5 py-2 px-3.5 shadow-sm">
+      <div class="flex items-center gap-2.5">
+        <button
+          @click="() => { refetchUsers(); refetchRoster(); }"
+          class="btn-outline text-xs gap-1.5 py-2 px-3 shadow-xs"
+          title="Refresh Data"
+        >
+          <RefreshCw :size="14" /> Refresh
+        </button>
+        <button @click="openNewUserModal('waiter')" class="btn-primary text-xs gap-1.5 py-2 px-3.5 shadow-sm">
           <Plus :size="15" /> {{ $t('adminUsers.addStaffBtn') }}
         </button>
       </div>
     </div>
 
-    <!-- Governance Banner -->
-    <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-      <div class="flex items-center gap-2.5 text-amber-800 dark:text-amber-200">
-        <Shield :size="18" class="text-amber-500 shrink-0" />
-        <div>
-          <span class="font-bold">{{ $t('adminUsers.bannerPrincipleTitle') }}</span>
-          {{ $t('adminUsers.bannerPrincipleText') }}
+    <!-- Live Multi-Department KPI Summary Metrics Bar -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <!-- Total Staff -->
+      <div class="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-warm-200/80 dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-warm-500 dark:text-warm-400 uppercase tracking-wider">Total Staff</span>
+          <Users :size="16" class="text-primary-500" />
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-2xl font-bold text-warm-900 dark:text-white">{{ rosterData?.total_staff ?? users().length }}</span>
+          <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+            {{ rosterData?.on_duty_count ?? 0 }} on duty
+          </span>
         </div>
       </div>
+
+      <!-- Floor Waiters -->
+      <div class="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-warm-200/80 dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Waiters on Floor</span>
+          <UtensilsCrossed :size="16" class="text-amber-500" />
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-2xl font-bold text-warm-900 dark:text-white">{{ rosterData?.roles?.waiter?.on_duty ?? 0 }}</span>
+            <span class="text-xs text-warm-400">/ {{ rosterData?.roles?.waiter?.total ?? 0 }} active</span>
+          </div>
+          <button
+            @click="handleBulkDuty('waiter', (rosterData?.roles?.waiter?.on_duty ?? 0) === 0)"
+            class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100"
+          >
+            {{ (rosterData?.roles?.waiter?.on_duty ?? 0) === 0 ? 'Clock In All' : 'Clock Out' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Kitchen Line -->
+      <div class="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-warm-200/80 dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Kitchen Line</span>
+          <ChefHat :size="16" class="text-orange-500" />
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-2xl font-bold text-warm-900 dark:text-white">{{ rosterData?.roles?.kitchen?.on_duty ?? 0 }}</span>
+            <span class="text-xs text-warm-400">/ {{ rosterData?.roles?.kitchen?.total ?? 0 }} line</span>
+          </div>
+          <span class="text-[10px] font-medium text-orange-600 dark:text-orange-400">
+            {{ rosterData?.roles?.kitchen?.pending_tickets ?? 0 }} tickets
+          </span>
+        </div>
+      </div>
+
+      <!-- Cashier POS -->
+      <div class="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-warm-200/80 dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Cashier POS</span>
+          <CreditCard :size="16" class="text-green-500" />
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-2xl font-bold text-warm-900 dark:text-white">{{ rosterData?.roles?.cashier?.on_duty ?? 0 }}</span>
+            <span class="text-xs text-warm-400">/ {{ rosterData?.roles?.cashier?.total ?? 0 }} tills</span>
+          </div>
+          <span class="text-[10px] font-medium text-green-600 dark:text-green-400">
+            {{ rosterData?.roles?.cashier?.active_shifts ?? 0 }} open shift
+          </span>
+        </div>
+      </div>
+
+      <!-- Shift Managers -->
+      <div class="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-warm-200/80 dark:border-neutral-800 shadow-xs col-span-2 md:col-span-1 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Shift Leads</span>
+          <Shield :size="16" class="text-blue-500" />
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span class="text-2xl font-bold text-warm-900 dark:text-white">{{ rosterData?.roles?.manager?.on_duty ?? 0 }}</span>
+          <span class="text-xs text-warm-400">/ {{ rosterData?.roles?.manager?.total ?? 0 }} leads on duty</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Coverage Health & Alert Bar -->
+    <div v-if="rosterData?.coverage_alerts?.length" class="space-y-2">
+      <div
+        v-for="(alert, idx) in rosterData.coverage_alerts"
+        :key="idx"
+        class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200"
+      >
+        <div class="flex items-center gap-2.5">
+          <AlertTriangle :size="18" class="text-amber-500 shrink-0" />
+          <span class="font-medium">{{ alert.message }}</span>
+        </div>
+        <button
+          v-if="alert.type === 'area_unassigned'"
+          @click="openNewUserModal('waiter')"
+          class="text-xs font-semibold px-3 py-1 rounded-xl bg-amber-500 text-white shadow-xs hover:bg-amber-600 transition-colors shrink-0"
+        >
+          Assign Staff
+        </button>
+      </div>
+    </div>
+    <div v-else class="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+      <CheckCircle :size="16" class="text-emerald-500 shrink-0" />
+      <span class="font-medium">All dining sections, kitchen prep stations, and cashier terminals are staffed and active.</span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex items-center justify-between border-b border-warm-200 dark:border-neutral-800 pb-3">
       <div class="flex gap-2">
         <button
-          @click="activeTab = 'directory'"
-          :class="['px-3 py-1.5 rounded-xl font-semibold transition-all text-xs', activeTab === 'directory' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white dark:bg-warm-850 text-warm-700 dark:text-warm-300 border border-warm-200 dark:border-warm-700']"
+          @click="activeTab = 'roster'"
+          :class="[
+            'px-4 py-2 rounded-xl font-bold transition-all text-xs flex items-center gap-2',
+            activeTab === 'roster'
+              ? 'bg-primary-600 text-white shadow-sm'
+              : 'bg-white dark:bg-neutral-900 text-warm-700 dark:text-warm-300 border border-warm-200 dark:border-neutral-800 hover:bg-warm-50 dark:hover:bg-neutral-800'
+          ]"
         >
+          <Layers :size="15" />
+          {{ $t('adminUsers.tabRoster') }}
+        </button>
+        <button
+          @click="activeTab = 'directory'"
+          :class="[
+            'px-4 py-2 rounded-xl font-bold transition-all text-xs flex items-center gap-2',
+            activeTab === 'directory'
+              ? 'bg-primary-600 text-white shadow-sm'
+              : 'bg-white dark:bg-neutral-900 text-warm-700 dark:text-warm-300 border border-warm-200 dark:border-neutral-800 hover:bg-warm-50 dark:hover:bg-neutral-800'
+          ]"
+        >
+          <Users :size="15" />
           {{ $t('adminUsers.tabDirectory') }}
         </button>
         <button
           @click="activeTab = 'matrix'"
-          :class="['px-3 py-1.5 rounded-xl font-semibold transition-all text-xs', activeTab === 'matrix' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white dark:bg-warm-850 text-warm-700 dark:text-warm-300 border border-warm-200 dark:border-warm-700']"
+          :class="[
+            'px-4 py-2 rounded-xl font-bold transition-all text-xs flex items-center gap-2',
+            activeTab === 'matrix'
+              ? 'bg-primary-600 text-white shadow-sm'
+              : 'bg-white dark:bg-neutral-900 text-warm-700 dark:text-warm-300 border border-warm-200 dark:border-neutral-800 hover:bg-warm-50 dark:hover:bg-neutral-800'
+          ]"
         >
+          <Key :size="15" />
           {{ $t('adminUsers.tabMatrix') }}
         </button>
       </div>
+
+      <div class="hidden sm:flex items-center gap-2 text-xs text-warm-500">
+        <Clock :size="14" />
+        <span>Live Sync active every 12s</span>
+      </div>
     </div>
 
-    <!-- TAB 1: Staff Directory & Access -->
+    <!-- TAB 1: Live Staff Roster & Operational Station Board -->
+    <div v-if="activeTab === 'roster'" class="space-y-6">
+      <!-- 1. Waiters Section Management -->
+      <div class="card p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-warm-100 dark:border-neutral-800">
+          <div>
+            <h2 class="font-heading font-bold text-base text-warm-900 dark:text-white flex items-center gap-2">
+              <UtensilsCrossed :size="18" class="text-amber-500" />
+              Floor Waiters & Table Section Assignments
+            </h2>
+            <p class="text-xs text-warm-500 mt-0.5">
+              Assign waiters to dining zones and monitor live table orders in service
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Section filter -->
+            <select v-model="waiterSectionFilter" class="input text-xs py-1.5 w-auto">
+              <option value="All">All Table Sections</option>
+              <option value="Indoor">Indoor Dining</option>
+              <option value="Garden">Garden Patio</option>
+              <option value="Sky Terrace">Sky Terrace</option>
+              <option value="VIP">VIP Suite</option>
+            </select>
+            <button
+              @click="openNewUserModal('waiter')"
+              class="btn-outline text-xs py-1.5 px-3 gap-1 shadow-xs"
+            >
+              <Plus :size="14" /> Add Waiter
+            </button>
+          </div>
+        </div>
+
+        <div v-if="!waitersList.length" class="text-center py-8 text-warm-400 text-xs">
+          No waiters found for this section.
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div
+            v-for="waiter in waitersList"
+            :key="waiter.id"
+            class="p-4 rounded-2xl border transition-all duration-150 hover:shadow-md bg-white dark:bg-neutral-900 flex flex-col justify-between gap-3"
+            :class="waiter.on_duty ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-warm-200/80 dark:border-neutral-800 opacity-75'"
+          >
+            <!-- Waiter Header -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="relative">
+                  <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center text-sm font-bold text-amber-700 dark:text-amber-300 shrink-0">
+                    {{ waiter.name?.[0]?.toUpperCase() }}
+                  </div>
+                  <span
+                    :class="[
+                      'absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-neutral-900',
+                      waiter.on_duty ? 'bg-emerald-500 animate-pulse' : 'bg-warm-400'
+                    ]"
+                  ></span>
+                </div>
+                <div class="min-w-0">
+                  <p class="font-bold text-xs text-warm-900 dark:text-white truncate">{{ waiter.name }}</p>
+                  <p class="text-[11px] text-warm-400 truncate">{{ waiter.phone || waiter.email }}</p>
+                </div>
+              </div>
+
+              <!-- Active Orders Pill -->
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-warm-100 dark:bg-neutral-800 text-warm-700 dark:text-warm-300 shrink-0">
+                {{ waiter.active_orders_count ?? 0 }} orders
+              </span>
+            </div>
+
+            <!-- Assigned Section Badge -->
+            <div class="p-2.5 rounded-xl bg-warm-50 dark:bg-neutral-850 border border-warm-100 dark:border-neutral-800 text-xs">
+              <div class="text-[10px] uppercase font-bold text-warm-400 tracking-wider">Assigned Section</div>
+              <div class="font-semibold text-warm-900 dark:text-warm-100 flex items-center gap-1.5 mt-0.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                <span class="truncate">{{ waiter.section || 'Unassigned Floor' }}</span>
+              </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-warm-100 dark:border-neutral-800/80">
+              <button
+                @click="toggleUserDuty(waiter)"
+                type="button"
+                :class="[
+                  'text-xs font-semibold px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1.5',
+                  waiter.on_duty
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                    : 'bg-warm-100 dark:bg-neutral-800 text-warm-500 border-warm-200 dark:border-neutral-700'
+                ]"
+              >
+                <span :class="['w-1.5 h-1.5 rounded-full', waiter.on_duty ? 'bg-emerald-500' : 'bg-warm-400']"></span>
+                {{ waiter.on_duty ? 'On Shift' : 'Off Shift' }}
+              </button>
+
+              <div class="flex items-center gap-1.5">
+                <button
+                  @click="openReassignModal(waiter)"
+                  class="btn-outline text-xs py-1 px-2.5 gap-1 shadow-xs text-primary-600 dark:text-primary-400 font-semibold"
+                  title="Reassign Section"
+                >
+                  <Layers :size="13" /> Assign
+                </button>
+                <button
+                  @click="openEditUserModal(waiter)"
+                  class="text-warm-400 hover:text-warm-700 dark:hover:text-warm-200 p-1.5 rounded-lg hover:bg-warm-100 dark:hover:bg-neutral-800"
+                  title="Edit Profile"
+                >
+                  <Pencil :size="13" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Kitchen Prep Stations & Cooks -->
+      <div class="card p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-warm-100 dark:border-neutral-800">
+          <div>
+            <h2 class="font-heading font-bold text-base text-warm-900 dark:text-white flex items-center gap-2">
+              <ChefHat :size="18" class="text-orange-500" />
+              Kitchen Cooking Stations & Chefs
+            </h2>
+            <p class="text-xs text-warm-500 mt-0.5">
+              Ensure hot line, charcoal grill, and cold prep stations are fully manned
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              @click="openNewUserModal('kitchen')"
+              class="btn-outline text-xs py-1.5 px-3 gap-1 shadow-xs"
+            >
+              <Plus :size="14" /> Add Chef
+            </button>
+          </div>
+        </div>
+
+        <div v-if="!kitchenList.length" class="text-center py-8 text-warm-400 text-xs">
+          No kitchen staff registered.
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div
+            v-for="cook in kitchenList"
+            :key="cook.id"
+            class="p-4 rounded-2xl border transition-all duration-150 hover:shadow-md bg-white dark:bg-neutral-900 flex flex-col justify-between gap-3"
+            :class="cook.on_duty ? 'border-orange-400/60 dark:border-orange-600/40' : 'border-warm-200/80 dark:border-neutral-800 opacity-75'"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/50 flex items-center justify-center text-sm font-bold text-orange-700 dark:text-orange-300 shrink-0">
+                {{ cook.name?.[0]?.toUpperCase() }}
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-xs text-warm-900 dark:text-white truncate">{{ cook.name }}</p>
+                <p class="text-[11px] text-warm-400 truncate">{{ cook.email }}</p>
+              </div>
+            </div>
+
+            <div class="p-2 rounded-xl bg-warm-50 dark:bg-neutral-850 border border-warm-100 dark:border-neutral-800 text-xs">
+              <div class="text-[10px] uppercase font-bold text-warm-400">Station</div>
+              <div class="font-semibold text-warm-900 dark:text-warm-100 truncate mt-0.5">
+                {{ cook.section || 'General Kitchen Line' }}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-warm-100 dark:border-neutral-800">
+              <button
+                @click="toggleUserDuty(cook)"
+                type="button"
+                :class="[
+                  'text-xs font-semibold px-2 py-1 rounded-xl border transition-all',
+                  cook.on_duty
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300'
+                    : 'bg-warm-100 dark:bg-neutral-800 text-warm-500 border-warm-200 dark:border-neutral-700'
+                ]"
+              >
+                {{ cook.on_duty ? 'On Line' : 'Off Shift' }}
+              </button>
+              <button
+                @click="openReassignModal(cook)"
+                class="btn-outline text-xs py-1 px-2.5 gap-1 shadow-xs"
+              >
+                <Layers :size="12" /> Reassign
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Cashier POS Terminals -->
+      <div class="card p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-warm-100 dark:border-neutral-800">
+          <div>
+            <h2 class="font-heading font-bold text-base text-warm-900 dark:text-white flex items-center gap-2">
+              <CreditCard :size="18" class="text-green-500" />
+              Cashier Registers & Billing Counters
+            </h2>
+            <p class="text-xs text-warm-500 mt-0.5">
+              Manage POS register assignments, cash drawer float, and shift coverage
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              @click="openNewUserModal('cashier')"
+              class="btn-outline text-xs py-1.5 px-3 gap-1 shadow-xs"
+            >
+              <Plus :size="14" /> Add Cashier
+            </button>
+          </div>
+        </div>
+
+        <div v-if="!cashiersList.length" class="text-center py-8 text-warm-400 text-xs">
+          No cashiers registered.
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div
+            v-for="cashier in cashiersList"
+            :key="cashier.id"
+            class="p-4 rounded-2xl border transition-all duration-150 hover:shadow-md bg-white dark:bg-neutral-900 flex flex-col justify-between gap-3"
+            :class="cashier.on_duty ? 'border-green-400/60 dark:border-green-600/40' : 'border-warm-200/80 dark:border-neutral-800 opacity-75'"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-950/50 flex items-center justify-center text-sm font-bold text-green-700 dark:text-green-300 shrink-0">
+                {{ cashier.name?.[0]?.toUpperCase() }}
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-xs text-warm-900 dark:text-white truncate">{{ cashier.name }}</p>
+                <p class="text-[11px] text-warm-400 truncate">{{ cashier.email }}</p>
+              </div>
+            </div>
+
+            <div class="p-2 rounded-xl bg-warm-50 dark:bg-neutral-850 border border-warm-100 dark:border-neutral-800 text-xs">
+              <div class="text-[10px] uppercase font-bold text-warm-400">Terminal</div>
+              <div class="font-semibold text-warm-900 dark:text-warm-100 truncate mt-0.5">
+                {{ cashier.section || 'Main Dining POS Terminal' }}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-warm-100 dark:border-neutral-800">
+              <button
+                @click="toggleUserDuty(cashier)"
+                type="button"
+                :class="[
+                  'text-xs font-semibold px-2 py-1 rounded-xl border transition-all',
+                  cashier.on_duty
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300'
+                    : 'bg-warm-100 dark:bg-neutral-800 text-warm-500 border-warm-200 dark:border-neutral-700'
+                ]"
+              >
+                {{ cashier.on_duty ? 'Register Open' : 'Register Closed' }}
+              </button>
+              <button
+                @click="openReassignModal(cashier)"
+                class="btn-outline text-xs py-1 px-2.5 gap-1 shadow-xs"
+              >
+                <Layers :size="12" /> Reassign
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Complete Staff Directory & Profiles -->
     <div v-if="activeTab === 'directory'" class="space-y-4">
-      <!-- Search & Quick Filters -->
+      <!-- Search & Filters -->
       <div class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex flex-wrap items-center gap-3">
@@ -478,49 +976,49 @@ function roleBadgeClass(role) {
           <p class="text-xs text-warm-500 font-medium">{{ $t('adminUsers.staffCount', { count: users().length }) }}</p>
         </div>
 
-        <!-- Quick Role Switcher Pills -->
+        <!-- Role Switcher Pills -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           <button
             type="button"
             @click="roleFilter = ''"
-            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === '' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === '' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-neutral-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
             {{ $t('adminUsers.filterAllStaff') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'manager'"
-            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'manager' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'manager' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-neutral-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
             {{ $t('adminUsers.filterManagers') }}
           </button>
           <button
             type="button"
-            @click="roleFilter = 'reception'"
-            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'reception' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
-          >
-            {{ $t('adminUsers.filterReceptionists') }}
-          </button>
-          <button
-            type="button"
             @click="roleFilter = 'waiter'"
-            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'waiter' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'waiter' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-neutral-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
             {{ $t('adminUsers.filterWaiters') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'kitchen'"
-            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'kitchen' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'kitchen' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-neutral-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
             {{ $t('adminUsers.filterChefs') }}
           </button>
           <button
             type="button"
             @click="roleFilter = 'cashier'"
-            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'cashier' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'cashier' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-neutral-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
           >
             {{ $t('adminUsers.filterCashiers') }}
+          </button>
+          <button
+            type="button"
+            @click="roleFilter = 'reception'"
+            :class="['px-3 py-1 rounded-xl font-medium transition-all', roleFilter === 'reception' ? 'bg-primary-600 text-white shadow-xs' : 'bg-warm-100 dark:bg-neutral-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200']"
+          >
+            Receptionists
           </button>
         </div>
       </div>
@@ -531,7 +1029,7 @@ function roleBadgeClass(role) {
       <!-- Staff Table -->
       <div v-else class="card overflow-x-auto shadow-sm">
         <table class="w-full text-sm text-left">
-          <thead class="bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
+          <thead class="bg-warm-50 dark:bg-neutral-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
             <tr>
               <th class="px-5 py-3.5">{{ $t('adminUsers.thStaffMember') }}</th>
               <th class="px-5 py-3.5">{{ $t('adminUsers.thRole') }}</th>
@@ -541,11 +1039,11 @@ function roleBadgeClass(role) {
               <th class="px-5 py-3.5 text-right">{{ $t('adminUsers.thAccessControls') }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
+          <tbody class="divide-y divide-warm-100 dark:divide-neutral-800">
             <tr
               v-for="user in users()"
               :key="user.id"
-              class="hover:bg-warm-50/70 dark:hover:bg-warm-800/40 transition-colors"
+              class="hover:bg-warm-50/70 dark:hover:bg-neutral-800/40 transition-colors"
             >
               <!-- Staff Member -->
               <td class="px-5 py-3.5">
@@ -599,9 +1097,8 @@ function roleBadgeClass(role) {
                       'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all hover:scale-105 active:scale-95 cursor-pointer',
                       user.on_duty
                         ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                        : 'bg-warm-100 dark:bg-warm-800 text-warm-500 border-warm-200 dark:border-warm-700'
+                        : 'bg-warm-100 dark:bg-neutral-800 text-warm-500 border-warm-200 dark:border-neutral-700'
                     ]"
-                    :title="$t('adminUsers.toggleDutyTitle', { name: user.name })"
                   >
                     <span :class="['w-2 h-2 rounded-full', user.on_duty ? 'bg-emerald-500 animate-pulse' : 'bg-warm-400']"></span>
                     <span>{{ user.on_duty ? $t('adminUsers.onDutyBadge') : $t('adminUsers.offDutyBadge') }}</span>
@@ -633,6 +1130,14 @@ function roleBadgeClass(role) {
               <!-- Access Controls -->
               <td class="px-5 py-3.5 text-right">
                 <div class="flex items-center justify-end gap-2">
+                  <button
+                    @click="openReassignModal(user)"
+                    class="btn-outline text-xs py-1.5 px-2.5 gap-1 shadow-xs"
+                    title="Assign Station / Table Section"
+                  >
+                    <Layers :size="13" />
+                    <span>Station</span>
+                  </button>
                   <button
                     @click="openEditUserModal(user)"
                     class="btn-outline text-xs py-1.5 px-2.5 gap-1 shadow-xs"
@@ -670,8 +1175,8 @@ function roleBadgeClass(role) {
       </div>
     </div>
 
-    <!-- TAB 2: RBAC Matrix Overview -->
-    <div v-else class="card p-6 space-y-6">
+    <!-- TAB 3: RBAC Matrix Overview -->
+    <div v-else-if="activeTab === 'matrix'" class="card p-6 space-y-6">
       <div>
         <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">{{ $t('adminUsers.matrixTitle') }}</h2>
         <p class="text-xs text-warm-500 dark:text-warm-400 mt-0.5">{{ $t('adminUsers.matrixSubtitle') }}</p>
@@ -680,7 +1185,7 @@ function roleBadgeClass(role) {
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left border-collapse">
           <thead>
-            <tr class="bg-warm-100 dark:bg-warm-850 text-warm-700 dark:text-warm-300 border-b border-warm-200 dark:border-warm-800">
+            <tr class="bg-warm-100 dark:bg-neutral-850 text-warm-700 dark:text-warm-300 border-b border-warm-200 dark:border-neutral-800">
               <th class="p-3 font-bold">{{ $t('adminUsers.thCapability') }}</th>
               <th class="p-3 font-bold text-center">Super Admin</th>
               <th class="p-3 font-bold text-center">Admin</th>
@@ -691,37 +1196,19 @@ function roleBadgeClass(role) {
               <th class="p-3 font-bold text-center">Kitchen</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-warm-100 dark:divide-warm-800">
+          <tbody class="divide-y divide-warm-100 dark:divide-neutral-800">
             <template v-for="group in permissionGroups" :key="group.category">
-              <tr class="bg-warm-50 dark:bg-warm-900/60 font-bold text-primary-700 dark:text-primary-300">
+              <tr class="bg-warm-50 dark:bg-neutral-900/70 font-bold text-primary-700 dark:text-primary-300">
                 <td colspan="8" class="p-2.5 text-xs uppercase tracking-wider">{{ group.category }}</td>
               </tr>
-              <tr v-for="p in group.permissions" :key="p.id" class="hover:bg-warm-50/50 dark:hover:bg-warm-800/20">
+              <tr v-for="p in group.permissions" :key="p.id" class="hover:bg-warm-50/50 dark:hover:bg-neutral-850/40">
                 <td class="p-3">
-                  <p class="font-semibold text-warm-900 dark:text-white">{{ p.label }}</p>
-                  <p class="text-[10px] text-warm-400 font-mono">{{ p.id }}</p>
+                  <div class="font-semibold text-warm-900 dark:text-warm-100">{{ p.label }}</div>
+                  <div class="text-[11px] text-warm-400">{{ p.desc }}</div>
                 </td>
-                <td class="p-3 text-center"><Check class="w-4 h-4 text-emerald-500 mx-auto" /></td>
-                <td class="p-3 text-center"><Check class="w-4 h-4 text-emerald-500 mx-auto" /></td>
-                <td class="p-3 text-center">
-                  <Check v-if="rolePresets['manager']?.includes(p.id)" class="w-4 h-4 text-emerald-500 mx-auto" />
-                  <span v-else class="text-warm-300">—</span>
-                </td>
-                <td class="p-3 text-center">
-                  <Check v-if="rolePresets['cashier']?.includes(p.id)" class="w-4 h-4 text-emerald-500 mx-auto" />
-                  <span v-else class="text-warm-300">—</span>
-                </td>
-                <td class="p-3 text-center">
-                  <Check v-if="rolePresets['reception']?.includes(p.id)" class="w-4 h-4 text-emerald-500 mx-auto" />
-                  <span v-else class="text-warm-300">—</span>
-                </td>
-                <td class="p-3 text-center">
-                  <Check v-if="rolePresets['waiter']?.includes(p.id)" class="w-4 h-4 text-emerald-500 mx-auto" />
-                  <span v-else class="text-warm-300">—</span>
-                </td>
-                <td class="p-3 text-center">
-                  <Check v-if="rolePresets['kitchen']?.includes(p.id)" class="w-4 h-4 text-emerald-500 mx-auto" />
-                  <span v-else class="text-warm-300">—</span>
+                <td v-for="role in ['super-admin', 'admin', 'manager', 'cashier', 'reception', 'waiter', 'kitchen']" :key="role" class="p-3 text-center">
+                  <Check v-if="rolePresets[role]?.includes(p.id)" :size="16" class="text-emerald-500 mx-auto" />
+                  <span v-else class="text-warm-300 dark:text-neutral-600">-</span>
                 </td>
               </tr>
             </template>
@@ -730,22 +1217,102 @@ function roleBadgeClass(role) {
       </div>
     </div>
 
-    <!-- MODAL 1: Edit Permissions & Role (The Core Governance Tool) -->
-    <div v-if="showPermissionsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="card w-full max-w-3xl shadow-float max-h-[90vh] flex flex-col">
+    <!-- MODAL 1: Quick Station & Section Assignment Modal -->
+    <Teleport to="body">
+      <Transition enter-from-class="opacity-0" enter-active-class="transition-opacity duration-200" leave-to-class="opacity-0" leave-active-class="transition-opacity duration-150">
+        <div v-if="showReassignModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showReassignModal = false">
+          <div class="card w-full max-w-md p-6 shadow-float">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-warm-100 dark:border-neutral-800">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                  <Layers :size="16" />
+                </div>
+                <div>
+                  <h2 class="font-heading font-bold text-base text-warm-900 dark:text-white">
+                    Assign Station / Section
+                  </h2>
+                  <p class="text-xs text-warm-500">{{ reassignForm.name }} • <span class="capitalize font-semibold text-primary-600">{{ reassignForm.role }}</span></p>
+                </div>
+              </div>
+              <button @click="showReassignModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
+            </div>
+
+            <form @submit.prevent="saveReassignedSection" class="space-y-4">
+              <!-- Custom Station Input -->
+              <div>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
+                  Target Work Section / Station / Table Range
+                </label>
+                <input
+                  v-model="reassignForm.section"
+                  type="text"
+                  required
+                  class="input text-xs"
+                  placeholder="e.g. Garden Patio (Tables 13-24)..."
+                />
+              </div>
+
+              <!-- Station Presets -->
+              <div v-if="sectionPresets[reassignForm.role]?.length">
+                <label class="block text-[11px] uppercase tracking-wider font-bold text-warm-400 mb-1.5">
+                  Presets for {{ reassignForm.role }}
+                </label>
+                <div class="flex flex-wrap gap-1.5">
+                  <button
+                    v-for="preset in sectionPresets[reassignForm.role]"
+                    :key="preset"
+                    type="button"
+                    @click="reassignForm.section = preset"
+                    :class="[
+                      'text-xs px-2.5 py-1 rounded-xl border transition-all text-left',
+                      reassignForm.section === preset
+                        ? 'bg-primary-500 text-white border-primary-500 font-bold shadow-xs'
+                        : 'bg-warm-100 dark:bg-neutral-800 border-warm-200 dark:border-neutral-700 text-warm-700 dark:text-warm-300 hover:bg-warm-200'
+                    ]"
+                  >
+                    {{ preset }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Set On Duty state -->
+              <div class="p-3 rounded-xl bg-warm-50 dark:bg-neutral-850 border border-warm-200 dark:border-neutral-700">
+                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-warm-800 dark:text-warm-200">
+                  <input
+                    v-model="reassignForm.on_duty"
+                    type="checkbox"
+                    class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <span>Clock in staff member on duty for this section</span>
+                </label>
+              </div>
+
+              <div class="flex gap-2.5 pt-3 border-t border-warm-100 dark:border-neutral-800">
+                <button type="button" @click="showReassignModal = false" class="btn-outline flex-1 text-xs">
+                  Cancel
+                </button>
+                <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
+                  {{ saving ? 'Saving...' : 'Confirm Assignment' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- MODAL 2: Permissions & Role Editor Modal -->
+    <div v-if="showPermissionsModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="card w-full max-w-2xl max-h-[90vh] flex flex-col p-6 shadow-float">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between pb-3.5 border-b border-warm-100 dark:border-warm-800 mb-3.5">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold text-sm">
-              {{ selectedUser?.name?.[0]?.toUpperCase() }}
-            </div>
-            <div>
-              <h3 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
-                <Sliders :size="18" class="text-primary-500" />
-                {{ $t('adminUsers.modalEditTitle', { name: selectedUser?.name }) }}
-              </h3>
-              <p class="text-xs text-warm-500 dark:text-warm-400">{{ $t('adminUsers.modalEditSubtitle', { email: selectedUser?.email }) }}</p>
-            </div>
+        <div class="flex items-center justify-between pb-4 border-b border-warm-100 dark:border-neutral-800">
+          <div>
+            <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
+              {{ $t('adminUsers.modalEditTitle', { name: selectedUser?.name }) }}
+            </h2>
+            <p class="text-xs text-warm-500">
+              {{ $t('adminUsers.modalEditSubtitle', { email: selectedUser?.email }) }}
+            </p>
           </div>
           <button @click="showPermissionsModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
         </div>
@@ -753,7 +1320,7 @@ function roleBadgeClass(role) {
         <!-- Modal Body -->
         <div class="space-y-4 flex-1 overflow-y-auto p-1 pr-2">
           <!-- Role & Presets Row -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-warm-100/70 dark:bg-warm-900/50 border border-warm-200 dark:border-warm-800">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-warm-100/70 dark:bg-neutral-850 border border-warm-200 dark:border-neutral-800">
             <div>
               <label class="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">{{ $t('adminUsers.role') }}</label>
               <select v-model="editForm.role" class="input text-xs">
@@ -783,8 +1350,8 @@ function roleBadgeClass(role) {
             </div>
           </div>
 
-          <!-- Work Section / Station / Desk & Shift Duty Details -->
-          <div class="p-3.5 rounded-2xl bg-warm-50 dark:bg-warm-800/40 border border-warm-200 dark:border-warm-700 space-y-2 text-xs">
+          <!-- Work Section & Duty Checkbox -->
+          <div class="p-3.5 rounded-2xl bg-warm-50 dark:bg-neutral-900 border border-warm-200 dark:border-neutral-800 space-y-2 text-xs">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
               <label class="font-bold text-warm-900 dark:text-warm-100 cursor-pointer flex items-center gap-2">
                 <input v-model="editForm.on_duty" type="checkbox" class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500" />
@@ -801,7 +1368,7 @@ function roleBadgeClass(role) {
               </div>
             </div>
 
-            <!-- Quick Station presets for the role -->
+            <!-- Presets -->
             <div v-if="sectionPresets[editForm.role]?.length" class="flex flex-wrap items-center gap-1 pt-1">
               <span class="text-[10px] text-warm-400 font-semibold uppercase tracking-wider mr-1">{{ $t('adminUsers.stationPresets') }}</span>
               <button
@@ -813,7 +1380,7 @@ function roleBadgeClass(role) {
                   'text-[10px] px-2 py-0.5 rounded-lg border transition-colors',
                   editForm.section === preset
                     ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-400 text-primary-700 dark:text-primary-300 font-bold'
-                    : 'bg-white dark:bg-warm-850 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:bg-warm-100'
+                    : 'bg-white dark:bg-neutral-850 border-warm-200 dark:border-neutral-700 text-warm-600 dark:text-warm-400 hover:bg-warm-100'
                 ]"
               >
                 {{ preset }}
@@ -842,11 +1409,11 @@ function roleBadgeClass(role) {
             <div
               v-for="group in filteredPermissionGroups"
               :key="group.category"
-              class="border border-warm-200 dark:border-warm-700 rounded-2xl p-4 bg-white dark:bg-gray-900"
+              class="border border-warm-200 dark:border-neutral-800 rounded-2xl p-4 bg-white dark:bg-neutral-900"
             >
               <h4 class="font-bold text-xs uppercase tracking-wider text-warm-600 dark:text-warm-400 mb-3 flex items-center justify-between">
                 <span>{{ group.category }}</span>
-                <span :class="['text-[10px] font-semibold px-2 py-0.5 rounded-full', group.permissions.filter(p => isPermChecked(p.id)).length > 0 ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'text-warm-400 bg-warm-100 dark:bg-warm-800']">
+                <span :class="['text-[10px] font-semibold px-2 py-0.5 rounded-full', group.permissions.filter(p => isPermChecked(p.id)).length > 0 ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'text-warm-400 bg-warm-100 dark:bg-neutral-800']">
                   {{ $t('adminUsers.enabledCount', { enabled: group.permissions.filter(p => isPermChecked(p.id)).length, total: group.permissions.length }) }}
                 </span>
               </h4>
@@ -860,15 +1427,14 @@ function roleBadgeClass(role) {
                     'flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all select-none',
                     isPermChecked(p.id)
                       ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 shadow-sm'
-                      : 'border-warm-200 dark:border-warm-700 hover:border-primary-300 hover:bg-warm-50 dark:hover:bg-warm-800/60'
+                      : 'border-warm-200 dark:border-neutral-800 hover:border-primary-300 hover:bg-warm-50 dark:hover:bg-neutral-850'
                   ]"
                 >
-                  <!-- Custom checkbox indicator -->
                   <div :class="[
                     'w-4 h-4 rounded shrink-0 mt-0.5 border-2 flex items-center justify-center transition-all',
                     isPermChecked(p.id)
                       ? 'bg-primary-500 border-primary-500'
-                      : 'border-warm-300 dark:border-warm-600 bg-white dark:bg-warm-900'
+                      : 'border-warm-300 dark:border-neutral-600 bg-white dark:bg-neutral-900'
                   ]">
                     <svg v-if="isPermChecked(p.id)" class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8" aria-hidden="true">
                       <path d="M1 4l2.5 2.5L9 1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -887,7 +1453,7 @@ function roleBadgeClass(role) {
         </div>
 
         <!-- Modal Footer -->
-        <div class="pt-3.5 mt-3.5 border-t border-warm-100 dark:border-warm-800 flex items-center justify-between gap-3">
+        <div class="pt-3.5 mt-3.5 border-t border-warm-100 dark:border-neutral-800 flex items-center justify-between gap-3">
           <p class="text-[11px] text-warm-400">
             {{ $t('adminUsers.changesEffectNote') }}
           </p>
@@ -908,7 +1474,7 @@ function roleBadgeClass(role) {
       </div>
     </div>
 
-    <!-- MODAL 2: Onboard New Staff Account -->
+    <!-- MODAL 3: Onboard New Staff Account -->
     <Teleport to="body">
       <Transition enter-from-class="opacity-0" enter-active-class="transition-opacity duration-200" leave-to-class="opacity-0" leave-active-class="transition-opacity duration-150">
         <div v-if="showModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showModal = false">
@@ -958,9 +1524,8 @@ function roleBadgeClass(role) {
                   v-model="newUserForm.section"
                   type="text"
                   class="input text-xs"
-                  placeholder="e.g. Indoor Tables 1-12, Main Lobby Desk..."
+                  placeholder="e.g. Indoor Dining (Tables 1-12), Main Lobby Desk..."
                 />
-                <!-- Quick clickable station presets -->
                 <div v-if="sectionPresets[newUserForm.role]?.length" class="mt-1.5 flex flex-wrap gap-1">
                   <button
                     v-for="preset in sectionPresets[newUserForm.role]"
@@ -971,7 +1536,7 @@ function roleBadgeClass(role) {
                       'text-[10px] px-2 py-0.5 rounded-lg border transition-colors',
                       newUserForm.section === preset
                         ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-400 text-primary-700 dark:text-primary-300 font-bold'
-                        : 'bg-warm-100 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
+                        : 'bg-warm-100 dark:bg-neutral-800 border-warm-200 dark:border-neutral-700 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
                     ]"
                   >
                     {{ preset }}
@@ -991,7 +1556,7 @@ function roleBadgeClass(role) {
                 </label>
               </div>
 
-              <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">
+              <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-neutral-800">
                 <button type="button" @click="showModal = false" class="btn-outline flex-1 text-xs">{{ $t('adminUsers.cancel') }}</button>
                 <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
                   {{ saving ? $t('adminUsers.onboardingBtn') : $t('adminUsers.createAssignBtn') }}
@@ -1003,19 +1568,19 @@ function roleBadgeClass(role) {
       </Transition>
     </Teleport>
 
-    <!-- MODAL 3: Edit User Details (Full Profile & Role Editor) -->
+    <!-- MODAL 4: Edit Staff Profile Details -->
     <Teleport to="body">
       <Transition enter-from-class="opacity-0" enter-active-class="transition-opacity duration-200" leave-to-class="opacity-0" leave-active-class="transition-opacity duration-150">
         <div v-if="showEditModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showEditModal = false">
           <div class="card w-full max-w-lg p-6 shadow-float">
-            <div class="flex items-center justify-between mb-5 pb-3 border-b border-warm-100 dark:border-warm-800">
+            <div class="flex items-center justify-between mb-5 pb-3 border-b border-warm-100 dark:border-neutral-800">
               <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-xl bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center">
                   <Pencil :size="16" />
                 </div>
                 <div>
                   <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">Edit Staff Profile</h2>
-                  <p class="text-xs text-warm-500">Update account credentials, operational role and station</p>
+                  <p class="text-xs text-warm-500">Update account credentials, operational role, and section</p>
                 </div>
               </div>
               <button @click="showEditModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
@@ -1067,13 +1632,13 @@ function roleBadgeClass(role) {
               <!-- Station / Section -->
               <div>
                 <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
-                  Assigned Floor Section / Desk
+                  Assigned Floor Section / Desk / Station
                 </label>
                 <input
                   v-model="editUserForm.section"
                   type="text"
                   class="input text-xs"
-                  placeholder="e.g. Indoor Tables 1-12, Cashier POS 1..."
+                  placeholder="e.g. Indoor Dining (Tables 1-12), Cashier POS 1..."
                 />
                 <div v-if="sectionPresets[editUserForm.role]?.length" class="mt-1.5 flex flex-wrap gap-1">
                   <button
@@ -1085,7 +1650,7 @@ function roleBadgeClass(role) {
                       'text-[10px] px-2 py-0.5 rounded-lg border transition-colors',
                       editUserForm.section === preset
                         ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-400 text-primary-700 dark:text-primary-300 font-bold'
-                        : 'bg-warm-100 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
+                        : 'bg-warm-100 dark:bg-neutral-800 border-warm-200 dark:border-neutral-700 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
                     ]"
                   >
                     {{ preset }}
@@ -1094,7 +1659,7 @@ function roleBadgeClass(role) {
               </div>
 
               <!-- Shift On-duty Checkbox -->
-              <div class="p-2.5 rounded-xl bg-warm-100/70 dark:bg-warm-850 border border-warm-200 dark:border-warm-700">
+              <div class="p-2.5 rounded-xl bg-warm-100/70 dark:bg-neutral-850 border border-warm-200 dark:border-neutral-700">
                 <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-warm-800 dark:text-warm-200">
                   <input
                     v-model="editUserForm.on_duty"
@@ -1105,7 +1670,7 @@ function roleBadgeClass(role) {
                 </label>
               </div>
 
-              <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">
+              <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-neutral-800">
                 <button type="button" @click="showEditModal = false" class="btn-outline flex-1 text-xs">Cancel</button>
                 <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
                   {{ saving ? 'Saving Changes...' : 'Save User Profile' }}

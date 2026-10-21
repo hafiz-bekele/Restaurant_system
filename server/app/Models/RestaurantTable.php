@@ -16,16 +16,18 @@ class RestaurantTable extends Model
 
     protected $fillable = [
         'name', 'capacity', 'qr_token', 'area',
-        'position_x', 'position_y', 'status',
+        'position_x', 'position_y', 'status', 'features', 'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'status' => TableStatus::class,
-            'capacity' => 'integer',
+            'status'     => TableStatus::class,
+            'capacity'   => 'integer',
             'position_x' => 'decimal:2',
             'position_y' => 'decimal:2',
+            'features'   => 'array',
+            'is_active'  => 'boolean',
         ];
     }
 

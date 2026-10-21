@@ -39,10 +39,41 @@ const i18n = createI18n({
   messages: { en, am },
 })
 
+import { useAuthStore } from './stores/auth'
+
 const app = createApp(App)
 app.use(pinia)
 app.use(router)
 app.use(VueQueryPlugin)
 app.use(i18n)
+
+// Global permission directive: v-permission="'users.create'" or v-permission="['orders.view', 'orders.create']"
+app.directive('permission', {
+  mounted(el, binding) {
+    const auth = useAuthStore()
+    const { value } = binding
+    if (value) {
+      const allowed = auth.hasPermission(value)
+      if (!allowed) {
+        el.style.display = 'none'
+        el.setAttribute('aria-hidden', 'true')
+      }
+    }
+  },
+  updated(el, binding) {
+    const auth = useAuthStore()
+    const { value } = binding
+    if (value) {
+      const allowed = auth.hasPermission(value)
+      if (!allowed) {
+        el.style.display = 'none'
+        el.setAttribute('aria-hidden', 'true')
+      } else {
+        el.style.removeProperty('display')
+        el.removeAttribute('aria-hidden')
+      }
+    }
+  },
+})
 
 app.mount('#app')

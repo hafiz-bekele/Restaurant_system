@@ -8,6 +8,8 @@ declare module 'vue-router' {
     staffOnly?: boolean
     role?: string
     customerOnly?: boolean
+    permission?: string | string[]
+    superAdminOnly?: boolean
   }
 }
 
@@ -47,11 +49,11 @@ const routes = [
     component: () => import('../layouts/StaffLayout.vue'),
     meta: { auth: true, role: 'staff' },
     children: [
-      { path: 'kitchen',   name: 'kitchen',   component: () => import('../views/staff/KitchenPage.vue') },
-      { path: 'waiter',    name: 'waiter',    component: () => import('../views/staff/WaiterPage.vue') },
-      { path: 'cashier',   name: 'cashier',   component: () => import('../views/staff/CashierPage.vue') },
-      { path: 'delivery',  name: 'delivery',  component: () => import('../views/staff/DeliveryPage.vue') },
-      { path: 'reception', name: 'reception', component: () => import('../views/staff/ReceptionPage.vue') },
+      { path: 'kitchen',   name: 'kitchen',   component: () => import('../views/staff/KitchenPage.vue'),   meta: { permission: 'kitchen.view_kds' } },
+      { path: 'waiter',    name: 'waiter',    component: () => import('../views/staff/WaiterPage.vue'),    meta: { permission: 'orders.view' } },
+      { path: 'cashier',   name: 'cashier',   component: () => import('../views/staff/CashierPage.vue'),   meta: { permission: 'cashier.view_pos' } },
+      { path: 'delivery',  name: 'delivery',  component: () => import('../views/staff/DeliveryPage.vue'),  meta: { permission: 'orders.view' } },
+      { path: 'reception', name: 'reception', component: () => import('../views/staff/ReceptionPage.vue'), meta: { permission: 'reception.view_floor' } },
     ],
   },
 
@@ -62,21 +64,21 @@ const routes = [
     meta: { auth: true, role: 'admin' },
     children: [
       { path: '',               name: 'admin',                  component: () => import('../views/admin/DashboardPage.vue') },
-      { path: 'menu',           name: 'admin.menu',             component: () => import('../views/admin/MenuPage.vue') },
-      { path: 'orders',         name: 'admin.orders',           component: () => import('../views/admin/OrdersPage.vue') },
+      { path: 'menu',           name: 'admin.menu',             component: () => import('../views/admin/MenuPage.vue'),           meta: { permission: 'menu.view' } },
+      { path: 'orders',         name: 'admin.orders',           component: () => import('../views/admin/OrdersPage.vue'),         meta: { permission: 'orders.view' } },
       { path: 'reviews',        name: 'admin.reviews',          component: () => import('../views/admin/ReviewsPage.vue') },
-      { path: 'reports',        name: 'admin.reports',          component: () => import('../views/admin/ReportsPage.vue') },
-      { path: 'settings',       name: 'admin.settings',         component: () => import('../views/admin/SettingsPage.vue') },
-      { path: 'users',          name: 'admin.users',            component: () => import('../views/admin/UsersPage.vue') },
-      { path: 'tables',         name: 'admin.tables',           component: () => import('../views/admin/TablesPage.vue') },
-      { path: 'reservations',   name: 'admin.reservations',     component: () => import('../views/admin/ReservationsPage.vue') },
-      { path: 'coupons',        name: 'admin.coupons',          component: () => import('../views/admin/CouponsPage.vue') },
-      { path: 'inventory',      name: 'admin.inventory',        component: () => import('../views/admin/InventoryPage.vue') },
-      { path: 'audit',          name: 'admin.audit',            component: () => import('../views/admin/AuditPage.vue') },
+      { path: 'reports',        name: 'admin.reports',          component: () => import('../views/admin/ReportsPage.vue'),        meta: { permission: 'reports.view' } },
+      { path: 'settings',       name: 'admin.settings',         component: () => import('../views/admin/SettingsPage.vue'),       meta: { permission: 'settings.manage' } },
+      { path: 'users',          name: 'admin.users',            component: () => import('../views/admin/UsersPage.vue'),          meta: { permission: 'users.view' } },
+      { path: 'tables',         name: 'admin.tables',           component: () => import('../views/admin/TablesPage.vue'),         meta: { permission: 'reception.manage_tables' } },
+      { path: 'reservations',   name: 'admin.reservations',     component: () => import('../views/admin/ReservationsPage.vue'),   meta: { permission: 'reservations.manage' } },
+      { path: 'coupons',        name: 'admin.coupons',          component: () => import('../views/admin/CouponsPage.vue'),        meta: { permission: 'menu.manage' } },
+      { path: 'inventory',      name: 'admin.inventory',        component: () => import('../views/admin/InventoryPage.vue'),      meta: { permission: 'inventory.view' } },
+      { path: 'audit',          name: 'admin.audit',            component: () => import('../views/admin/AuditPage.vue'),          meta: { permission: 'audit.view' } },
       { path: 'complaints',     name: 'admin.complaints',       component: () => import('../views/admin/ComplaintsPage.vue') },
       { path: 'delivery-zones', name: 'admin.delivery-zones',   component: () => import('../views/admin/DeliveryZonesPage.vue') },
-      { path: 'rooms',          name: 'admin.rooms',            component: () => import('../views/admin/RoomsPage.vue') },
-      { path: 'hotels',         name: 'admin.hotels',           component: () => import('../views/admin/HotelsPage.vue') },
+      { path: 'rooms',          name: 'admin.rooms',            component: () => import('../views/admin/RoomsPage.vue'),          meta: { permission: 'reception.manage_rooms' } },
+      { path: 'hotels',         name: 'admin.hotels',           component: () => import('../views/admin/HotelsPage.vue'),         meta: { superAdminOnly: true } },
     ],
   },
 
@@ -99,6 +101,19 @@ router.beforeEach(async (to) => {
 
   if (to.meta.auth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  // Super-admin only pages (like multi-hotel management)
+  if (to.meta.superAdminOnly && !auth.hasRole('super-admin')) {
+    return { name: 'admin' }
+  }
+
+  // Granular Permission-based page access
+  if (to.meta.permission && auth.isAuthenticated) {
+    const isAllowed = auth.hasPermission(to.meta.permission)
+    if (!isAllowed) {
+      return auth.isAdmin ? { name: 'admin' } : { name: 'home' }
+    }
   }
 
   // Login page — if staff/admin already logged in, redirect to their panel

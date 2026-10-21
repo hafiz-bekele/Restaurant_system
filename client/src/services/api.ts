@@ -84,12 +84,15 @@ export const orderApi = {
 
 // Reservations
 export const reservationApi = {
-  availability: (params?: Record<string, any>) => api.get('/reservations/availability', { params }),
-  create:       (data: Record<string, any>)    => api.post('/reservations', data),
-  get:          (id: number | string)          => api.get(`/reservations/${id}`),
-  update:       (id: number | string, data: Record<string, any>) => api.patch(`/reservations/${id}`, data),
-  redeem:       (id: number | string)          => api.post(`/reservations/${id}/redeem`),
-  cancel:       (id: number | string)          => api.delete(`/reservations/${id}`),
+  pricing:         ()                              => api.get('/reservations/pricing'),
+  availableTables: (params?: Record<string, any>) => api.get('/reservations/available-tables', { params }),
+  availability:    (params?: Record<string, any>) => api.get('/reservations/available-tables', { params }),
+  create:          (data: Record<string, any>)    => api.post('/reservations', data),
+  get:             (id: number | string)          => api.get(`/reservations/${id}`),
+  verifyPayment:   (ulid: string)                 => api.post(`/reservations/${ulid}/verify-payment`),
+  cancel:          (id: number | string, data?: Record<string, any>) => api.post(`/reservations/${id}/cancel`, data),
+  update:          (id: number | string, data: Record<string, any>)  => api.patch(`/reservations/${id}`, data),
+  redeem:          (id: number | string)          => api.post(`/reservations/${id}/redeem`),
 }
 
 // Profile

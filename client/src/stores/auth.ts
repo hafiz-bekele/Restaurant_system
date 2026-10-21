@@ -8,6 +8,10 @@ export interface User {
   email: string
   phone?: string
   roles?: string[]
+  permissions?: string[]
+  hotel_id?: number | null
+  section?: string | null
+  on_duty?: boolean
   [key: string]: any
 }
 
@@ -19,6 +23,23 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin         = computed(() => user.value?.roles?.includes('super-admin') || user.value?.roles?.includes('admin') || user.value?.roles?.includes('manager'))
   const isStaff         = computed(() => ['super-admin', 'admin', 'manager', 'waiter', 'kitchen', 'cashier', 'reception', 'delivery'].some(r => user.value?.roles?.includes(r)))
   const hasRole         = (role: string) => user.value?.roles?.includes(role) ?? false
+
+  const hasPermission = (permission: string | string[]) => {
+    if (!user.value) return false
+    if (user.value.roles?.includes('super-admin')) return true
+    const userPerms = user.value.permissions || []
+    if (Array.isArray(permission)) {
+      return permission.every(p => userPerms.includes(p))
+    }
+    return userPerms.includes(permission)
+  }
+
+  const hasAnyPermission = (permissions: string[]) => {
+    if (!user.value) return false
+    if (user.value.roles?.includes('super-admin')) return true
+    const userPerms = user.value.permissions || []
+    return permissions.some(p => userPerms.includes(p))
+  }
 
   async function login(credentials: Record<string, any>) {
     const { data } = await authApi.login(credentials)
@@ -54,5 +75,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, token, isAuthenticated, isAdmin, isStaff, hasRole, login, register, logout, fetchUser }
+  return { user, token, isAuthenticated, isAdmin, isStaff, hasRole, hasPermission, hasAnyPermission, login, register, logout, fetchUser }
 }, { persist: { pick: ['token'] } })

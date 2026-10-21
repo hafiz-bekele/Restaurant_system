@@ -28,6 +28,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Default binding so TenantScope never throws "not bound" error
         app()->bind('current_hotel_id', fn () => null);
+
+        // Chapa Payment Gateway service binding
+        $this->app->bind(
+            \App\Contracts\Payment\PaymentGatewayInterface::class,
+            \App\Services\Payment\ChapaService::class
+        );
     }
 
     /**
@@ -36,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::preventLazyLoading(! app()->isProduction());
+
+        // Implicitly grant 'super-admin' role all permission checks using Gate::before
+        Gate::before(function ($user, $ability) {
+            return $user->hasRole('super-admin') ? true : null;
+        });
 
         // Policies
         Gate::policy(Order::class, OrderPolicy::class);

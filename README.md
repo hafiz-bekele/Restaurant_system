@@ -102,5 +102,49 @@ npm run dev
 
 ---
 
+## 📅 Table Reservation System & Chapa Integration
+
+The table reservation feature is powered by a real-time 4-step wizard:
+1. **Step 1: Details & Time**: Customer name, Ethiopian phone number (`+251 9XXXXXXXX` or `07XXXXXXXX`), email, party size (1–20), 7-day advance booking window, and duration selector (1h, 2h, 3h, 6h, 12h, 18h, 24h).
+2. **Step 2: Live Table Selection**: Queries `GET /api/v1/reservations/available-tables` to only display tables that have adequate capacity and no overlapping active, confirmed, or 10-minute held reservations. Filterable by area (Indoor, Outdoor, Window, VIP, Quiet) and capacity.
+3. **Step 3: Review & Pay**: Displays live transparent pricing (base rate 12.5 ETB/h, day surcharge: today = 0%, tomorrow = +25%, 2+ days = +40%). Creates a pending reservation with a 10-minute table hold and initiates a Chapa transaction.
+4. **Step 4: Confirmation & Live Countdown**: Syncs with restaurant server time to display a digital live countdown (`days:hours:minutes:seconds`), QR check-in code, and "Add to Calendar" (`.ics`) download.
+
+### 🧪 Testing with Chapa Sandbox Keys
+
+1. Sign up or log in to your **[Chapa Dashboard](https://dashboard.chapa.co)** and toggle to **Test Mode**.
+2. Navigate to **Settings > API & Webhooks** and copy your test keys:
+   - `CHAPA_PUBLIC_KEY`: `CHAPUBK_TEST-xxxxxxxxxxxxxxxxxxxx`
+   - `CHAPA_SECRET_KEY`: `CHASECK_TEST-xxxxxxxxxxxxxxxxxxxx`
+   - `CHAPA_WEBHOOK_SECRET`: your configured webhook secret
+3. In `server/.env`, configure your keys:
+   ```env
+   CHAPA_PUBLIC_KEY=CHAPUBK_TEST-your-public-key
+   CHAPA_SECRET_KEY=CHASECK_TEST-your-secret-key
+   CHAPA_WEBHOOK_SECRET=your-webhook-secret
+   CHAPA_RETURN_URL=http://localhost:5173/reservations
+   CHAPA_WEBHOOK_URL=http://127.0.0.1:8000/api/v1/webhooks/chapa
+   ```
+4. **Test Payment Flow**:
+   - Start the frontend (`npm run dev`) and backend (`php artisan serve`).
+   - Navigate to `/reservations`, fill your details, and select an available table.
+   - Click **Pay with Chapa (ETB total)**. You will be redirected to the official Chapa Hosted Checkout page.
+   - Use Chapa's sandbox test credentials (e.g. Telebirr test wallet / OTP `1234` or test cards).
+   - Upon successful payment, Chapa redirects back to the confirmation page (`return_url`), where the reservation is verified, confirmed, and the live dining window countdown begins!
+   - *Note*: If test keys are not configured or set to demo placeholders, the system automatically falls back to clean local sandbox simulation mode for offline development and CI/CD pipelines.
+
+### ⏰ Reservation Expiry Scheduler
+
+Run the scheduler to automatically release expired 10-minute table holds and mark finished reservations as expired:
+```bash
+cd server
+php artisan reservations:expire
+# Or run the worker in the background:
+php artisan schedule:work
+```
+
+---
+
 ## 📄 License
 This project is open-source software licensed under the MIT license.
+

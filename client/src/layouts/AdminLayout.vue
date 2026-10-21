@@ -54,19 +54,19 @@ const nav = computed(() => {
       group: t('adminLayout.groups.operations'),
       items: [
         { to: '/admin',              icon: LayoutDashboard, label: t('adminLayout.nav.dashboard') },
-        { to: '/admin/orders',       icon: ShoppingBag,     label: t('adminLayout.nav.orders') },
-        { to: '/staff/cashier',      icon: CreditCard,      label: t('staffLayout.cashierPos') },
-        { to: '/admin/reservations', icon: Calendar,        label: t('adminLayout.nav.reservations') },
-        { to: '/admin/tables',       icon: Grid3x3,         label: t('adminLayout.nav.tables') },
-        { to: '/admin/rooms',        icon: BedDouble,       label: t('adminLayout.nav.rooms') },
+        { to: '/admin/orders',       icon: ShoppingBag,     label: t('adminLayout.nav.orders'),       permission: 'orders.view' },
+        { to: '/staff/cashier',      icon: CreditCard,      label: t('staffLayout.cashierPos'),      permission: 'cashier.view_pos' },
+        { to: '/admin/reservations', icon: Calendar,        label: t('adminLayout.nav.reservations'), permission: 'reservations.manage' },
+        { to: '/admin/tables',       icon: Grid3x3,         label: t('adminLayout.nav.tables'),       permission: 'reception.manage_tables' },
+        { to: '/admin/rooms',        icon: BedDouble,       label: t('adminLayout.nav.rooms'),        permission: 'reception.manage_rooms' },
       ],
     },
     {
       group: t('adminLayout.groups.catalogue'),
       items: [
-        { to: '/admin/menu',      icon: UtensilsCrossed, label: t('adminLayout.nav.menu') },
-        { to: '/admin/inventory', icon: Package,         label: t('adminLayout.nav.inventory') },
-        { to: '/admin/coupons',   icon: Tag,             label: t('adminLayout.nav.coupons') },
+        { to: '/admin/menu',      icon: UtensilsCrossed, label: t('adminLayout.nav.menu'),      permission: 'menu.view' },
+        { to: '/admin/inventory', icon: Package,         label: t('adminLayout.nav.inventory'), permission: 'inventory.view' },
+        { to: '/admin/coupons',   icon: Tag,             label: t('adminLayout.nav.coupons'),   permission: 'menu.manage' },
       ],
     },
     {
@@ -85,19 +85,20 @@ const nav = computed(() => {
     {
       group: t('adminLayout.groups.administration'),
       items: [
-        { to: '/admin/users',    icon: Users,     label: t('adminLayout.nav.users') },
-        { to: '/admin/reports',  icon: BarChart2, label: t('adminLayout.nav.reports') },
-        { to: '/admin/hotels',   icon: Building2, label: t('adminLayout.nav.hotels'),  superAdminOnly: true },
-        { to: '/admin/audit',    icon: Shield,    label: t('adminLayout.nav.audit'),   adminOnly: true },
-        { to: '/admin/settings', icon: Settings,  label: t('adminLayout.nav.settings'), adminOnly: true },
+        { to: '/admin/users',    icon: Users,     label: t('adminLayout.nav.users'),    permission: 'users.view' },
+        { to: '/admin/reports',  icon: BarChart2, label: t('adminLayout.nav.reports'),  permission: 'reports.view' },
+        { to: '/admin/hotels',   icon: Building2, label: t('adminLayout.nav.hotels'),   superAdminOnly: true },
+        { to: '/admin/audit',    icon: Shield,    label: t('adminLayout.nav.audit'),    permission: 'audit.view', adminOnly: true },
+        { to: '/admin/settings', icon: Settings,  label: t('adminLayout.nav.settings'), permission: 'settings.manage', adminOnly: true },
       ],
     },
   ]
   return all.map(g => ({
     ...g,
     items: g.items.filter(item => {
-      if (item.superAdminOnly) return isSuperAdmin.value
-      if (item.adminOnly)      return !isManager.value
+      if (item.superAdminOnly && !isSuperAdmin.value) return false
+      if (item.adminOnly && isManager.value) return false
+      if (item.permission && !auth.hasPermission(item.permission)) return false
       return true
     }),
   })).filter(g => g.items.length)
@@ -126,7 +127,7 @@ async function logout() {
 </script>
 
 <template>
-  <div class="flex h-screen bg-warm-50 dark:bg-[#0f1117] overflow-hidden">
+  <div class="flex h-screen bg-warm-50 dark:bg-[#0a0a0c] overflow-hidden">
 
     <!-- Mobile backdrop -->
     <Transition
@@ -141,12 +142,12 @@ async function logout() {
     </Transition>
 
     <!-- ══════════════════════════════════════════
-         SIDEBAR
+         SIDEBAR (White in Light Mode, Black in Dark Mode)
     ══════════════════════════════════════════ -->
     <aside
       :class="[
         'flex flex-col z-50 transition-[width,transform] duration-300 ease-in-out will-change-transform',
-        'bg-[#111318] border-r border-white/[0.06]',
+        'bg-white dark:bg-black border-r border-warm-200/90 dark:border-neutral-850 shadow-xs',
         isMobile
           ? ['fixed inset-y-0 left-0 shadow-2xl', sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full']
           : ['relative shrink-0',                  collapsed   ? 'w-[68px]'          : 'w-60'],
@@ -154,22 +155,22 @@ async function logout() {
     >
 
       <!-- Brand row -->
-      <div class="flex items-center h-16 px-4 border-b border-white/[0.06] shrink-0 gap-3">
+      <div class="flex items-center h-16 px-4 border-b border-warm-200/90 dark:border-neutral-850 shrink-0 gap-3">
         <!-- Logo mark -->
         <div class="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shrink-0 shadow-lg shadow-primary-500/30">
           <ChefHat :size="16" class="text-white" />
         </div>
 
         <div v-if="showLabels" class="flex-1 min-w-0">
-          <p class="font-heading font-bold text-white text-sm leading-tight truncate">{{ APP_NAME }}</p>
-          <p class="text-[11px] font-medium text-primary-400 leading-tight">{{ roleLabel }}</p>
+          <p class="font-heading font-bold text-warm-900 dark:text-white text-sm leading-tight truncate">{{ APP_NAME }}</p>
+          <p class="text-[11px] font-medium text-primary-600 dark:text-primary-400 leading-tight">{{ roleLabel }}</p>
         </div>
 
         <!-- Close on mobile -->
         <button
           v-if="isMobile"
           @click="sidebarOpen = false"
-          class="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/8 transition-colors"
+          class="p-1.5 rounded-lg text-warm-400 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors"
           :aria-label="$t('adminLayout.close')"
         >
           <X :size="17" />
@@ -182,9 +183,9 @@ async function logout() {
           <!-- Group label -->
           <p
             v-if="showLabels"
-            class="mt-3 mb-1 px-5 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-600 select-none"
+            class="mt-3 mb-1 px-5 text-[10px] font-bold uppercase tracking-[0.15em] text-warm-400 dark:text-neutral-500 select-none"
           >{{ group.group }}</p>
-          <div v-else class="mt-3 mb-1 mx-4 border-t border-white/[0.06]"></div>
+          <div v-else class="mt-3 mb-1 mx-4 border-t border-warm-200/80 dark:border-neutral-850"></div>
 
           <!-- Nav items -->
           <RouterLink
@@ -196,8 +197,8 @@ async function logout() {
               'relative flex items-center gap-3 mx-2 rounded-xl text-sm font-medium transition-all duration-150 group',
               collapsed && !isMobile ? 'px-0 py-2.5 justify-center' : 'px-3 py-2.5',
               isActive(item.to)
-                ? 'bg-primary-500/12 text-primary-400'
-                : 'text-gray-400 hover:bg-white/5 hover:text-gray-100',
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 font-semibold shadow-xs'
+                : 'text-warm-700 dark:text-neutral-300 hover:bg-warm-100/80 dark:hover:bg-neutral-900 hover:text-warm-900 dark:hover:text-white',
             ]"
           >
             <!-- Left accent line on active -->
@@ -211,7 +212,7 @@ async function logout() {
               :size="18"
               :class="[
                 'shrink-0 transition-colors',
-                isActive(item.to) ? 'text-primary-400' : 'text-gray-500 group-hover:text-gray-200',
+                isActive(item.to) ? 'text-primary-500 dark:text-primary-400' : 'text-warm-400 dark:text-neutral-500 group-hover:text-warm-800 dark:group-hover:text-neutral-200',
               ]"
             />
 
@@ -227,18 +228,18 @@ async function logout() {
       </nav>
 
       <!-- ── User + logout row ────────────────────────────────────────── -->
-      <div class="border-t border-white/[0.06] shrink-0">
+      <div class="border-t border-warm-200/90 dark:border-neutral-850 shrink-0">
         <div v-if="showLabels" class="flex items-center gap-3 px-4 py-3">
-          <div class="w-8 h-8 rounded-full bg-primary-500/20 border border-primary-500/30 flex items-center justify-center font-bold text-primary-400 text-sm shrink-0">
+          <div class="w-8 h-8 rounded-full bg-primary-500/15 border border-primary-500/30 flex items-center justify-center font-bold text-primary-600 dark:text-primary-400 text-sm shrink-0">
             {{ auth.user?.name?.[0]?.toUpperCase() }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-xs font-semibold text-white truncate leading-tight">{{ auth.user?.name }}</p>
-            <p class="text-[10px] text-gray-500 truncate leading-tight">{{ auth.user?.email }}</p>
+            <p class="text-xs font-semibold text-warm-900 dark:text-white truncate leading-tight">{{ auth.user?.name }}</p>
+            <p class="text-[10px] text-warm-500 dark:text-neutral-400 truncate leading-tight">{{ auth.user?.email }}</p>
           </div>
           <button
             @click="logout"
-            class="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+            class="p-1.5 rounded-lg text-warm-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors shrink-0"
             :title="$t('adminLayout.signOut')" :aria-label="$t('adminLayout.signOut')"
           >
             <LogOut :size="15" />
@@ -247,7 +248,7 @@ async function logout() {
         <div v-else class="flex justify-center py-3">
           <button
             @click="logout"
-            class="p-2 rounded-xl text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            class="p-2 rounded-xl text-warm-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
             :title="$t('adminLayout.signOut')" :aria-label="$t('adminLayout.signOut')"
           >
             <LogOut :size="16" />
@@ -262,7 +263,7 @@ async function logout() {
     <div class="flex-1 flex flex-col overflow-hidden min-w-0">
 
       <!-- Top bar -->
-      <header class="h-14 bg-white dark:bg-[#161921] border-b border-warm-200 dark:border-white/[0.06] flex items-center justify-between px-4 sm:px-5 shrink-0 gap-3">
+      <header class="h-14 bg-white dark:bg-black border-b border-warm-200/90 dark:border-neutral-850 flex items-center justify-between px-4 sm:px-5 shrink-0 gap-3">
 
         <!-- Left -->
         <div class="flex items-center gap-2">
@@ -270,7 +271,7 @@ async function logout() {
           <!-- Hamburger (mobile) / Collapse toggle (desktop) -->
           <button
             @click="isMobile ? (sidebarOpen = !sidebarOpen) : (collapsed = !collapsed)"
-            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-gray-500 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-white/8 transition-colors"
+            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors"
             :aria-label="isMobile ? $t('adminLayout.toggleMenu') : (collapsed ? $t('adminLayout.expandSidebar') : $t('adminLayout.collapseSidebar'))"
           >
             <Menu :size="19" />
@@ -280,7 +281,7 @@ async function logout() {
           <RouterLink
             to="/"
             target="_blank"
-            class="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-warm-200 dark:border-white/10 text-warm-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
+            class="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-warm-200 dark:border-neutral-800 text-warm-600 dark:text-neutral-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
           >
             <ExternalLink :size="12" /> {{ $t('adminLayout.storefront') }}
           </RouterLink>
@@ -289,7 +290,7 @@ async function logout() {
           <div v-if="auth.isStaff" class="relative">
             <button
               @click="showPortals = !showPortals"
-              class="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-warm-200 dark:border-white/10 text-warm-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
+              class="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-warm-200 dark:border-neutral-800 text-warm-600 dark:text-neutral-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
             >
               <ChefHat :size="12" />
               {{ $t('adminLayout.staffPortals') }}
@@ -304,14 +305,14 @@ async function logout() {
             >
               <div
                 v-if="showPortals"
-                class="absolute top-full left-0 mt-2 w-44 bg-white dark:bg-[#1c1f28] rounded-xl border border-warm-100 dark:border-white/8 shadow-float z-50 py-1.5 overflow-hidden"
+                class="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-black rounded-xl border border-warm-200 dark:border-neutral-800 shadow-xl z-50 py-1.5 overflow-hidden"
               >
                 <RouterLink
                   v-for="p in staffPortals"
                   :key="p.to"
                   :to="p.to"
                   @click="showPortals = false"
-                  class="flex items-center gap-2.5 px-4 py-2 text-sm text-warm-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                  class="flex items-center gap-2.5 px-4 py-2 text-sm text-warm-700 dark:text-neutral-300 hover:bg-primary-50 dark:hover:bg-neutral-900 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   <ChevronRight :size="11" class="text-primary-400 shrink-0" /> {{ p.label }}
                 </RouterLink>
@@ -329,7 +330,7 @@ async function logout() {
           <!-- Inline theme toggle in topbar -->
           <button
             @click="ui.toggleDarkMode"
-            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-gray-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-white/8 transition-colors"
+            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors"
             :aria-label="ui.darkMode ? $t('adminLayout.lightMode') : $t('adminLayout.darkMode')"
             :title="ui.darkMode ? $t('adminLayout.lightMode') : $t('adminLayout.darkMode')"
           >
@@ -338,12 +339,12 @@ async function logout() {
           </button>
 
           <!-- User pill -->
-          <div class="hidden sm:flex items-center gap-2.5 pl-3 border-l border-warm-200 dark:border-white/10">
+          <div class="hidden sm:flex items-center gap-2.5 pl-3 border-l border-warm-200 dark:border-neutral-800">
             <div class="w-7 h-7 rounded-full bg-primary-500/20 border border-primary-500/25 flex items-center justify-center font-bold text-primary-600 dark:text-primary-400 text-xs shrink-0">
               {{ auth.user?.name?.[0]?.toUpperCase() }}
             </div>
             <div>
-              <p class="text-xs font-semibold text-warm-800 dark:text-gray-200 leading-tight">{{ auth.user?.name?.split(' ')[0] }}</p>
+              <p class="text-xs font-semibold text-warm-800 dark:text-neutral-200 leading-tight">{{ auth.user?.name?.split(' ')[0] }}</p>
               <p class="text-[10px] text-primary-600 dark:text-primary-400 font-medium leading-tight capitalize">{{ roleLabel }}</p>
             </div>
           </div>
@@ -351,7 +352,7 @@ async function logout() {
       </header>
 
       <!-- Page content -->
-      <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-warm-50 dark:bg-[#0f1117]">
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-warm-50/70 dark:bg-[#070709]">
         <RouterView />
       </main>
     </div>

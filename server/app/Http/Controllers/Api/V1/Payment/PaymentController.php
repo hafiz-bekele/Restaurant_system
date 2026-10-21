@@ -218,7 +218,24 @@ class PaymentController extends Controller
 
     public function chapaWebhook(Request $request): JsonResponse
     {
-        $this->handleWebhook($request, 'chapa', $request->header('Chapa-Signature', ''));
+        $rawPayload = $request->getContent();
+        $signature  = $request->header('Chapa-Signature', $request->header('x-chapa-signature', ''));
+
+        $data = json_decode($rawPayload, true) ?? [];
+        $txRef = $data['tx_ref'] ?? '';
+
+        // Route reservation transactions to ReservationService
+        if (str_starts_with($txRef, 'RSV-')) {
+            try {
+                $result = app(\App\Services\ReservationService::class)->handleWebhook($rawPayload, $signature);
+                return $this->success($result, 'Reservation webhook processed');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Reservation webhook error: ' . $e->getMessage());
+                return $this->error($e->getMessage(), 400);
+            }
+        }
+
+        $this->handleWebhook($request, 'chapa', $signature);
 
         return $this->success(null, 'OK');
     }

@@ -83,9 +83,13 @@ Route::prefix('v1')->group(function () {
     });
 
     // ── Table reservations (public) ────────────────────────────────────────────
+    Route::get('reservations/pricing', [ReservationController::class, 'pricing']);
+    Route::get('reservations/available-tables', [ReservationController::class, 'availableTables']);
     Route::get('reservations/availability', [ReservationController::class, 'availability']);
     Route::post('reservations', [ReservationController::class, 'store']);
     Route::get('reservations/{reservation}', [ReservationController::class, 'show']);
+    Route::post('reservations/{reservation}/verify-payment', [ReservationController::class, 'verifyPayment']);
+    Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
     Route::patch('reservations/{reservation}', [ReservationController::class, 'update']);
     Route::post('reservations/{reservation}/redeem', [ReservationController::class, 'redeem']);
     Route::delete('reservations/{reservation}', [ReservationController::class, 'destroy']);
@@ -207,14 +211,14 @@ Route::prefix('v1')->group(function () {
             Route::delete('coupons/{coupon}', [AdminCouponController::class, 'destroy']);
 
             // Users & RBAC Permissions — static routes BEFORE {user} wildcard
-            Route::get('users/roles', [AdminUserController::class, 'roles']);
-            Route::get('users/permissions', [AdminUserController::class, 'permissions']);
-            Route::get('users', [AdminUserController::class, 'index']);
-            Route::post('users', [AdminUserController::class, 'store']);
-            Route::get('users/{user}', [AdminUserController::class, 'show']);
-            Route::patch('users/{user}', [AdminUserController::class, 'update']);
-            Route::patch('users/{user}/duty', [AdminUserController::class, 'toggleDuty']);
-            Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
+            Route::get('users/roles', [AdminUserController::class, 'roles'])->middleware('permission:users.view');
+            Route::get('users/permissions', [AdminUserController::class, 'permissions'])->middleware('permission:users.view|users.manage_permissions');
+            Route::get('users', [AdminUserController::class, 'index'])->middleware('permission:users.view');
+            Route::post('users', [AdminUserController::class, 'store'])->middleware('permission:users.create');
+            Route::get('users/{user}', [AdminUserController::class, 'show'])->middleware('permission:users.view');
+            Route::patch('users/{user}', [AdminUserController::class, 'update'])->middleware('permission:users.edit');
+            Route::patch('users/{user}/duty', [AdminUserController::class, 'toggleDuty'])->middleware('permission:users.edit');
+            Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->middleware('permission:users.delete');
 
             // Tables — static segments BEFORE {table} wildcard
             Route::get('tables/areas', [AdminTableController::class, 'areas']);

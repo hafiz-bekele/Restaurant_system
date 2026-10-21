@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
-import { Plus, Trash2, X, Key, Shield, ShieldCheck, Check, Search, Sliders, Users, AlertCircle, CheckCircle, RefreshCw } from '@lucide/vue'
+import { Plus, Trash2, X, Key, Shield, ShieldCheck, Check, Search, Sliders, Users, AlertCircle, CheckCircle, RefreshCw, Pencil } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
 
 const { t } = useI18n()
@@ -16,9 +16,67 @@ const search = ref('')
 const roleFilter = ref('')
 const dutyFilter = ref('') // '' | '1' | '0'
 const showModal = ref(false)
+const showEditModal = ref(false)
 const showPermissionsModal = ref(false)
 const saving = ref(false)
 const permSearch = ref('')
+
+const editUserForm = ref({
+  id: null,
+  name: '',
+  email: '',
+  phone: '',
+  password: '',
+  role: 'waiter',
+  section: '',
+  status: 'active',
+  on_duty: true,
+})
+
+function openEditUserModal(user) {
+  selectedUser.value = user
+  const userRole = user.roles?.[0] || 'waiter'
+  editUserForm.value = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || '',
+    password: '',
+    role: userRole,
+    section: user.section || sectionPresets[userRole]?.[0] || '',
+    status: typeof user.status === 'object' ? user.status.value : user.status || 'active',
+    on_duty: Boolean(user.on_duty),
+  }
+  showEditModal.value = true
+}
+
+async function updateUserDetails() {
+  if (!editUserForm.value.id) return
+  saving.value = true
+  try {
+    const payload = {
+      name: editUserForm.value.name,
+      email: editUserForm.value.email,
+      phone: editUserForm.value.phone || undefined,
+      role: editUserForm.value.role,
+      section: editUserForm.value.section || undefined,
+      status: editUserForm.value.status,
+      on_duty: editUserForm.value.on_duty,
+    }
+    if (editUserForm.value.password) {
+      payload.password = editUserForm.value.password
+    }
+    await adminApi.updateUser(editUserForm.value.id, payload)
+    qc.invalidateQueries({ queryKey: ['admin', 'users'] })
+    ui.toast('Staff member details updated successfully', 'success')
+    showEditModal.value = false
+  } catch (e) {
+    const errors = e.response?.data?.errors
+    ui.toast(errors ? Object.values(errors).flat()[0] : 'Failed to update user', 'error')
+  } finally {
+    saving.value = false
+  }
+}
 
 // Work section / Station / Desk presets per operational role
 const sectionPresets = {
@@ -576,6 +634,14 @@ function roleBadgeClass(role) {
               <td class="px-5 py-3.5 text-right">
                 <div class="flex items-center justify-end gap-2">
                   <button
+                    @click="openEditUserModal(user)"
+                    class="btn-outline text-xs py-1.5 px-2.5 gap-1 shadow-xs"
+                    title="Edit user details"
+                  >
+                    <Pencil :size="13" />
+                    <span>Edit</span>
+                  </button>
+                  <button
                     @click="openPermissionsModal(user)"
                     class="btn-secondary text-xs py-1.5 px-2.5 gap-1 shadow-xs"
                     :title="$t('adminUsers.btnManageAccess')"
@@ -929,6 +995,120 @@ function roleBadgeClass(role) {
                 <button type="button" @click="showModal = false" class="btn-outline flex-1 text-xs">{{ $t('adminUsers.cancel') }}</button>
                 <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
                   {{ saving ? $t('adminUsers.onboardingBtn') : $t('adminUsers.createAssignBtn') }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- MODAL 3: Edit User Details (Full Profile & Role Editor) -->
+    <Teleport to="body">
+      <Transition enter-from-class="opacity-0" enter-active-class="transition-opacity duration-200" leave-to-class="opacity-0" leave-active-class="transition-opacity duration-150">
+        <div v-if="showEditModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showEditModal = false">
+          <div class="card w-full max-w-lg p-6 shadow-float">
+            <div class="flex items-center justify-between mb-5 pb-3 border-b border-warm-100 dark:border-warm-800">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                  <Pencil :size="16" />
+                </div>
+                <div>
+                  <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">Edit Staff Profile</h2>
+                  <p class="text-xs text-warm-500">Update account credentials, operational role and station</p>
+                </div>
+              </div>
+              <button @click="showEditModal = false" class="btn-ghost p-1.5 rounded-lg"><X :size="18" /></button>
+            </div>
+
+            <form @submit.prevent="updateUserDetails" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Full Name</label>
+                  <input v-model="editUserForm.name" type="text" required class="input text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Email Address</label>
+                  <input v-model="editUserForm.email" type="email" required class="input text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Phone Number</label>
+                  <input v-model="editUserForm.phone" type="tel" class="input text-xs" placeholder="+251 9XXXXXXXX" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
+                    Reset Password
+                    <span class="text-[10px] text-warm-400 font-normal">(Leave blank to keep)</span>
+                  </label>
+                  <input v-model="editUserForm.password" type="password" minlength="8" class="input text-xs" placeholder="New password" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Assigned Role</label>
+                  <select v-model="editUserForm.role" class="input text-xs font-medium">
+                    <option v-for="r in (rolesData ?? [])" :key="r.id" :value="r.name">{{ r.name }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">Account Status</label>
+                  <select v-model="editUserForm.status" class="input text-xs font-medium">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Station / Section -->
+              <div>
+                <label class="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
+                  Assigned Floor Section / Desk
+                </label>
+                <input
+                  v-model="editUserForm.section"
+                  type="text"
+                  class="input text-xs"
+                  placeholder="e.g. Indoor Tables 1-12, Cashier POS 1..."
+                />
+                <div v-if="sectionPresets[editUserForm.role]?.length" class="mt-1.5 flex flex-wrap gap-1">
+                  <button
+                    v-for="preset in sectionPresets[editUserForm.role]"
+                    :key="preset"
+                    type="button"
+                    @click="editUserForm.section = preset"
+                    :class="[
+                      'text-[10px] px-2 py-0.5 rounded-lg border transition-colors',
+                      editUserForm.section === preset
+                        ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-400 text-primary-700 dark:text-primary-300 font-bold'
+                        : 'bg-warm-100 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
+                    ]"
+                  >
+                    {{ preset }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Shift On-duty Checkbox -->
+              <div class="p-2.5 rounded-xl bg-warm-100/70 dark:bg-warm-850 border border-warm-200 dark:border-warm-700">
+                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-warm-800 dark:text-warm-200">
+                  <input
+                    v-model="editUserForm.on_duty"
+                    type="checkbox"
+                    class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <span>Currently On Duty / Active on Shift</span>
+                </label>
+              </div>
+
+              <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">
+                <button type="button" @click="showEditModal = false" class="btn-outline flex-1 text-xs">Cancel</button>
+                <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
+                  {{ saving ? 'Saving Changes...' : 'Save User Profile' }}
                 </button>
               </div>
             </form>

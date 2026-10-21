@@ -74,9 +74,32 @@ class AdminInventoryController extends Controller
         );
     }
 
+    public function summary(): JsonResponse
+    {
+        $totalItems = Ingredient::count();
+        $lowStockCount = Ingredient::whereRaw('stock <= reorder_level')->count();
+        $totalValuation = (float) (Ingredient::selectRaw('SUM(stock * cost) as val')->value('val') ?? 0);
+        $suppliersCount = Supplier::count();
+
+        return $this->success([
+            'total_items'      => $totalItems,
+            'low_stock_count'  => $lowStockCount,
+            'total_valuation'  => round($totalValuation, 2),
+            'suppliers_count'  => $suppliersCount,
+        ]);
+    }
+
+    public function destroyIngredient(Ingredient $ingredient): JsonResponse
+    {
+        ActivityLog::record('ingredient.deleted', $ingredient);
+        $ingredient->delete();
+
+        return $this->success(null, 'Ingredient deleted');
+    }
+
     public function suppliers(): JsonResponse
     {
-        return $this->success(Supplier::orderBy('name')->get());
+        return $this->success(Supplier::withCount('ingredients')->orderBy('name')->get());
     }
 
     public function storeSupplier(StoreSupplierRequest $request): JsonResponse
@@ -84,5 +107,38 @@ class AdminInventoryController extends Controller
         $supplier = Supplier::create($request->validated());
 
         return $this->success($supplier, 'Supplier created', 201);
+    }
+
+    public function updateSupplier(StoreSupplierRequest $request, Supplier $supplier): JsonResponse
+    {
+        $supplier->update($request->validated());
+
+        return $this->success($supplier->fresh(), 'Supplier updated');
+    }
+
+    public function destroySupplier(Supplier $supplier): JsonResponse
+    {
+        // Unlink or set supplier_id to null for associated ingredients
+        Ingredient::where('supplier_id', $supplier->id)->update(['supplier_id' => null]);
+        $supplier->delete();
+
+        return $this->success(null, 'Supplier deleted');
+    }
+
+    public function movements(Request $request): JsonResponse
+    {
+        $movements = StockMovement::with('ingredient:id,name,unit')
+            ->orderByDesc('id')
+            ->paginate(20);
+
+        return $this->paginated($movements->through(fn ($m) => [
+            'id'              => $m->id,
+            'ingredient_id'   => $m->ingredient_id,
+            'ingredient_name' => $m->ingredient?->name ?? 'Unknown',
+            'ingredient_unit' => $m->ingredient?->unit ?? '',
+            'delta'           => (float) $m->delta,
+            'reason'          => $m->reason,
+            'created_at'      => $m->created_at?->toIso8601String() ?? now()->toIso8601String(),
+        ]));
     }
 }

@@ -230,13 +230,18 @@ export const adminApi = {
   deleteReservation:      (id: number | string)          => api.delete(`/admin/reservations/${id}`),
 
   // Inventory
+  inventorySummary:()                            => api.get('/admin/inventory/summary'),
   ingredients:     (params?: Record<string, any>) => api.get('/admin/inventory/ingredients', { params }),
   createIngredient:(data: Record<string, any>)   => api.post('/admin/inventory/ingredients', data),
   updateIngredient:(id: number | string, data: Record<string, any>) => api.patch(`/admin/inventory/ingredients/${id}`, data),
+  deleteIngredient:(id: number | string)         => api.delete(`/admin/inventory/ingredients/${id}`),
   adjustStock:     (id: number | string, data: Record<string, any>) => api.post(`/admin/inventory/ingredients/${id}/adjust`, data),
   lowStock:        ()                            => api.get('/admin/inventory/low-stock'),
   suppliers:       ()                            => api.get('/admin/inventory/suppliers'),
   createSupplier:  (data: Record<string, any>)   => api.post('/admin/inventory/suppliers', data),
+  updateSupplier:  (id: number | string, data: Record<string, any>) => api.patch(`/admin/inventory/suppliers/${id}`, data),
+  deleteSupplier:  (id: number | string)         => api.delete(`/admin/inventory/suppliers/${id}`),
+  stockMovements:  (params?: Record<string, any>) => api.get('/admin/inventory/movements', { params }),
 
   // Audit log
   auditLog:        (params?: Record<string, any>) => api.get('/admin/audit', { params }),

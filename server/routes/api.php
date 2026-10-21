@@ -258,16 +258,23 @@ Route::prefix('v1')->group(function () {
             Route::patch('banners/{banner}', [AdminBannerController::class, 'update']);
             Route::delete('banners/{banner}', [AdminBannerController::class, 'destroy']);
 
+            // Inventory — summary & movements
+            Route::get('inventory/summary', [AdminInventoryController::class, 'summary']);
+            Route::get('inventory/movements', [AdminInventoryController::class, 'movements']);
+
             // Inventory — ingredients
             Route::get('inventory/ingredients', [AdminInventoryController::class, 'ingredients']);
             Route::post('inventory/ingredients', [AdminInventoryController::class, 'storeIngredient']);
             Route::patch('inventory/ingredients/{ingredient}', [AdminInventoryController::class, 'updateIngredient']);
+            Route::delete('inventory/ingredients/{ingredient}', [AdminInventoryController::class, 'destroyIngredient']);
             Route::post('inventory/ingredients/{ingredient}/adjust', [AdminInventoryController::class, 'adjustStock']);
             Route::get('inventory/low-stock', [AdminInventoryController::class, 'lowStock']);
 
             // Inventory — suppliers
             Route::get('inventory/suppliers', [AdminInventoryController::class, 'suppliers']);
             Route::post('inventory/suppliers', [AdminInventoryController::class, 'storeSupplier']);
+            Route::patch('inventory/suppliers/{supplier}', [AdminInventoryController::class, 'updateSupplier']);
+            Route::delete('inventory/suppliers/{supplier}', [AdminInventoryController::class, 'destroySupplier']);
 
             // Audit log
             Route::get('audit', [AdminAuditController::class, 'index']);

@@ -43,10 +43,10 @@ async function updateStatus(reservation, status) {
   ui.toast(t('adminReservations.toastUpdated'), 'success')
 }
 
-async function redeem(reservation) {
-  await adminApi.redeemReservation(reservation.id)
+async function seatGuest(reservation) {
+  await adminApi.updateReservation(reservation.id, { status: 'confirmed' })
   qc.invalidateQueries({ queryKey: ['admin', 'reservations'] })
-  ui.toast('Reservation fee redeemed successfully', 'success')
+  ui.toast('Guest confirmed and seated', 'success')
 }
 
 async function cancel(reservation) {
@@ -91,7 +91,7 @@ function formatDate(dt) {
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thDateTime') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thTable') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thParty') }}</th>
-            <th class="px-5 py-3 font-medium">Fee & Policy</th>
+            <th class="px-5 py-3 font-medium">Special Requests</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thStatus') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thUpdate') }}</th>
             <th class="px-5 py-3 font-medium">{{ $t('adminReservations.thActions') }}</th>
@@ -100,20 +100,20 @@ function formatDate(dt) {
         <tbody class="divide-y divide-warm-50 dark:divide-warm-800">
           <tr v-for="r in reservations()" :key="r.id" class="hover:bg-warm-50 dark:hover:bg-warm-800/50 transition-colors">
             <td class="px-5 py-3">
-              <p class="font-medium text-warm-900 dark:text-white">{{ r.name }}</p>
-              <p class="text-xs text-warm-400">{{ r.email }}</p>
+              <p class="font-medium text-warm-900 dark:text-white">{{ r.customer_name || r.name }}</p>
+              <p class="text-xs text-warm-400">{{ r.phone || r.email }}</p>
             </td>
             <td class="px-5 py-3 text-warm-600 dark:text-warm-400 whitespace-nowrap">
-              {{ formatDate(r.reserved_at) }}
-              <p class="text-[10px] text-warm-400">{{ r.duration || 60 }} mins</p>
+              {{ formatDate(r.start_at || r.reserved_at) }}
+              <p class="text-[10px] text-warm-400">{{ r.duration_hours ? r.duration_hours + 'h' : (r.duration || 60) + 'm' }}</p>
             </td>
-            <td class="px-5 py-3 text-warm-600 dark:text-warm-400">{{ r.table?.name ?? '—' }}</td>
+            <td class="px-5 py-3 text-warm-600 dark:text-warm-400">
+              <span class="font-medium">{{ r.table?.name ?? '—' }}</span>
+              <span v-if="r.table?.area" class="ml-1 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-warm-100 dark:bg-warm-700 text-warm-600 dark:text-warm-300">{{ r.table.area }}</span>
+            </td>
             <td class="px-5 py-3 text-center font-semibold text-warm-700 dark:text-warm-300">{{ r.party_size }}</td>
-            <td class="px-5 py-3">
-              <p class="font-mono font-bold text-warm-900 dark:text-white">ETB {{ Number(r.current_fee ?? r.reservation_fee ?? 50).toFixed(2) }}</p>
-              <p class="text-[10px] text-warm-400">Base: 50 ETB (+5/10s)</p>
-              <p v-if="r.status === 'redeemed'" class="text-[10px] text-purple-600 dark:text-purple-400 font-bold">✓ Redeemed</p>
-              <p v-else-if="r.seconds_until_auto_redeem > 0" class="text-[10px] text-amber-600 font-mono">Auto-redeems in {{ Math.floor(r.seconds_until_auto_redeem / 60) }}m</p>
+            <td class="px-5 py-3 text-warm-600 dark:text-warm-400 max-w-xs truncate">
+              {{ r.special_requests || r.notes || '—' }}
             </td>
             <td class="px-5 py-3">
               <span :class="['badge', statusColors[r.status] ?? 'badge']">{{ r.status }}</span>
@@ -124,21 +124,21 @@ function formatDate(dt) {
                 @change="e => updateStatus(r, e.target.value)"
                 class="input text-xs py-1 px-2 w-auto"
               >
-                <option v-for="s in ['pending','confirmed','redeemed','completed','no_show','cancelled']" :key="s" :value="s">{{ s }}</option>
+                <option v-for="s in ['pending','confirmed','completed','no_show','cancelled']" :key="s" :value="s">{{ s }}</option>
               </select>
             </td>
             <td class="px-5 py-3">
               <div class="flex items-center gap-2">
                 <button
-                  v-if="r.status !== 'redeemed' && r.status !== 'cancelled' && r.status !== 'no_show'"
-                  @click="redeem(r)"
-                  class="text-xs text-purple-600 hover:text-purple-800 font-medium"
-                  title="Redeem fee towards dining bill"
+                  v-if="r.status === 'pending'"
+                  @click="seatGuest(r)"
+                  class="text-xs text-primary-600 hover:text-primary-800 font-semibold"
+                  title="Confirm & seat guest"
                 >
-                  Redeem
+                  Confirm
                 </button>
                 <button
-                  v-if="r.status !== 'cancelled'"
+                  v-if="r.status !== 'cancelled' && r.status !== 'completed'"
                   @click="cancel(r)"
                   class="text-xs text-red-400 hover:text-red-600 font-medium"
                 >{{ $t('adminReservations.cancelBtn') }}</button>

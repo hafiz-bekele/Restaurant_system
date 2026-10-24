@@ -65,7 +65,7 @@ class ReservationController extends Controller
 
     /**
      * POST /api/v1/reservations
-     * Creates a pending reservation with a 10-minute hold and initiates Chapa checkout.
+     * Creates an instant confirmed table reservation.
      */
     public function store(StoreReservationRequest $request): JsonResponse
     {
@@ -75,14 +75,15 @@ class ReservationController extends Controller
             ]);
             $userId = $request->user()?->id;
 
-            $result = $this->reservationService->createPendingReservation($data, $userId);
+            // Direct instant table booking
+            $result = $this->reservationService->createReservation($data, $userId);
 
             return $this->success([
                 'reservation'  => new ReservationResource($result['reservation']),
-                'checkout_url' => $result['checkout_url'],
+                'checkout_url' => null,
                 'tx_ref'       => $result['tx_ref'],
-                'mode'         => $result['mode'],
-            ], 'Reservation hold created. Please complete payment within 10 minutes.', 201);
+                'mode'         => 'instant',
+            ], 'Table reservation confirmed successfully!', 201);
         } catch (\DomainException $e) {
             return $this->error($e->getMessage(), 422);
         } catch (\Throwable $e) {

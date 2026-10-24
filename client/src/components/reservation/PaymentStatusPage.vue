@@ -174,7 +174,12 @@ function retryPayment() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (reservation.value?.ulid) {
+    await generateQr(reservation.value.ulid)
+    loading.value = false
+    return
+  }
   verifyAndLoad()
 })
 </script>

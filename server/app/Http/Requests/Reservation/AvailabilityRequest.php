@@ -15,7 +15,7 @@ class AvailabilityRequest extends FormRequest
 
     public function rules(): array
     {
-        $maxAdvanceDate = Carbon::now()->addDays(7)->toDateString();
+        $maxAdvanceDate = Carbon::now()->addDays(14)->toDateString();
 
         return [
             'date'           => [
@@ -25,7 +25,7 @@ class AvailabilityRequest extends FormRequest
                 'before_or_equal:' . $maxAdvanceDate,
             ],
             'start_time'     => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
-            'duration_hours' => ['required', 'integer', 'in:1,2,3,6,12,18,24'],
+            'duration_hours' => ['required', 'numeric', 'in:1,2,3,4,6,12,18,24'],
             'party_size'     => ['required', 'integer', 'min:1', 'max:20'],
         ];
     }

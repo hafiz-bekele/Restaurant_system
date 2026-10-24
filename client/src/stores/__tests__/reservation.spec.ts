@@ -64,63 +64,37 @@ describe('Reservation Store & Pricing Engine', () => {
     expect(store.selectedTable).toBeNull()
   })
 
-  it('calculates exact base prices for all duration presets', () => {
+  it('provides complimentary table reservations without hourly fees', () => {
     const store = useReservationStore()
 
-    const expectations: Record<number, number> = {
-      1: 12.50,
-      2: 25.00,
-      3: 37.50,
-      6: 75.00,
-      12: 150.00,
-      18: 225.00,
-      24: 300.00,
-    }
-
-    for (const [hours, price] of Object.entries(expectations)) {
-      store.form.duration_hours = Number(hours)
-      expect(store.basePrice).toBe(price)
+    const realisticDurations = [1, 2, 3, 4]
+    for (const hours of realisticDurations) {
+      store.form.duration_hours = hours
+      expect(store.basePrice).toBe(0)
+      expect(store.totalPrice).toBe(0)
     }
   })
 
-  it('calculates day surcharges correctly for today (+0%), tomorrow (+25%), and 2+ days (+40%)', () => {
+  it('does not penalize guests with surcharges for advance bookings', () => {
     const store = useReservationStore()
     const today = new Date()
 
-    // 1. Today: 0% surcharge
-    const todayStr = today.toISOString().split('T')[0]
-    store.form.date = todayStr
-    store.form.duration_hours = 24
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const toIso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+    store.form.date = toIso(today)
+    store.form.duration_hours = 2
     expect(store.daysAhead).toBe(0)
     expect(store.surchargePercent).toBe(0)
     expect(store.surchargeAmount).toBe(0)
-    expect(store.totalPrice).toBe(300.00)
+    expect(store.totalPrice).toBe(0)
 
-    // 2. Tomorrow: +25% surcharge (e.g. 24h = 300 x 1.25 = 375 ETB)
     const tomorrow = new Date(today)
     tomorrow.setDate(today.getDate() + 1)
-    store.form.date = tomorrow.toISOString().split('T')[0]
-    store.form.duration_hours = 24
+    store.form.date = toIso(tomorrow)
     expect(store.daysAhead).toBe(1)
-    expect(store.surchargePercent).toBe(25)
-    expect(store.surchargeAmount).toBe(75.00)
-    expect(store.totalPrice).toBe(375.00)
-
-    // Tomorrow 2 hours: 25 x 1.25 = 31.25 ETB
-    store.form.duration_hours = 2
-    expect(store.basePrice).toBe(25.00)
-    expect(store.surchargeAmount).toBe(6.25)
-    expect(store.totalPrice).toBe(31.25)
-
-    // 3. Two days ahead: +40% surcharge (e.g. 24h = 300 x 1.40 = 420 ETB)
-    const inTwoDays = new Date(today)
-    inTwoDays.setDate(today.getDate() + 2)
-    store.form.date = inTwoDays.toISOString().split('T')[0]
-    store.form.duration_hours = 24
-    expect(store.daysAhead).toBe(2)
-    expect(store.surchargePercent).toBe(40)
-    expect(store.surchargeAmount).toBe(120.00)
-    expect(store.totalPrice).toBe(420.00)
+    expect(store.surchargePercent).toBe(0)
+    expect(store.totalPrice).toBe(0)
   })
 
   it('correctly calculates end time from start time and duration', () => {

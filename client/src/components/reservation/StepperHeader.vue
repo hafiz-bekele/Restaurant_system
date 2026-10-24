@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Calendar, Utensils, CreditCard, CheckCircle2, Check } from '@lucide/vue'
+import { Calendar, Utensils, ClipboardCheck, Sparkles, Check } from '@lucide/vue'
 
 const props = defineProps<{
   currentStep: number
@@ -13,10 +13,10 @@ const emit = defineEmits<{
 }>()
 
 const steps = [
-  { step: 1, title: 'Details & Time', icon: Calendar },
-  { step: 2, title: 'Select Table',  icon: Utensils },
-  { step: 3, title: 'Review & Pay',  icon: CreditCard },
-  { step: 4, title: 'Confirmation',  icon: CheckCircle2 },
+  { step: 1, title: 'Details & Time',   icon: Calendar },
+  { step: 2, title: 'Select Table',    icon: Utensils },
+  { step: 3, title: 'Review & Confirm', icon: ClipboardCheck },
+  { step: 4, title: 'Confirmation',    icon: Sparkles },
 ]
 
 function handleStepClick(targetStep: number) {

@@ -24,52 +24,29 @@ class ReservationService
     ) {}
 
     /**
-     * Retrieve active pricing and day surcharge config, cached in Redis.
+     * Retrieve active reservation configuration.
+     * Table reservations are complimentary (no per-hour fee or advance booking penalty).
      */
     public function getPricing(): array
     {
-        return Cache::remember('reservation_pricing_config', 3600, function () {
-            $pricing = ReservationPricing::where('is_active', true)
-                ->orderBy('duration_hours')
-                ->get(['duration_hours', 'price']);
-
-            // Fallback defaults if table is empty
-            if ($pricing->isEmpty()) {
-                $pricing = collect([
-                    ['duration_hours' => 1,  'price' => 12.50],
-                    ['duration_hours' => 2,  'price' => 25.00],
-                    ['duration_hours' => 3,  'price' => 37.50],
-                    ['duration_hours' => 6,  'price' => 75.00],
-                    ['duration_hours' => 12, 'price' => 150.00],
-                    ['duration_hours' => 18, 'price' => 225.00],
-                    ['duration_hours' => 24, 'price' => 300.00],
-                ]);
-            }
-
-            $surcharges = ReservationDaySurcharge::orderBy('days_ahead')
-                ->get(['days_ahead', 'percent']);
-
-            if ($surcharges->isEmpty()) {
-                $surcharges = collect([
-                    ['days_ahead' => 0, 'percent' => 0.00],
-                    ['days_ahead' => 1, 'percent' => 25.00],
-                    ['days_ahead' => 2, 'percent' => 40.00],
-                ]);
-            }
-
-            return [
-                'base_rate_per_hour' => 12.50,
-                'durations'          => $pricing,
-                'day_surcharges'     => $surcharges,
-                'currency'           => 'ETB',
-                'max_duration_hours' => 24,
-                'max_advance_days'   => 7,
-            ];
-        });
+        return [
+            'is_complimentary'   => true,
+            'base_rate_per_hour' => 0.00,
+            'durations'          => [
+                ['duration_hours' => 1, 'price' => 0.00, 'title' => '1 Hour',  'subtitle' => 'Quick Dining / Lunch'],
+                ['duration_hours' => 2, 'price' => 0.00, 'title' => '2 Hours', 'subtitle' => 'Standard Dining (Recommended)'],
+                ['duration_hours' => 3, 'price' => 0.00, 'title' => '3 Hours', 'subtitle' => 'Celebration & Leisure'],
+                ['duration_hours' => 4, 'price' => 0.00, 'title' => '4 Hours', 'subtitle' => 'Private Banquet / VIP Session'],
+            ],
+            'day_surcharges'     => [],
+            'currency'           => 'ETB',
+            'max_duration_hours' => 4,
+            'max_advance_days'   => 14,
+        ];
     }
 
     /**
-     * Calculate exact server-side price breakdown for duration and date.
+     * Calculate exact price breakdown. Complimentary table reservations have 0.00 fee.
      */
     public function calculatePrice(int $durationHours, Carbon $startAt): array
     {
@@ -77,40 +54,19 @@ class ReservationService
             throw new \InvalidArgumentException('Duration must be between 1 and 24 hours.');
         }
 
-        // 1. Base price for duration
-        $pricingRow = ReservationPricing::where('duration_hours', $durationHours)
-            ->where('is_active', true)
-            ->first();
-
-        $priceBase = $pricingRow
-            ? (float) $pricingRow->price
-            : (float) round($durationHours * 12.50, 2);
-
-        // 2. Day surcharge calculation
-        $todayStart     = Carbon::now()->startOfDay();
-        $resStartDay    = $startAt->copy()->startOfDay();
-        $daysAhead      = (int) $todayStart->diffInDays($resStartDay, false);
-        $daysAhead      = max(0, $daysAhead);
-
-        $surchargeRow = ReservationDaySurcharge::where('days_ahead', $daysAhead)->first();
-        if (! $surchargeRow && $daysAhead >= 2) {
-            $surchargeRow = ReservationDaySurcharge::where('days_ahead', '>=', 2)
-                ->orderBy('days_ahead', 'desc')
-                ->first();
-        }
-
-        $surchargePercent = $surchargeRow ? (float) $surchargeRow->percent : ($daysAhead === 1 ? 25.00 : ($daysAhead >= 2 ? 40.00 : 0.00));
-        $surchargeAmount  = round($priceBase * ($surchargePercent / 100), 2);
-        $totalPrice       = round($priceBase + $surchargeAmount, 2);
+        $todayStart  = Carbon::now()->startOfDay();
+        $resStartDay = $startAt->copy()->startOfDay();
+        $daysAhead   = (int) $todayStart->diffInDays($resStartDay, false);
+        $daysAhead   = max(0, $daysAhead);
 
         return [
-            'duration_hours'   => $durationHours,
-            'days_ahead'       => $daysAhead,
-            'price_base'       => $priceBase,
-            'surcharge_percent'=> $surchargePercent,
-            'surcharge_amount' => $surchargeAmount,
-            'total_price'      => $totalPrice,
-            'currency'         => 'ETB',
+            'duration_hours'    => $durationHours,
+            'days_ahead'        => $daysAhead,
+            'price_base'        => 0.00,
+            'surcharge_percent' => 0.00,
+            'surcharge_amount'  => 0.00,
+            'total_price'       => 0.00,
+            'currency'          => 'ETB',
         ];
     }
 
@@ -145,6 +101,88 @@ class ReservationService
             ->orderBy('capacity')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Create an instant, confirmed table reservation directly without payment barriers.
+     */
+    public function createReservation(array $data, ?int $userId = null): array
+    {
+        $startAt       = Carbon::parse($data['start_at']);
+        $durationHours = max(1, (int) ($data['duration_hours'] ?? 2));
+        $partySize     = (int) $data['party_size'];
+        $tableId       = (int) $data['table_id'];
+        $endAt         = $startAt->copy()->addHours($durationHours);
+
+        return DB::transaction(function () use ($data, $userId, $tableId, $partySize, $startAt, $endAt, $durationHours) {
+            $table = RestaurantTable::where('id', $tableId)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $table || $table->capacity < $partySize) {
+                throw new \DomainException('The selected table is not suitable for your party size or is unavailable.');
+            }
+
+            // Check for overlapping confirmed or active reservations
+            $hasOverlap = Reservation::where('table_id', $tableId)
+                ->whereIn('status', [
+                    ReservationStatus::Confirmed,
+                    ReservationStatus::Active,
+                    ReservationStatus::Pending,
+                ])
+                ->where('start_at', '<', $endAt)
+                ->where('end_at', '>', $startAt)
+                ->exists();
+
+            if ($hasOverlap) {
+                throw new \DomainException('This table is already reserved for the selected dining window. Please choose another table or time.');
+            }
+
+            $customerName = trim($data['customer_name'] ?? $data['name'] ?? 'Guest Diner');
+
+            $reservation = Reservation::create([
+                'user_id'          => $userId,
+                'table_id'         => $tableId,
+                'customer_name'    => $customerName,
+                'name'             => $customerName,
+                'phone'            => $data['phone'],
+                'email'            => $data['email'],
+                'party_size'       => $partySize,
+                'start_at'         => $startAt,
+                'end_at'           => $endAt,
+                'reserved_at'      => $startAt,
+                'duration_hours'   => $durationHours,
+                'duration'         => $durationHours * 60,
+                'status'           => ReservationStatus::Confirmed,
+                'price_base'       => 0.00,
+                'surcharge_percent'=> 0.00,
+                'surcharge_amount' => 0.00,
+                'total_price'      => 0.00,
+                'currency'         => 'ETB',
+                'special_requests' => $data['special_requests'] ?? $data['notes'] ?? null,
+                'notes'            => $data['special_requests'] ?? $data['notes'] ?? null,
+                'payment_status'   => 'complimentary',
+                'paid_at'          => Carbon::now(),
+            ]);
+
+            event(new ReservationCreated($reservation));
+
+            return [
+                'reservation'  => $reservation->load('table'),
+                'checkout_url' => null,
+                'tx_ref'       => 'RSV-' . $reservation->ulid,
+                'mode'         => 'instant',
+            ];
+        });
+    }
+
+    /**
+     * Backward-compatible alias for staff & admin controllers.
+     */
+    public function autoRedeemExpiredReservations(): void
+    {
+        $this->expireOverdueReservations();
     }
 
     /**

@@ -19,7 +19,7 @@ import { UtensilsCrossed, Sparkles } from 'lucide-vue-next'
         </h1>
 
         <p class="text-warm-600 dark:text-warm-400 text-sm sm:text-base max-w-xl mx-auto">
-          Select your dining time, choose your preferred table in real time, and secure instant confirmation with Chapa.
+          Select your dining time, choose your preferred table in real time, and enjoy instant booking confirmation.
         </p>
       </div>
 

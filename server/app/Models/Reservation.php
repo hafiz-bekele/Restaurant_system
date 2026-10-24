@@ -214,4 +214,28 @@ class Reservation extends Model
             && $this->end_at !== null
             && $now->between($this->start_at, $this->end_at);
     }
+
+    public function redeem(): void
+    {
+        $this->update([
+            'status'        => ReservationStatus::Completed,
+            'redeemed_at'   => Carbon::now(),
+            'redeem_amount' => 0.00,
+        ]);
+    }
+
+    public function getCurrentFeeAttribute(): float
+    {
+        return 0.00;
+    }
+
+    public function getElapsedSecondsAttribute(): int
+    {
+        return 0;
+    }
+
+    public function getSecondsUntilAutoRedeemAttribute(): int
+    {
+        return 0;
+    }
 }

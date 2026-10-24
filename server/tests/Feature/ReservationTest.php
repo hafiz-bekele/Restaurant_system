@@ -51,34 +51,18 @@ class ReservationTest extends TestCase
     {
         $service = app(ReservationService::class);
 
-        // 1. Today (0% surcharge)
-        $todayPrice = $service->calculatePrice(24, Carbon::now());
-        $this->assertEquals(300.00, $todayPrice['price_base']);
+        // Table reservations are complimentary (no hourly charges or advance surcharges)
+        $todayPrice = $service->calculatePrice(2, Carbon::now());
+        $this->assertEquals(0.00, $todayPrice['price_base']);
         $this->assertEquals(0.00, $todayPrice['surcharge_percent']);
         $this->assertEquals(0.00, $todayPrice['surcharge_amount']);
-        $this->assertEquals(300.00, $todayPrice['total_price']);
+        $this->assertEquals(0.00, $todayPrice['total_price']);
 
-        // 2. Tomorrow (+25% surcharge): 300 * 1.25 = 375 ETB
-        $tomorrowPrice = $service->calculatePrice(24, Carbon::now()->addDay());
-        $this->assertEquals(300.00, $tomorrowPrice['price_base']);
-        $this->assertEquals(25.00, $tomorrowPrice['surcharge_percent']);
-        $this->assertEquals(75.00, $tomorrowPrice['surcharge_amount']);
-        $this->assertEquals(375.00, $tomorrowPrice['total_price']);
+        $tomorrowPrice = $service->calculatePrice(2, Carbon::now()->addDay());
+        $this->assertEquals(0.00, $tomorrowPrice['total_price']);
 
-        // 3. Two days ahead (+40% surcharge): 300 * 1.40 = 420 ETB
-        $twoDaysPrice = $service->calculatePrice(24, Carbon::now()->addDays(2));
-        $this->assertEquals(300.00, $twoDaysPrice['price_base']);
-        $this->assertEquals(40.00, $twoDaysPrice['surcharge_percent']);
-        $this->assertEquals(120.00, $twoDaysPrice['surcharge_amount']);
-        $this->assertEquals(420.00, $twoDaysPrice['total_price']);
-
-        // 4. 1h today = 12.50 ETB
-        $oneHourPrice = $service->calculatePrice(1, Carbon::now());
-        $this->assertEquals(12.50, $oneHourPrice['total_price']);
-
-        // 5. 6h tomorrow = 75 * 1.25 = 93.75 ETB
-        $sixHourTomorrow = $service->calculatePrice(6, Carbon::now()->addDay());
-        $this->assertEquals(93.75, $sixHourTomorrow['total_price']);
+        $twoDaysPrice = $service->calculatePrice(3, Carbon::now()->addDays(2));
+        $this->assertEquals(0.00, $twoDaysPrice['total_price']);
     }
 
     public function test_24_hour_max_duration_rule(): void
@@ -266,13 +250,11 @@ class ReservationTest extends TestCase
 
         $postResponse->assertStatus(201);
         $resData = $postResponse->json('data');
-        $this->assertNotNull($resData['checkout_url']);
         $this->assertNotNull($resData['tx_ref']);
         $ulid = $resData['reservation']['ulid'];
 
-        // 3. Status is pending_payment with 10-minute hold
-        $this->assertEquals('pending_payment', $resData['reservation']['status']);
-        $this->assertNotNull($resData['reservation']['hold_expires_at']);
+        // 3. Status is confirmed directly
+        $this->assertEquals('confirmed', $resData['reservation']['status']);
 
         // 4. Overlap check: table is now blocked for same window
         $recheck = $this->getJson("/api/v1/reservations/available-tables?date={$tomorrow}&start_time=19:00&duration_hours=2&party_size=3");

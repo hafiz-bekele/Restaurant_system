@@ -36,7 +36,7 @@ const rawSchema = z.object({
   duration_hours: z
     .number()
     .min(1, 'Minimum duration is 1 hour')
-    .max(24, 'Maximum duration is 24 hours'),
+    .max(4, 'Maximum duration is 4 hours'),
   special_requests: z.string().max(500, 'Max 500 characters').optional(),
 }).refine((data) => {
   // Validate 15-minute lead time for today
@@ -128,9 +128,7 @@ const nextSevenDays = computed(() => {
     const month = d.toLocaleDateString(undefined, { month: 'short' })
     const dayNum = d.getDate()
 
-    const surchargeLabel = i === 0 ? '+0%' : i === 1 ? '+25%' : '+40%'
-
-    days.push({ iso, weekday, month, dayNum, surchargeLabel, daysAhead: i })
+    days.push({ iso, weekday, month, dayNum, daysAhead: i })
   }
   return days
 })
@@ -302,7 +300,7 @@ const onSubmit = handleSubmit(async () => {
             Reservation Date & Start Time
           </h2>
         </div>
-        <span class="text-xs text-warm-400">Book up to 7 days ahead</span>
+        <span class="text-xs text-primary-600 dark:text-primary-400 font-medium">Instant Confirmation</span>
       </div>
 
       <!-- 7-Day Date Chips -->
@@ -334,9 +332,9 @@ const onSubmit = handleSubmit(async () => {
             </span>
             <span
               class="mt-1 text-[9px] font-bold px-1.5 py-0.2 rounded-full font-mono"
-              :class="d.daysAhead === 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : d.daysAhead === 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' : 'bg-warm-100 text-warm-600 dark:bg-warm-800 dark:text-warm-300'"
+              :class="d.daysAhead === 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-warm-100 text-warm-600 dark:bg-warm-800 dark:text-warm-300'"
             >
-              {{ d.surchargeLabel }}
+              {{ d.daysAhead === 0 ? 'Today' : d.daysAhead === 1 ? 'Tomorrow' : 'Open' }}
             </span>
           </button>
         </div>

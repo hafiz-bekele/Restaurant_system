@@ -23,7 +23,7 @@ class StoreReservationRequest extends FormRequest
 
     public function rules(): array
     {
-        $maxAdvanceDate = Carbon::now()->addDays(7)->toDateString();
+        $maxAdvanceDate = Carbon::now()->addDays(14)->toDateString();
 
         return [
             'customer_name'    => ['sometimes', 'required', 'string', 'max:100'],
@@ -39,7 +39,7 @@ class StoreReservationRequest extends FormRequest
             'date'             => ['sometimes', 'required', 'date', 'after_or_equal:today', 'before_or_equal:' . $maxAdvanceDate],
             'start_time'       => ['sometimes', 'required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
             'start_at'         => ['nullable', 'date'],
-            'duration_hours'   => ['required', 'integer', 'in:1,2,3,6,12,18,24'],
+            'duration_hours'   => ['required', 'numeric', 'in:1,2,3,4,6,12,18,24'],
             'special_requests' => ['nullable', 'string', 'max:1000'],
             'notes'            => ['nullable', 'string', 'max:1000'],
         ];

@@ -62,7 +62,7 @@ function handleStep2Continue() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// Step 3: Checkout Initiated
+// Step 3: Direct Confirmation
 async function handleStep3Pay() {
   if (!store.selectedTable || !store.form.table_id) {
     ui.toast('Please select a table first.', 'error')
@@ -72,17 +72,11 @@ async function handleStep3Pay() {
 
   try {
     const data = await store.submitReservation()
-    ui.toast('Table held for 10 minutes. Redirecting to Chapa…', 'success')
-
-    if (data.checkout_url) {
-      // In real mode or test mode with valid URL, redirect to Chapa checkout
-      window.location.href = data.checkout_url
-    } else {
-      // Direct confirmation fallback (e.g. simulated payment in testing)
-      store.step = 4
-    }
+    ui.toast('Table reservation confirmed successfully!', 'success')
+    store.step = 4
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (err: any) {
-    ui.toast(err?.response?.data?.message || 'Failed to initialize payment.', 'error')
+    ui.toast(err?.response?.data?.message || 'Failed to confirm reservation.', 'error')
   }
 }
 

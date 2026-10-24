@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import {
   Calendar,
   Clock,
   Users,
   ShieldCheck,
-  CreditCard,
+  CheckCircle2,
   ArrowLeft,
-  Lock,
   Sparkles,
   MapPin,
-  FileText,
+  Check,
 } from '@lucide/vue'
 import { useReservationStore } from '../../stores/reservation'
 
@@ -18,24 +16,24 @@ const store = useReservationStore()
 
 const emit = defineEmits<{
   (e: 'back'): void
+  (e: 'confirm'): void
   (e: 'pay'): void
 }>()
 
-const surchargeLabel = computed(() => {
-  if (store.daysAhead === 0) return 'Same-Day Booking (+0%)'
-  if (store.daysAhead === 1) return 'Tomorrow Advance (+25%)'
-  return `${store.daysAhead} Days Ahead (+40%)`
-})
+function handleConfirm() {
+  emit('confirm')
+  emit('pay')
+}
 </script>
 
 <template>
   <div class="space-y-6">
-    <!-- Header -->
+    <!-- Header & Summary Card -->
     <div class="card p-6 border border-warm-100 dark:border-warm-800 bg-gradient-to-br from-warm-50 via-white to-primary-50/20 dark:from-warm-900 dark:via-warm-900 dark:to-primary-950/20">
       <div class="flex items-center gap-2 pb-3 border-b border-warm-100 dark:border-warm-800">
-        <CreditCard :size="20" class="text-primary-500" />
+        <CheckCircle2 :size="20" class="text-primary-500" />
         <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white">
-          Review & Settle Reservation
+          Review & Confirm Reservation
         </h2>
       </div>
 
@@ -45,7 +43,7 @@ const surchargeLabel = computed(() => {
           <h3 class="text-xs font-bold uppercase tracking-wider text-warm-400">
             Guest Information
           </h3>
-          <div class="p-4 rounded-xl bg-white dark:bg-warm-800/60 border border-warm-100 dark:border-warm-800 space-y-1.5 text-sm">
+          <div class="p-4 rounded-xl bg-white dark:bg-warm-800/60 border border-warm-100 dark:border-warm-800 space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-warm-500">Guest Name:</span>
               <strong class="text-warm-900 dark:text-white">{{ store.form.customer_name }}</strong>
@@ -72,7 +70,7 @@ const surchargeLabel = computed(() => {
           <h3 class="text-xs font-bold uppercase tracking-wider text-warm-400">
             Reservation Window & Table
           </h3>
-          <div class="p-4 rounded-xl bg-white dark:bg-warm-800/60 border border-warm-100 dark:border-warm-800 space-y-1.5 text-sm">
+          <div class="p-4 rounded-xl bg-white dark:bg-warm-800/60 border border-warm-100 dark:border-warm-800 space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-warm-500">Date:</span>
               <strong class="text-warm-900 dark:text-white">{{ store.form.date }}</strong>
@@ -94,64 +92,44 @@ const surchargeLabel = computed(() => {
               </span>
             </div>
             <div v-if="store.form.special_requests" class="pt-1.5 border-t border-warm-100 dark:border-warm-700/60">
-              <span class="text-xs text-warm-400">Notes: {{ store.form.special_requests }}</span>
+              <span class="text-xs text-warm-500">Notes: {{ store.form.special_requests }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Official Price Breakdown Card -->
+    <!-- Complimentary Policy & Hospitality Guarantee -->
     <div class="card p-6 border border-warm-100 dark:border-warm-800 space-y-4">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-warm-400 pb-2 border-b border-warm-100 dark:border-warm-800">
-        Price Breakdown (ETB)
-      </h3>
-
-      <div class="space-y-2.5 text-sm">
-        <!-- Base Duration -->
-        <div class="flex items-center justify-between text-warm-700 dark:text-warm-300">
-          <span>Base Fee ({{ store.form.duration_hours }} Hours @ 12.50 ETB/hr)</span>
-          <span class="font-mono font-semibold">ETB {{ store.basePrice.toFixed(2) }}</span>
-        </div>
-
-        <!-- Day Surcharge -->
-        <div class="flex items-center justify-between text-warm-700 dark:text-warm-300">
-          <span class="flex items-center gap-1.5">
-            <span>{{ surchargeLabel }}</span>
-            <span v-if="store.surchargePercent > 0" class="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-              +{{ store.surchargePercent }}%
-            </span>
-          </span>
-          <span class="font-mono font-semibold" :class="store.surchargeAmount > 0 ? 'text-amber-600 dark:text-amber-400' : ''">
-            +ETB {{ store.surchargeAmount.toFixed(2) }}
-          </span>
-        </div>
-
-        <!-- Divider -->
-        <div class="h-px bg-warm-200 dark:bg-warm-800 my-2" />
-
-        <!-- Total -->
-        <div class="flex items-baseline justify-between text-base">
-          <div>
-            <strong class="font-heading font-bold text-lg text-warm-900 dark:text-white">
-              Total Payable Deposit
-            </strong>
-            <p class="text-xs text-warm-400">Fully credited towards your dining bill or reservation session</p>
-          </div>
-          <span class="font-heading font-extrabold text-2xl text-primary-600 dark:text-primary-400 font-mono">
-            ETB {{ store.totalPrice.toFixed(2) }}
-          </span>
-        </div>
+      <div class="flex items-center justify-between pb-2 border-b border-warm-100 dark:border-warm-800">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-warm-400">
+          Booking Terms & Table Policy
+        </h3>
+        <span class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <Sparkles :size="12" /> 100% Complimentary
+        </span>
       </div>
 
-      <!-- 10-Minute Hold Guarantee Banner -->
-      <div class="p-4 rounded-xl bg-primary-50/70 dark:bg-primary-950/30 border border-primary-200/60 dark:border-primary-900/40 flex items-start gap-3">
-        <div class="p-1.5 rounded-lg bg-primary-500 text-white shrink-0 mt-0.5">
-          <ShieldCheck :size="16" />
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div class="p-3.5 rounded-xl bg-warm-50 dark:bg-warm-800/40 border border-warm-100 dark:border-warm-800 space-y-1">
+          <p class="font-bold text-warm-900 dark:text-white flex items-center gap-1.5">
+            <Check :size="14" class="text-emerald-500" /> No Booking Fee
+          </p>
+          <p class="text-warm-500 leading-relaxed">Table reservations are free of charge. You only pay for what you dine and drink.</p>
         </div>
-        <div class="text-xs text-warm-700 dark:text-warm-300 leading-relaxed">
-          <strong class="text-primary-700 dark:text-primary-300">10-Minute Table Hold Guarantee:</strong>
-          Upon clicking <em>Pay with Chapa</em>, <strong>{{ store.selectedTable?.name }}</strong> will be instantly locked in the database exclusively for you. You will have 10 minutes to complete payment via Telebirr, CBE Birr, or debit card.
+
+        <div class="p-3.5 rounded-xl bg-warm-50 dark:bg-warm-800/40 border border-warm-100 dark:border-warm-800 space-y-1">
+          <p class="font-bold text-warm-900 dark:text-white flex items-center gap-1.5">
+            <Clock :size="14" class="text-primary-500" /> 15-Minute Grace Period
+          </p>
+          <p class="text-warm-500 leading-relaxed">Your table is held for up to 15 minutes past your reserved time.</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-warm-50 dark:bg-warm-800/40 border border-warm-100 dark:border-warm-800 space-y-1">
+          <p class="font-bold text-warm-900 dark:text-white flex items-center gap-1.5">
+            <ShieldCheck :size="14" class="text-sky-500" /> Instant Confirmation
+          </p>
+          <p class="text-warm-500 leading-relaxed">Receive instant QR check-in pass and Add to Calendar reminder.</p>
         </div>
       </div>
     </div>
@@ -170,16 +148,16 @@ const surchargeLabel = computed(() => {
       <button
         type="button"
         :disabled="store.isSubmitting"
-        @click="emit('pay')"
+        @click="handleConfirm"
         class="btn-primary gap-2.5 text-base px-8 py-4 shadow-xl shadow-primary-500/30 font-bold"
       >
-        <Lock v-if="!store.isSubmitting" :size="18" />
+        <CheckCircle2 v-if="!store.isSubmitting" :size="18" />
         <span v-if="store.isSubmitting" class="flex items-center gap-2">
           <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          <span>Connecting to Chapa…</span>
+          <span>Confirming Reservation…</span>
         </span>
         <span v-else>
-          Pay with Chapa (ETB {{ store.totalPrice.toFixed(2) }})
+          Confirm Table Reservation
         </span>
       </button>
     </div>

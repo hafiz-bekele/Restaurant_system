@@ -74,24 +74,17 @@ export const useReservationStore = defineStore('reservation', () => {
   })
 
   const pricingConfig = ref<PricingConfig>({
-    base_rate_per_hour: 12.5,
+    base_rate_per_hour: 0,
     durations: [
-      { duration_hours: 1,  price: 12.50 },
-      { duration_hours: 2,  price: 25.00 },
-      { duration_hours: 3,  price: 37.50 },
-      { duration_hours: 6,  price: 75.00 },
-      { duration_hours: 12, price: 150.00 },
-      { duration_hours: 18, price: 225.00 },
-      { duration_hours: 24, price: 300.00 },
+      { duration_hours: 1, price: 0 },
+      { duration_hours: 2, price: 0 },
+      { duration_hours: 3, price: 0 },
+      { duration_hours: 4, price: 0 },
     ],
-    day_surcharges: [
-      { days_ahead: 0, percent: 0.00 },
-      { days_ahead: 1, percent: 25.00 },
-      { days_ahead: 2, percent: 40.00 },
-    ],
+    day_surcharges: [],
     currency: 'ETB',
-    max_duration_hours: 24,
-    max_advance_days: 7,
+    max_duration_hours: 4,
+    max_advance_days: 14,
   })
 
   const availableTables = ref<TableOption[]>([])
@@ -119,31 +112,11 @@ export const useReservationStore = defineStore('reservation', () => {
     return Math.max(0, diffDays)
   })
 
-  const basePrice = computed(() => {
-    const hours = Number(form.value.duration_hours) || 1
-    const found = pricingConfig.value.durations.find(d => Number(d.duration_hours) === hours)
-    if (found) return Number(found.price)
-    return Number((hours * (pricingConfig.value.base_rate_per_hour || 12.5)).toFixed(2))
-  })
-
-  const surchargePercent = computed(() => {
-    const ahead = daysAhead.value
-    const found = pricingConfig.value.day_surcharges.find(s => Number(s.days_ahead) === ahead)
-    if (found) return Number(found.percent)
-    if (ahead >= 2) {
-      const maxSurcharge = pricingConfig.value.day_surcharges.find(s => Number(s.days_ahead) >= 2)
-      return maxSurcharge ? Number(maxSurcharge.percent) : 40.00
-    }
-    return 0.00
-  })
-
-  const surchargeAmount = computed(() => {
-    return Math.round(basePrice.value * (surchargePercent.value / 100) * 100) / 100
-  })
-
-  const totalPrice = computed(() => {
-    return Math.round((basePrice.value + surchargeAmount.value) * 100) / 100
-  })
+  // Table reservations are 100% complimentary
+  const basePrice = computed(() => 0)
+  const surchargePercent = computed(() => 0)
+  const surchargeAmount = computed(() => 0)
+  const totalPrice = computed(() => 0)
 
   const formattedEndTime = computed(() => {
     if (!form.value.start_time) return ''

@@ -2,8 +2,9 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useForm, useField } from 'vee-validate'
 import { z } from 'zod'
-import { User, Phone, Mail, Users, Calendar, Clock, AlertCircle, ArrowRight, Sparkles } from '@lucide/vue'
+import { User, Phone, Mail, Users, Calendar, Clock, AlertCircle, ArrowRight, Sparkles, Loader2 } from '@lucide/vue'
 import DurationSelector from './DurationSelector.vue'
+import CircleLoader from '../ui/CircleLoader.vue'
 import { useReservationStore } from '../../stores/reservation'
 
 const store = useReservationStore()
@@ -405,10 +406,11 @@ const onSubmit = handleSubmit(async () => {
       <button
         type="submit"
         :disabled="store.isLoadingTables"
-        class="btn-primary gap-2 text-base px-8 py-3.5 shadow-lg shadow-primary-500/25"
+        class="btn-primary gap-2 text-base px-8 py-3.5 shadow-lg shadow-primary-500/25 flex items-center"
       >
-        <span>Continue to Table Selection</span>
-        <ArrowRight :size="18" />
+        <CircleLoader v-if="store.isLoadingTables" size="sm" color="white" />
+        <span>{{ store.isLoadingTables ? 'Finding Best Tables…' : 'Continue to Table Selection' }}</span>
+        <ArrowRight v-if="!store.isLoadingTables" :size="18" />
       </button>
     </div>
   </form>

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { Utensils, Filter, ArrowLeft, ArrowRight, AlertTriangle, RefreshCw } from '@lucide/vue'
 import TableOptionCard from './TableOptionCard.vue'
+import CircleLoader from '../ui/CircleLoader.vue'
 import { useReservationStore, type TableOption } from '../../stores/reservation'
 
 const store = useReservationStore()
@@ -125,21 +126,27 @@ function handleSelect(table: TableOption) {
       </div>
     </div>
 
-    <!-- Loading Skeleton -->
-    <div v-if="store.isLoadingTables" class="space-y-3">
-      <div
-        v-for="i in 3"
-        :key="i"
-        class="card p-5 border border-warm-100 dark:border-warm-800 animate-pulse space-y-3"
-      >
-        <div class="flex justify-between">
-          <div class="h-5 w-44 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
-          <div class="h-5 w-20 bg-warm-200 dark:bg-warm-800 rounded-full"></div>
-        </div>
-        <div class="h-3 w-32 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
-        <div class="flex gap-2 pt-2 border-t border-warm-100 dark:border-warm-800">
-          <div class="h-4 w-20 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
-          <div class="h-4 w-24 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
+    <!-- Loading Skeleton & Circle Loader -->
+    <div v-if="store.isLoadingTables" class="space-y-4">
+      <div class="card p-8 flex flex-col items-center justify-center text-center border border-warm-100 dark:border-warm-800">
+        <CircleLoader size="lg" color="blue" label="Checking table availability in real time..." label-position="bottom" />
+      </div>
+
+      <div class="space-y-3">
+        <div
+          v-for="i in 3"
+          :key="i"
+          class="card p-5 border border-warm-100 dark:border-warm-800 animate-pulse space-y-3"
+        >
+          <div class="flex justify-between">
+            <div class="h-5 w-44 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
+            <div class="h-5 w-20 bg-warm-200 dark:bg-warm-800 rounded-full"></div>
+          </div>
+          <div class="h-3 w-32 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
+          <div class="flex gap-2 pt-2 border-t border-warm-100 dark:border-warm-800">
+            <div class="h-4 w-20 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
+            <div class="h-4 w-24 bg-warm-200 dark:bg-warm-800 rounded-md"></div>
+          </div>
         </div>
       </div>
     </div>

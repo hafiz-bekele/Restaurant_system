@@ -20,6 +20,7 @@ import {
 } from 'lucide-vue-next'
 import { useReservationStore, type ReservationData } from '../../stores/reservation'
 import CountdownTimer from './CountdownTimer.vue'
+import CircleLoader from '../ui/CircleLoader.vue'
 
 const props = defineProps<{
   ulid?: string
@@ -191,8 +192,8 @@ onMounted(async () => {
       v-if="loading"
       class="card p-8 rounded-3xl border border-warm-200 dark:border-warm-800 bg-white dark:bg-warm-900 shadow-xl text-center space-y-6"
     >
-      <div class="w-16 h-16 rounded-full bg-primary-500/10 text-primary-500 flex items-center justify-center mx-auto animate-pulse">
-        <RefreshCw class="w-8 h-8 animate-spin" />
+      <div class="flex items-center justify-center mx-auto my-2">
+        <CircleLoader size="xl" color="blue" />
       </div>
       <div class="space-y-2">
         <h3 class="text-xl font-bold text-warm-900 dark:text-white">

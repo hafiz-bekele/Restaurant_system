@@ -11,6 +11,7 @@ import {
   Check,
 } from '@lucide/vue'
 import { useReservationStore } from '../../stores/reservation'
+import CircleLoader from '../ui/CircleLoader.vue'
 
 const store = useReservationStore()
 
@@ -153,7 +154,7 @@ function handleConfirm() {
       >
         <CheckCircle2 v-if="!store.isSubmitting" :size="18" />
         <span v-if="store.isSubmitting" class="flex items-center gap-2">
-          <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <CircleLoader size="xs" color="white" />
           <span>Confirming Reservation…</span>
         </span>
         <span v-else>

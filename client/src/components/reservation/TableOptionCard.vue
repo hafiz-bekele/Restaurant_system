@@ -40,8 +40,8 @@ const areaColors = computed(() => {
     class="relative p-5 rounded-2xl border transition-all duration-200 cursor-pointer select-none focus:outline-hidden focus:ring-2 focus:ring-primary-500"
     :class="[
       isSelected
-        ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 shadow-md ring-2 ring-primary-500 dark:ring-primary-400'
-        : 'border-warm-200 dark:border-warm-800 bg-white dark:bg-warm-900 hover:border-warm-300 dark:hover:border-warm-700 hover:bg-warm-50/60 dark:hover:bg-warm-800/40 shadow-xs'
+        ? 'border-primary-500 bg-primary-500/10 dark:bg-primary-500/15 backdrop-blur-sm shadow-md ring-2 ring-primary-500 dark:ring-primary-400'
+        : 'border-warm-200/90 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm hover:border-primary-400 hover:bg-white dark:hover:bg-gray-900 shadow-2xs'
     ]"
   >
     <!-- Top-Right Selected Checkmark -->

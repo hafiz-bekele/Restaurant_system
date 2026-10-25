@@ -70,6 +70,7 @@ async function handleStep3Pay() {
     return
   }
 
+  ui.startProcess('Securing your table reservation...')
   try {
     const data = await store.submitReservation()
     ui.toast('Table reservation confirmed successfully!', 'success')
@@ -77,6 +78,8 @@ async function handleStep3Pay() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (err: any) {
     ui.toast(err?.response?.data?.message || 'Failed to confirm reservation.', 'error')
+  } finally {
+    ui.stopProcess()
   }
 }
 
@@ -110,8 +113,8 @@ function handleRestart() {
 
       <!-- STEP 2: Choose Available Table -->
       <div v-else-if="store.step === 2" key="step-2" class="space-y-6">
-        <div class="card p-6 sm:p-8 rounded-3xl border border-warm-200 dark:border-warm-800 bg-white dark:bg-warm-900 shadow-xl space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-warm-100 dark:border-warm-800">
+        <div class="card-glass p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/50 dark:border-white/10">
             <div>
               <span class="text-[11px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400">
                 Step 2 of 4
@@ -143,7 +146,7 @@ function handleRestart() {
           />
 
           <!-- Action bar -->
-          <div class="flex items-center justify-between pt-4 border-t border-warm-100 dark:border-warm-800">
+          <div class="flex items-center justify-between pt-4 border-t border-white/50 dark:border-white/10">
             <button
               type="button"
               @click="store.step = 1"

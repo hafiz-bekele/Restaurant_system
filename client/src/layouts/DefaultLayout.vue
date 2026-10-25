@@ -13,7 +13,19 @@ const route = useRoute()
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen">
+  <div class="flex flex-col min-h-screen relative overflow-x-hidden bg-warm-50 dark:bg-gray-950">
+    <!-- Subtle Ambient Glow Accents (Restricted, low-opacity background depth) -->
+    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
+      <!-- Warm Amber/Orange Brand Glow (Top-Right) -->
+      <div class="absolute -top-[12%] -right-[10%] w-[45vw] max-w-[500px] aspect-square rounded-full bg-gradient-to-br from-primary-400/15 via-amber-300/10 to-transparent dark:from-primary-500/10 dark:via-orange-600/5 dark:to-transparent blur-3xl opacity-25"></div>
+
+      <!-- Cool Indigo/Violet Accent Glow (Middle-Left) -->
+      <div class="absolute top-[35%] -left-[12%] w-[40vw] max-w-[450px] aspect-square rounded-full bg-gradient-to-tr from-indigo-300/10 via-primary-300/8 to-transparent dark:from-indigo-600/8 dark:via-primary-600/5 dark:to-transparent blur-3xl opacity-20"></div>
+
+      <!-- Subtle Rose/Amber Warm Glow (Bottom-Right) -->
+      <div class="absolute -bottom-[8%] right-[10%] w-[35vw] max-w-[400px] aspect-square rounded-full bg-gradient-to-tl from-rose-300/10 via-amber-200/8 to-transparent dark:from-rose-600/6 dark:via-primary-700/5 dark:to-transparent blur-3xl opacity-20"></div>
+    </div>
+
     <Navbar />
 
     <main class="flex-1 pb-20 md:pb-0">
@@ -21,7 +33,7 @@ const route = useRoute()
     </main>
 
     <!-- Footer -->
-    <footer class="bg-warm-900 dark:bg-gray-950 text-warm-300 py-12 mt-16 border-t border-warm-800/60">
+    <footer class="bg-warm-900/95 dark:bg-gray-950/95 backdrop-blur-xl text-warm-300 py-12 mt-16 border-t border-white/10">
       <div class="page-container grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
           <h3 class="font-heading font-bold text-white text-lg mb-3">{{ $t('brandName') }}</h3>
@@ -57,7 +69,7 @@ const route = useRoute()
     <!-- Mobile Bottom Navigation Bar (Hidden on desktop) -->
     <nav
       v-if="!auth.isStaff"
-      class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-warm-200/80 dark:border-warm-800 shadow-xl px-2 py-1.5 flex items-center justify-around"
+      class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-t border-warm-200/80 dark:border-white/10 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-2 py-1.5 flex items-center justify-around"
       aria-label="Mobile navigation"
     >
       <RouterLink

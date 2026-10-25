@@ -178,7 +178,12 @@ async function logout() {
 </script>
 
 <template>
-  <div class="flex h-screen bg-warm-50 dark:bg-[#0a0a0c] overflow-hidden">
+  <div class="flex h-screen bg-warm-50 dark:bg-[#08090d] overflow-hidden relative">
+    <!-- Ambient Background Depth Accents -->
+    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
+      <div class="absolute -top-[15%] right-[10%] w-[45vw] max-w-[450px] aspect-square rounded-full bg-gradient-to-br from-primary-400/12 via-amber-300/6 to-transparent dark:from-primary-500/8 dark:via-orange-600/4 dark:to-transparent blur-3xl opacity-20"></div>
+      <div class="absolute top-[40%] -left-[10%] w-[40vw] max-w-[400px] aspect-square rounded-full bg-gradient-to-tr from-indigo-300/8 via-primary-300/6 to-transparent dark:from-indigo-600/6 dark:via-primary-600/4 dark:to-transparent blur-3xl opacity-15"></div>
+    </div>
 
     <!-- Mobile backdrop -->
     <Transition
@@ -200,7 +205,7 @@ async function logout() {
       @mouseleave="onSidebarMouseLeave"
       :class="[
         'flex flex-col z-50 transition-[width,transform] duration-300 ease-in-out will-change-transform select-none',
-        'bg-white dark:bg-black border-r border-warm-200/90 dark:border-neutral-850 shadow-xs',
+        'bg-white/95 dark:bg-[#0c0d12]/95 backdrop-blur-md border-r border-warm-200/80 dark:border-white/10 shadow-[4px_0_24px_rgba(0,0,0,0.03)]',
         isMobile
           ? ['fixed inset-y-0 left-0 shadow-2xl', sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full']
           : ['relative shrink-0', isExpanded ? 'w-64 shadow-lg' : 'w-[70px]'],
@@ -208,7 +213,7 @@ async function logout() {
     >
 
       <!-- Brand row -->
-      <div class="flex items-center h-16 px-4 border-b border-warm-200/90 dark:border-neutral-850 shrink-0 gap-3 justify-between">
+      <div class="flex items-center h-16 px-4 border-b border-white/50 dark:border-white/10 shrink-0 gap-3 justify-between">
         <div class="flex items-center gap-3 min-w-0">
           <!-- Logo mark -->
           <div class="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shrink-0 shadow-lg shadow-primary-500/30">
@@ -300,7 +305,7 @@ async function logout() {
       </nav>
 
       <!-- ── Sidebar Bottom User Card ─────────────────────────────────── -->
-      <div class="border-t border-warm-200/90 dark:border-neutral-850 shrink-0">
+      <div class="border-t border-white/50 dark:border-white/10 shrink-0">
         <div v-if="showLabels" class="flex items-center gap-3 px-4 py-3">
           <RouterLink to="/profile" class="flex items-center gap-3 flex-1 min-w-0 hover:opacity-85 transition-opacity">
             <div class="w-8 h-8 rounded-full bg-primary-500/15 border border-primary-500/30 flex items-center justify-center font-bold text-primary-600 dark:text-primary-400 text-sm shrink-0">
@@ -337,7 +342,7 @@ async function logout() {
     <div class="flex-1 flex flex-col overflow-hidden min-w-0">
 
       <!-- Top bar -->
-      <header class="h-14 bg-white dark:bg-black border-b border-warm-200/90 dark:border-neutral-850 flex items-center justify-between px-4 sm:px-5 shrink-0 gap-3">
+      <header class="relative z-30 h-14 bg-white/95 dark:bg-[#0c0d12]/95 backdrop-blur-md border-b border-warm-200/80 dark:border-white/10 flex items-center justify-between px-4 sm:px-6 shrink-0 gap-3 shadow-xs">
 
         <!-- Left Header Controls -->
         <div class="flex items-center gap-2">
@@ -345,8 +350,9 @@ async function logout() {
           <button
             v-if="isMobile"
             @click="sidebarOpen = !sidebarOpen"
-            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors"
+            class="min-h-[44px] min-w-[44px] p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors inline-flex items-center justify-center focus:ring-2 focus:ring-primary-500 focus:outline-none"
             :aria-label="$t('adminLayout.toggleMenu')"
+            title="Toggle Menu"
           >
             <Menu :size="19" />
           </button>
@@ -355,7 +361,7 @@ async function logout() {
           <button
             v-else
             @click="togglePin"
-            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors"
+            class="min-h-[44px] min-w-[44px] p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors inline-flex items-center justify-center focus:ring-2 focus:ring-primary-500 focus:outline-none"
             :title="isPinned ? 'Sidebar is pinned open' : 'Sidebar expands on mouse hover (Click to pin)'"
             :aria-label="isPinned ? 'Unpin Sidebar' : 'Pin Sidebar'"
           >
@@ -373,7 +379,7 @@ async function logout() {
           </RouterLink>
 
           <!-- Staff portals dropdown -->
-          <div v-if="auth.isStaff" class="relative">
+          <div v-if="auth.isStaff" class="relative z-50">
             <button
               @click="showPortals = !showPortals"
               class="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-warm-200 dark:border-neutral-800 text-warm-600 dark:text-neutral-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
@@ -391,7 +397,7 @@ async function logout() {
             >
               <div
                 v-if="showPortals"
-                class="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-black rounded-xl border border-warm-200 dark:border-neutral-800 shadow-xl z-50 py-1.5 overflow-hidden"
+                class="absolute top-full left-0 mt-2 w-48 bg-white/95 dark:bg-[#151722]/95 backdrop-blur-lg rounded-xl border border-warm-200/90 dark:border-white/10 shadow-2xl z-50 py-1.5 overflow-hidden"
               >
                 <RouterLink
                   v-for="p in staffPortals"
@@ -416,7 +422,7 @@ async function logout() {
           <!-- Theme Toggle -->
           <button
             @click="ui.toggleDarkMode"
-            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors"
+            class="min-h-[44px] min-w-[44px] p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors inline-flex items-center justify-center focus:ring-2 focus:ring-primary-500 focus:outline-none"
             :aria-label="ui.darkMode ? $t('adminLayout.lightMode') : $t('adminLayout.darkMode')"
             :title="ui.darkMode ? $t('adminLayout.lightMode') : $t('adminLayout.darkMode')"
           >
@@ -427,7 +433,7 @@ async function logout() {
           <!-- Settings Button in Right Corner -->
           <RouterLink
             to="/admin/settings"
-            class="p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors flex items-center justify-center"
+            class="min-h-[44px] min-w-[44px] p-2 rounded-xl text-warm-500 hover:text-warm-900 dark:text-neutral-400 dark:hover:text-white hover:bg-warm-100 dark:hover:bg-neutral-900 transition-colors inline-flex items-center justify-center focus:ring-2 focus:ring-primary-500 focus:outline-none"
             title="System Settings"
             aria-label="System Settings"
           >
@@ -435,7 +441,7 @@ async function logout() {
           </RouterLink>
 
           <!-- User Profile Dropdown Menu in Right Corner -->
-          <div class="relative" ref="userMenuRef">
+          <div class="relative z-50" ref="userMenuRef">
             <button
               @click="showUserMenu = !showUserMenu"
               class="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-warm-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-neutral-700 bg-warm-50/50 dark:bg-neutral-900 transition-all cursor-pointer"
@@ -465,7 +471,7 @@ async function logout() {
             >
               <div
                 v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-56 bg-white dark:bg-black rounded-2xl border border-warm-200 dark:border-neutral-800 shadow-2xl z-50 py-2 overflow-hidden"
+                class="absolute right-0 mt-2 w-56 bg-white/95 dark:bg-[#151722]/95 backdrop-blur-lg rounded-2xl border border-warm-200/90 dark:border-white/10 shadow-2xl z-50 py-2 overflow-hidden"
               >
                 <!-- User Info Header -->
                 <div class="px-4 py-2.5 border-b border-warm-100 dark:border-neutral-850">
@@ -529,7 +535,7 @@ async function logout() {
           <!-- Direct Logout Button in Far Right Corner -->
           <button
             @click="logout"
-            class="p-2 rounded-xl text-warm-400 hover:text-red-500 dark:text-neutral-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
+            class="min-h-[44px] min-w-[44px] p-2 rounded-xl text-warm-500 hover:text-red-500 dark:text-neutral-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0 inline-flex items-center justify-center focus:ring-2 focus:ring-primary-500 focus:outline-none"
             :title="$t('adminLayout.signOut')"
             :aria-label="$t('adminLayout.signOut')"
           >
@@ -539,7 +545,7 @@ async function logout() {
       </header>
 
       <!-- Page content -->
-      <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-warm-50/70 dark:bg-[#070709]">
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-warm-50 dark:bg-[#070709]">
         <RouterView />
       </main>
     </div>

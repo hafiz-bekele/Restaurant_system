@@ -63,7 +63,7 @@ async function handleLogout() {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 bg-white/95 dark:bg-[#111318]/95 backdrop-blur-xl border-b border-warm-100 dark:border-white/[0.06]">
+  <header class="sticky top-0 z-50 bg-white/92 dark:bg-[#0c0d12]/92 backdrop-blur-md border-b border-warm-200/80 dark:border-white/10 shadow-xs">
     <nav class="page-container flex items-center justify-between h-16 gap-4">
 
       <!-- ── Logo ─────────────────────────────────────── -->
@@ -89,8 +89,8 @@ async function handleLogout() {
           :class="[
             'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-150',
             isActive(link.to)
-              ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10'
-              : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white hover:bg-warm-50 dark:hover:bg-white/5',
+              ? 'text-primary-600 dark:text-primary-400 bg-primary-500/10 dark:bg-primary-500/15 border border-primary-500/20 shadow-2xs backdrop-blur-xs'
+              : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/5 border border-transparent',
           ]"
         >
           <component :is="link.icon" :size="15" :class="isActive(link.to) ? 'text-primary-500' : 'text-warm-400 dark:text-warm-600'" />
@@ -188,7 +188,7 @@ async function handleLogout() {
             >
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#1c1f2e] border border-warm-100 dark:border-white/8 shadow-float z-50 overflow-hidden"
+                class="absolute right-0 mt-2 w-56 rounded-2xl bg-white/95 dark:bg-[#161824]/95 backdrop-blur-lg border border-warm-200/90 dark:border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.5)] z-50 overflow-hidden"
               >
                 <!-- User info -->
                 <div class="px-4 pt-4 pb-3 border-b border-warm-100 dark:border-white/6">
@@ -259,7 +259,7 @@ async function handleLogout() {
             >
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-[#1c1f2e] border border-warm-100 dark:border-white/8 shadow-float z-50 overflow-hidden"
+                class="absolute right-0 mt-2 w-52 rounded-2xl bg-white/95 dark:bg-[#161824]/95 backdrop-blur-lg border border-warm-200/90 dark:border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.5)] z-50 overflow-hidden"
               >
                 <div class="px-4 py-3 border-b border-warm-100 dark:border-white/6">
                   <p class="text-sm font-semibold text-warm-900 dark:text-white truncate">{{ auth.user?.name }}</p>
@@ -341,7 +341,7 @@ async function handleLogout() {
     >
       <div
         v-if="mobileOpen"
-        class="lg:hidden border-t border-warm-100 dark:border-white/[0.06] bg-white dark:bg-[#111318] px-4 py-3"
+        class="lg:hidden border-t border-warm-200/80 dark:border-white/10 bg-white/95 dark:bg-[#0c0d12]/95 backdrop-blur-lg px-4 py-3 shadow-lg"
       >
         <!-- Nav links with icons -->
         <div class="space-y-0.5 mb-3">

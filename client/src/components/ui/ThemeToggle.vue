@@ -21,7 +21,7 @@ const ui = useUiStore()
   <!-- Segmented Control Variant -->
   <div
     v-if="variant === 'segmented'"
-    class="inline-flex items-center p-1 rounded-xl bg-warm-100 dark:bg-warm-800/80 border border-warm-200/80 dark:border-warm-700/80 text-xs font-semibold select-none shadow-xs"
+    class="inline-flex items-center p-1 rounded-xl bg-white/50 dark:bg-white/[0.05] backdrop-blur-md border border-white/60 dark:border-white/10 text-xs font-semibold select-none shadow-xs"
     role="radiogroup"
     aria-label="Theme selection"
   >
@@ -31,8 +31,8 @@ const ui = useUiStore()
       :class="[
         'flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200',
         !ui.darkMode
-          ? 'bg-white text-warm-900 shadow-xs'
-          : 'text-warm-500 hover:text-warm-800 dark:text-warm-400 dark:hover:text-warm-200'
+          ? 'bg-white text-warm-900 shadow-xs border border-white/80'
+          : 'text-warm-500 hover:text-warm-800 dark:text-warm-400 dark:hover:text-warm-200 border border-transparent'
       ]"
       :aria-checked="!ui.darkMode"
       role="radio"
@@ -46,8 +46,8 @@ const ui = useUiStore()
       :class="[
         'flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200',
         ui.darkMode
-          ? 'bg-gray-900 text-white shadow-xs'
-          : 'text-warm-500 hover:text-warm-800 dark:text-warm-400 dark:hover:text-warm-200'
+          ? 'bg-white/15 text-white shadow-xs border border-white/10'
+          : 'text-warm-500 hover:text-warm-800 dark:text-warm-400 dark:hover:text-warm-200 border border-transparent'
       ]"
       :aria-checked="ui.darkMode"
       role="radio"

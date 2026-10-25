@@ -6,9 +6,10 @@ const ui = useUiStore()
 
 const icons = { success: CheckCircle, error: XCircle, warning: AlertCircle }
 const colors = {
-  success: 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-200',
-  error:   'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-700 dark:text-red-200',
-  warning: 'bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-200',
+  success: 'bg-white/95 dark:bg-[#0c1810]/95 border-emerald-500/30 text-emerald-950 dark:text-emerald-100 backdrop-blur-md shadow-[0_12px_36px_rgba(16,185,129,0.12)]',
+  error:   'bg-white/95 dark:bg-[#1a0a0a]/95 border-red-500/30 text-red-950 dark:text-red-100 backdrop-blur-md shadow-[0_12px_36px_rgba(239,68,68,0.12)]',
+  warning: 'bg-white/95 dark:bg-[#1a1405]/95 border-amber-500/30 text-amber-950 dark:text-amber-100 backdrop-blur-md shadow-[0_12px_36px_rgba(245,158,11,0.12)]',
+  info:    'bg-white/95 dark:bg-[#0a121a]/95 border-blue-500/30 text-blue-950 dark:text-blue-100 backdrop-blur-md shadow-[0_12px_36px_rgba(59,130,246,0.12)]',
 }
 </script>
 

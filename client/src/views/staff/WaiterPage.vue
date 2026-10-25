@@ -8,6 +8,7 @@ import {
   Plus, X, Search, Trash2, User, Phone, MessageSquare, CreditCard,
   Printer, DollarSign, Check, ChevronRight, Layers, Smartphone, Banknote
 } from '@lucide/vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const ui = useUiStore()
@@ -972,13 +973,16 @@ onUnmounted(() => {
                 <span class="text-primary-600 dark:text-primary-400 font-mono">ETB {{ orderGrandTotal.toFixed(2) }}</span>
               </div>
 
-              <button
+              <AppButton
                 @click="submitOrder"
-                :disabled="!orderItems.length || submittingOrder"
-                class="btn-primary w-full justify-center text-xs py-2.5 mt-2 shadow-md font-bold"
+                :loading="submittingOrder"
+                :loading-text="$t('waiterPage.sending')"
+                :disabled="!orderItems.length"
+                full-width
+                class="text-xs py-2.5 mt-2 shadow-md font-bold"
               >
-                {{ submittingOrder ? $t('waiterPage.sending') : $t('waiterPage.sendOrderDirectToKds') }}
-              </button>
+                {{ $t('waiterPage.sendOrderDirectToKds') }}
+              </AppButton>
             </div>
           </div>
         </div>
@@ -1125,15 +1129,16 @@ onUnmounted(() => {
           >
             <Printer :size="14" /> {{ $t('waiterPage.printGuestCheck') }}
           </button>
-          <button
+          <AppButton
             type="button"
             @click="settleOrderPayment"
-            :disabled="settlingPayment"
-            class="btn-primary flex-1 text-xs py-2.5 justify-center gap-1.5 font-bold shadow-md"
+            :loading="settlingPayment"
+            loading-text="Processing…"
+            :icon="Check"
+            class="flex-1 text-xs py-2.5 justify-center gap-1.5 font-bold shadow-md"
           >
-            <Check :size="15" />
-            {{ settlingPayment ? 'Processing…' : `Confirm Payment (ETB ${Number(selectedBillOrder.total).toFixed(2)})` }}
-          </button>
+            Confirm Payment (ETB {{ Number(selectedBillOrder.total).toFixed(2) }})
+          </AppButton>
         </div>
       </div>
     </div>

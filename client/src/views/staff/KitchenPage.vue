@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { staffApi, menuApi, adminApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { Clock, ChefHat, CheckCircle, Volume2, VolumeX, AlertTriangle, Flame, Utensils, X, ToggleLeft, ToggleRight, Search, User, Phone, MessageSquare } from '@lucide/vue'
+import CircleLoader from '../../components/ui/CircleLoader.vue'
 
 const { t } = useI18n()
 const ui     = useUiStore()
@@ -395,8 +396,8 @@ function getSlaStatus(order) {
           />
         </div>
 
-        <div v-if="loadingDishes" class="p-8 text-center text-xs text-warm-400">
-          {{ $t('kitchenPage.loadingCatalog') }}
+        <div v-if="loadingDishes" class="p-8 flex flex-col items-center justify-center text-center">
+          <CircleLoader size="md" color="primary" :label="$t('kitchenPage.loadingCatalog')" label-position="bottom" />
         </div>
 
         <div v-else class="flex-1 overflow-y-auto divide-y divide-warm-100 dark:divide-warm-800 pr-1 space-y-1">

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useUiStore } from '../stores/ui'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -92,6 +93,9 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  const ui = useUiStore()
+  ui.startNavigation()
+
   const auth = useAuthStore()
 
   // Always resolve the user before evaluating role guards
@@ -159,6 +163,14 @@ router.beforeEach(async (to) => {
     if (auth.hasRole('delivery'))  return { path: '/staff/delivery' }
     return { name: 'home' }
   }
+})
+
+router.afterEach(() => {
+  useUiStore().finishNavigation()
+})
+
+router.onError(() => {
+  useUiStore().finishNavigation()
 })
 
 export default router

@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
+import { useUiStore } from '../stores/ui'
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -26,12 +27,35 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     delete config.headers['Content-Type']
   }
 
+  // Trigger global process loading bar unless explicitly skipped
+  const skipLoading = (config as any).skipLoading || config.headers?.['X-Skip-Loading']
+  if (!skipLoading) {
+    try {
+      useUiStore().startRequest()
+    } catch {}
+  }
+
   return config
 })
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const skipLoading = (res.config as any)?.skipLoading || res.config?.headers?.['X-Skip-Loading']
+    if (!skipLoading) {
+      try {
+        useUiStore().finishRequest()
+      } catch {}
+    }
+    return res
+  },
   (error) => {
+    const skipLoading = (error.config as any)?.skipLoading || error.config?.headers?.['X-Skip-Loading']
+    if (!skipLoading) {
+      try {
+        useUiStore().finishRequest()
+      } catch {}
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token')
       const url = error.config?.url || ''
@@ -187,7 +211,8 @@ export const adminApi = {
   dishes:       (params?: Record<string, any>)                    => api.get('/admin/dishes', { params }),
   createDish:   (data: FormData | Record<string, any>)            => api.post('/admin/dishes', data),
   updateDish:   (id: number | string, data: FormData | Record<string, any>) => api.post(`/admin/dishes/${id}?_method=PUT`, data),
-  deleteDish:   (id: number | string)                             => api.delete(`/admin/dishes/${id}`),
+  deleteDish:   (id: number | string, force?: boolean)            => api.delete(`/admin/dishes/${id}`, { params: force ? { force: true } : {} }),
+  restoreDish:  (id: number | string)                             => api.post(`/admin/dishes/${id}/restore`),
 
   // Orders
   orders:       (params?: Record<string, any>)  => api.get('/admin/orders', { params }),
@@ -284,4 +309,12 @@ export const adminApi = {
   reviews:            (params?: Record<string, any>) => api.get('/admin/reviews', { params }),
   updateReview:       (id: number | string, data: Record<string, any>) => api.patch(`/admin/reviews/${id}`, data),
   deleteReview:       (id: number | string)          => api.delete(`/admin/reviews/${id}`),
+
+  // File Upload
+  uploadImage:        (file: File, folder = 'uploads') => {
+    const fd = new FormData()
+    fd.append('image', file)
+    fd.append('folder', folder)
+    return api.post('/upload/image', fd)
+  },
 }

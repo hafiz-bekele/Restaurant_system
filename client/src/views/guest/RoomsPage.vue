@@ -6,7 +6,10 @@ import { guestApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import RoomCardSkeleton from '../../components/ui/RoomCardSkeleton.vue'
-import { BedDouble, Users, CalendarCheck, CheckCircle, X } from '@lucide/vue'
+import CircleLoader from '../../components/ui/CircleLoader.vue'
+import LoadingState from '../../components/ui/LoadingState.vue'
+import AppButton from '../../components/ui/AppButton.vue'
+import { BedDouble, Users, CalendarCheck, CheckCircle, X, Loader2 } from '@lucide/vue'
 
 const { t }   = useI18n()
 const route   = useRoute()
@@ -67,6 +70,7 @@ function openBooking(room) {
 
 async function confirmBooking() {
   saving.value = true
+  ui.startProcess('Booking boutique suite...')
   try {
     const { data } = await guestApi.bookRoom({
       hotel_id:       form.value.hotel_id,
@@ -83,6 +87,7 @@ async function confirmBooking() {
     ui.toast(e.response?.data?.message ?? t('roomsPage.failedToast'), 'error')
   } finally {
     saving.value = false
+    ui.stopProcess()
   }
 }
 </script>
@@ -121,22 +126,29 @@ async function confirmBooking() {
               <input v-model.number="form.capacity" type="number" min="1" max="10" class="input" />
             </div>
             <div class="flex items-end">
-              <button @click="search" :disabled="loading || !form.check_in_date || !form.check_out_date" class="btn-primary w-full justify-center">
-                {{ loading ? $t('roomsPage.searching') : $t('roomsPage.search') }}
-              </button>
+              <AppButton
+                @click="search"
+                :loading="loading"
+                :loading-text="$t('roomsPage.searching')"
+                :disabled="!form.check_in_date || !form.check_out_date"
+                full-width
+              >
+                {{ $t('roomsPage.search') }}
+              </AppButton>
             </div>
           </div>
         </div>
 
-        <!-- Loading Skeleton -->
-        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <RoomCardSkeleton v-for="i in 6" :key="i" />
-        </div>
-
-        <!-- Results -->
-        <div v-else-if="searched">
-          <p v-if="!rooms.length" class="text-center py-12 text-warm-400">{{ $t('roomsPage.noRooms') }}</p>
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Results & LoadingState -->
+        <LoadingState
+          :loading="loading"
+          :empty="searched && !rooms.length"
+          :empty-title="$t('roomsPage.noRooms')"
+          skeleton-type="rooms"
+          :skeleton-count="6"
+          @retry="search"
+        >
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div v-for="room in rooms" :key="room.id" class="card overflow-hidden hover:shadow-float transition-all hover:-translate-y-1">
               <img v-if="room.image" :src="room.image" :alt="`Room ${room.room_number}`" class="w-full h-44 object-cover" />
               <div v-else class="w-full h-44 bg-warm-100 dark:bg-warm-800 flex items-center justify-center text-warm-400">
@@ -166,7 +178,7 @@ async function confirmBooking() {
               </div>
             </div>
           </div>
-        </div>
+        </LoadingState>
       </template>
     </div>
 
@@ -199,7 +211,14 @@ async function confirmBooking() {
               </div>
               <div class="flex gap-3 pt-2">
                 <button type="button" @click="showModal = false" class="btn-outline flex-1">{{ $t('roomsPage.cancel') }}</button>
-                <button type="submit" :disabled="saving" class="btn-primary flex-1">{{ saving ? $t('roomsPage.booking') : $t('roomsPage.confirmBtn') }}</button>
+                <AppButton
+                  type="submit"
+                  :loading="saving"
+                  :loading-text="$t('roomsPage.booking')"
+                  class="flex-1"
+                >
+                  {{ $t('roomsPage.confirmBtn') }}
+                </AppButton>
               </div>
             </form>
           </div>

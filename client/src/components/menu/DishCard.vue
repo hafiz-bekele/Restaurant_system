@@ -1,13 +1,17 @@
 <script setup>
-import { ref } from 'vue'
-import { Star, Clock, Plus, Heart, Check, ImageOff } from '@lucide/vue'
+import { ref, computed } from 'vue'
+import { Clock, Plus, Heart, Check, ImageOff, Flame } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useCartStore } from '../../stores/cart'
 import { useAuthStore } from '../../stores/auth'
-import { profileApi }   from '../../services/api'
+import { profileApi, reviewApi } from '../../services/api'
 import { useUiStore }   from '../../stores/ui'
+import CircleLoader     from '../ui/CircleLoader.vue'
+import StarRating       from '../ui/StarRating.vue'
 
 const props  = defineProps({ dish: { type: Object, required: true } })
+const { locale } = useI18n()
 const cart   = useCartStore()
 const auth   = useAuthStore()
 const ui     = useUiStore()
@@ -18,13 +22,38 @@ const liked       = ref(false)
 const imgLoaded   = ref(false)
 const imgError    = ref(false)
 
+const currentRating = ref(Number(props.dish.avg_rating) || 0)
+const currentReviewsCount = ref(Number(props.dish.reviews_count) || 0)
+
+const isAmharic = computed(() => locale.value === 'am')
+
+const primaryName = computed(() => {
+  if (isAmharic.value && props.dish.name_am) return props.dish.name_am
+  return props.dish.name
+})
+
+const secondaryName = computed(() => {
+  if (isAmharic.value && props.dish.name_am && props.dish.name !== props.dish.name_am) {
+    return props.dish.name
+  }
+  if (!isAmharic.value && props.dish.name_am) {
+    return props.dish.name_am
+  }
+  return ''
+})
+
+const displayDescription = computed(() => {
+  if (isAmharic.value && props.dish.description_am) return props.dish.description_am
+  return props.dish.description
+})
+
 async function addToCart() {
   if (adding.value) return
   adding.value = true
   try {
     await cart.addItem({ dish_id: props.dish.id, quantity: 1 })
     added.value = true
-    ui.toast(`${props.dish.name} added to cart`, 'success')
+    ui.toast(`${primaryName.value} added to cart`, 'success')
     setTimeout(() => { added.value = false }, 1800)
   } catch {
     ui.toast('Failed to add item', 'error')
@@ -47,6 +76,22 @@ async function toggleFavorite() {
     liked.value = !liked.value
   } catch {
     ui.toast('Could not update favourites', 'error')
+  }
+}
+
+async function handleDirectRating(stars) {
+  if (!auth.isAuthenticated) {
+    ui.toast('Please sign in to submit your rating', 'warning')
+    return
+  }
+  try {
+    await reviewApi.submit({ dish_id: props.dish.id, rating: stars })
+    currentRating.value = stars
+    currentReviewsCount.value = (currentReviewsCount.value || 0) + 1
+    ui.toast(`★ You rated ${stars} stars for ${primaryName.value}! Thank you.`, 'success')
+  } catch (err) {
+    const msg = err.response?.data?.message || 'Could not submit rating'
+    ui.toast(msg, 'error')
   }
 }
 </script>
@@ -92,6 +137,9 @@ async function toggleFavorite() {
         <span v-if="dish.is_vegetarian" class="badge badge-green shadow-sm">{{ $t('menu.veg') }}</span>
         <span v-if="dish.is_vegan"      class="badge badge-green shadow-sm">{{ $t('menu.vegan') }}</span>
         <span v-if="dish.is_featured"   class="badge badge-orange shadow-sm">{{ $t('menu.featured') }}</span>
+        <span v-if="dish.spice_level > 0" class="badge bg-red-500/90 text-white shadow-sm flex items-center gap-0.5 text-[10px]">
+          <Flame :size="10" /> {{ dish.spice_level === 1 ? '🌶️' : dish.spice_level === 2 ? '🌶️🌶️' : '🌶️🌶️🌶️' }}
+        </span>
       </div>
 
       <!-- Favourite button -->
@@ -112,32 +160,36 @@ async function toggleFavorite() {
     <!-- ── Content ────────────────────────────────────────────────────── -->
     <div class="flex flex-col flex-1 p-4 gap-2">
 
-      <!-- Name -->
-      <RouterLink :to="`/menu/${dish.slug}`">
-        <h3 class="font-heading font-semibold text-base text-warm-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors line-clamp-1 leading-snug">
-          {{ dish.name }}
+      <!-- Name & Bilingual Subtitle -->
+      <RouterLink :to="`/menu/${dish.slug}`" class="group/title block">
+        <h3 class="font-heading font-semibold text-base text-warm-900 dark:text-white group-hover/title:text-primary-600 dark:group-hover/title:text-primary-400 transition-colors line-clamp-1 leading-snug">
+          {{ primaryName }}
         </h3>
+        <p v-if="secondaryName" class="text-xs text-warm-500 dark:text-warm-400 font-medium line-clamp-1 mt-0.5">
+          {{ secondaryName }}
+        </p>
       </RouterLink>
 
       <!-- Description -->
       <p class="text-xs text-warm-500 dark:text-warm-400 line-clamp-2 flex-1 leading-relaxed">
-        {{ dish.description || '&nbsp;' }}
+        {{ displayDescription || '&nbsp;' }}
       </p>
 
-      <!-- Meta row: rating + prep time -->
-      <div class="flex items-center gap-3 text-xs text-warm-400">
-        <span
-          v-if="dish.avg_rating > 0"
-          class="flex items-center gap-1 font-semibold text-warm-700 dark:text-warm-300"
-        >
-          <Star :size="12" class="text-amber-400 fill-amber-400" />
-          {{ Number(dish.avg_rating).toFixed(1) }}
-          <span v-if="dish.reviews_count" class="text-warm-400 font-normal">({{ dish.reviews_count }})</span>
-        </span>
-        <span v-if="dish.prep_time" class="flex items-center gap-1">
-          <Clock :size="12" /> {{ dish.prep_time }}m
-        </span>
-        <span v-if="dish.calories" class="ml-auto">{{ dish.calories }} kcal</span>
+      <!-- Meta row: interactive rating + prep time -->
+      <div class="flex items-center justify-between gap-2 text-xs text-warm-400 pt-1">
+        <StarRating
+          :rating="currentRating"
+          :reviews-count="currentReviewsCount"
+          interactive
+          size="xs"
+          @rate="handleDirectRating"
+        />
+        <div class="flex items-center gap-2 text-[11px] shrink-0">
+          <span v-if="dish.prep_time" class="flex items-center gap-1">
+            <Clock :size="11" /> {{ dish.prep_time }}m
+          </span>
+          <span v-if="dish.calories">{{ dish.calories }} kcal</span>
+        </div>
       </div>
 
       <!-- Price + Add button -->
@@ -168,10 +220,11 @@ async function toggleFavorite() {
             leave-active-class="transition-all duration-150"
             mode="out-in"
           >
-            <Check v-if="added" :size="14" key="check" />
-            <Plus  v-else       :size="14" key="plus" />
+            <CircleLoader v-if="adding" size="xs" color="white" key="loading" />
+            <Check        v-else-if="added" :size="14" key="check" />
+            <Plus         v-else       :size="14" key="plus" />
           </Transition>
-          <span>{{ adding ? '…' : added ? $t('common.added') : $t('common.add') }}</span>
+          <span>{{ adding ? 'Adding…' : added ? $t('common.added') : $t('common.add') }}</span>
         </button>
       </div>
     </div>

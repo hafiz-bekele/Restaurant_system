@@ -8,9 +8,11 @@ import { useCartStore } from '../../stores/cart'
 import { useUiStore }   from '../../stores/ui'
 import { useAuthStore } from '../../stores/auth'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
+import AppButton from '../../components/ui/AppButton.vue'
+import CircleLoader from '../../components/ui/CircleLoader.vue'
 import { Star, Clock, Leaf, Plus, Minus, MessageSquare, ThumbsUp, Send, CheckCircle2 } from '@lucide/vue'
 
-const { t }       = useI18n()
+const { t, locale } = useI18n()
 const route       = useRoute()
 const router      = useRouter()
 const queryClient = useQueryClient()
@@ -23,12 +25,15 @@ const loading     = ref(false)
 const submittingReview = ref(false)
 const showReviewForm   = ref(false)
 
-// Review Form state
+// Review Form state - unselected by default so user explicitly selects their rating
 const ratingHover = ref(0)
-const newRating   = ref(5)
+const newRating   = ref(0)
 const newComment  = ref('')
 
+const isAmharic = computed(() => locale.value === 'am')
+
 const ratingLabels = computed(() => ({
+  0: t('dish.selectRatingPrompt'),
   1: t('dish.rating1'),
   2: t('dish.rating2'),
   3: t('dish.rating3'),
@@ -76,6 +81,46 @@ async function addToCart() {
   }
 }
 
+const displayName = computed(() => {
+  if (isAmharic.value && dish.value?.name_am) return dish.value.name_am
+  return dish.value?.name || ''
+})
+
+const secondaryName = computed(() => {
+  if (isAmharic.value && dish.value?.name_am && dish.value.name !== dish.value.name_am) {
+    return dish.value.name
+  }
+  if (!isAmharic.value && dish.value?.name_am) {
+    return dish.value.name_am
+  }
+  return ''
+})
+
+const displayDescription = computed(() => {
+  if (isAmharic.value && dish.value?.description_am) return dish.value.description_am
+  return dish.value?.description || ''
+})
+
+const secondaryDescription = computed(() => {
+  if (isAmharic.value && dish.value?.description_am && dish.value?.description) {
+    return dish.value.description
+  }
+  if (!isAmharic.value && dish.value?.description_am) {
+    return dish.value.description_am
+  }
+  return ''
+})
+
+function openRateSection(preselectedStars = 0) {
+  showReviewForm.value = true
+  if (preselectedStars > 0) {
+    newRating.value = preselectedStars
+  }
+  setTimeout(() => {
+    document.getElementById('review-section')?.scrollIntoView({ behavior: 'smooth' })
+  }, 100)
+}
+
 async function handleReviewSubmit() {
   if (!auth.isAuthenticated) {
     ui.toast('Please sign in to submit a rating and review', 'warning')
@@ -85,8 +130,8 @@ async function handleReviewSubmit() {
 
   if (!dish.value?.id) return
 
-  if (newRating.value < 1 || newRating.value > 5) {
-    ui.toast('Please select a star rating between 1 and 5', 'error')
+  if (!newRating.value || newRating.value < 1 || newRating.value > 5) {
+    ui.toast(t('dish.mustSelectRating'), 'warning')
     return
   }
 
@@ -100,6 +145,7 @@ async function handleReviewSubmit() {
 
     ui.toast('Thank you! Your review has been submitted successfully.', 'success')
     newComment.value = ''
+    newRating.value = 0
     showReviewForm.value = false
 
     // Refetch dish & reviews
@@ -204,16 +250,32 @@ function getInitials(name) {
               <span v-if="dish.spice_level > 0" class="badge badge-red font-semibold">{{ $t('dish.spiceLevel', { level: dish.spice_level }) }}</span>
             </div>
 
-            <h1 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white mb-3">{{ dish.name }}</h1>
-            <p class="text-warm-600 dark:text-warm-300 text-base leading-relaxed mb-6">{{ dish.description }}</p>
+            <div class="space-y-1 mb-3">
+              <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="font-heading text-3xl md:text-4xl font-bold text-warm-900 dark:text-white">{{ displayName }}</h1>
+                <span
+                  v-if="secondaryName"
+                  class="text-base md:text-lg font-medium text-warm-600 dark:text-warm-300 bg-warm-100 dark:bg-warm-800 px-3 py-1 rounded-xl"
+                >
+                  {{ secondaryName }}
+                </span>
+              </div>
+            </div>
+            <p class="text-warm-600 dark:text-warm-300 text-base leading-relaxed mb-6">{{ displayDescription }}</p>
 
             <!-- Quick Meta Badges -->
             <div class="flex items-center gap-5 text-sm text-warm-500 dark:text-warm-400 mb-6 pb-6 border-b border-warm-100 dark:border-warm-800">
-              <div class="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-xl font-medium">
+              <button
+                type="button"
+                @click="openRateSection(0)"
+                class="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-xl font-medium hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                title="Click to rate this dish"
+              >
                 <Star :size="16" class="text-amber-500 fill-amber-500" />
                 <span class="font-bold">{{ summaryStats.avg > 0 ? summaryStats.avg.toFixed(1) : $t('dish.newBadge') }}</span>
                 <span v-if="summaryStats.total > 0" class="text-xs text-amber-600/80 dark:text-amber-400/80">{{ $t('dish.reviewsCount', { count: summaryStats.total }) }}</span>
-              </div>
+                <span class="text-xs font-semibold text-amber-600 dark:text-amber-400 underline ml-1">★ Rate</span>
+              </button>
               <span v-if="dish.prep_time" class="flex items-center gap-1.5"><Clock :size="16" class="text-warm-400" />{{ $t('dish.prepTime', { time: dish.prep_time }) }}</span>
               <span v-if="dish.calories" class="flex items-center gap-1.5"><Leaf :size="16" class="text-warm-400" />{{ $t('dish.calories', { calories: dish.calories }) }}</span>
             </div>
@@ -245,13 +307,15 @@ function getInitials(name) {
                 </button>
               </div>
 
-              <button
+              <AppButton
                 @click="addToCart"
-                :disabled="loading"
-                class="btn-primary flex-1 justify-center py-3.5 text-base font-semibold shadow-lg shadow-primary-500/20"
+                :loading="loading"
+                :loading-text="$t('dish.adding')"
+                size="lg"
+                class="flex-1 justify-center py-3.5 text-base font-semibold shadow-lg shadow-primary-500/20"
               >
-                {{ loading ? $t('dish.adding') : $t('dish.addToCartWithPrice', { price: (Number(dish.price) * qty).toFixed(2) }) }}
-              </button>
+                {{ $t('dish.addToCartWithPrice', { price: (Number(dish.price) * qty).toFixed(2) }) }}
+              </AppButton>
             </div>
 
             <!-- Allergens Note -->
@@ -267,7 +331,7 @@ function getInitials(name) {
         </div>
 
         <!-- ──────────────── Ratings & Reviews Section ──────────────── -->
-        <section class="mt-16 pt-12 border-t border-warm-200 dark:border-warm-800">
+        <section id="review-section" class="mt-16 pt-12 border-t border-warm-200 dark:border-warm-800 scroll-mt-24">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h2 class="font-heading text-2xl md:text-3xl font-bold text-warm-900 dark:text-white flex items-center gap-3">
@@ -294,17 +358,20 @@ function getInitials(name) {
             class="card p-6 md:p-8 mb-10 bg-gradient-to-br from-amber-500/5 via-primary-500/5 to-transparent border border-amber-500/20 rounded-3xl"
           >
             <h3 class="font-heading text-lg font-bold text-warm-900 dark:text-white mb-2">
-              {{ $t('dish.rateExperience', { name: dish.name }) }}
+              {{ $t('dish.rateExperience', { name: displayName }) }}
             </h3>
             <p class="text-xs text-warm-500 dark:text-warm-400 mb-6">
               {{ $t('dish.ratePrompt') }}
             </p>
 
             <form @submit.prevent="handleReviewSubmit" class="space-y-6">
-              <!-- Interactive 5-Star Picker -->
+              <!-- Interactive 5-Star Picker (Unselected by default until user clicks) -->
               <div>
                 <label class="block text-xs font-semibold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-2">
                   {{ $t('dish.overallRating') }}
+                  <span v-if="newRating === 0" class="text-amber-500 font-normal normal-case ml-1.5 text-[11px]">
+                    — {{ $t('dish.selectRatingPrompt') }}
+                  </span>
                 </label>
                 <div class="flex items-center gap-2">
                   <div class="flex items-center gap-1.5">
@@ -315,20 +382,26 @@ function getInitials(name) {
                       @mouseenter="ratingHover = starIndex"
                       @mouseleave="ratingHover = 0"
                       @click="newRating = starIndex"
-                      class="p-1 rounded-xl transition-transform hover:scale-110 focus:outline-none"
+                      class="p-1 rounded-xl transition-transform hover:scale-125 focus:outline-none cursor-pointer"
+                      :aria-label="`Rate ${starIndex} stars`"
                     >
                       <Star
                         :size="30"
                         :class="[
                           'transition-colors duration-150',
-                          starIndex <= (ratingHover || newRating)
+                          starIndex <= (ratingHover || newRating) && (ratingHover > 0 || newRating > 0)
                             ? 'text-amber-400 fill-amber-400 drop-shadow'
-                            : 'text-warm-300 dark:text-warm-700'
+                            : 'text-warm-300 dark:text-warm-700 hover:text-amber-300'
                         ]"
                       />
                     </button>
                   </div>
-                  <span class="text-sm font-semibold text-amber-600 dark:text-amber-400 ml-3">
+                  <span
+                    :class="[
+                      'text-sm font-semibold ml-3 transition-colors',
+                      (ratingHover || newRating) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-warm-400'
+                    ]"
+                  >
                     {{ ratingLabels[ratingHover || newRating] }}
                   </span>
                 </div>
@@ -362,14 +435,15 @@ function getInitials(name) {
                   {{ $t('dish.postingAs', { name: auth.user?.name }) }}
                 </div>
 
-                <button
+                <AppButton
                   type="submit"
-                  :disabled="submittingReview"
-                  class="btn-primary gap-2 py-2.5 px-6 rounded-2xl shadow-md"
+                  :loading="submittingReview"
+                  :loading-text="$t('dish.publishing')"
+                  :icon="Send"
+                  class="gap-2 py-2.5 px-6 rounded-2xl shadow-md"
                 >
-                  <Send :size="16" />
-                  <span>{{ submittingReview ? $t('dish.publishing') : $t('dish.submitReview') }}</span>
-                </button>
+                  <span>{{ $t('dish.submitReview') }}</span>
+                </AppButton>
               </div>
             </form>
           </div>
@@ -542,13 +616,14 @@ function getInitials(name) {
           </button>
         </div>
 
-        <button
+        <AppButton
           @click="addToCart"
-          :disabled="loading"
-          class="btn-primary py-2.5 px-4 text-xs font-semibold shadow-md whitespace-nowrap"
+          :loading="loading"
+          size="sm"
+          class="whitespace-nowrap"
         >
-          {{ loading ? '...' : $t('dish.addToCart') }}
-        </button>
+          {{ $t('dish.addToCart') }}
+        </AppButton>
       </div>
     </div>
   </DefaultLayout>

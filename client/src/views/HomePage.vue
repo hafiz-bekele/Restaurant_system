@@ -685,7 +685,7 @@ function subscribeNewsletter() {
       <div class="max-w-5xl mx-auto">
         <form
           @submit.prevent="submitQuickBooking"
-          class="bg-white dark:bg-warm-900 rounded-3xl p-5 md:p-6 shadow-2xl border border-warm-200 dark:border-warm-700/80 backdrop-blur-xl"
+          class="glass-panel rounded-3xl p-5 md:p-6 shadow-2xl border border-warm-200/90 dark:border-white/10 backdrop-blur-md"
         >
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
 
@@ -707,7 +707,7 @@ function subscribeNewsletter() {
               </label>
               <select
                 v-model.number="quickBooking.partySize"
-                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="w-full bg-white dark:bg-gray-900 border border-warm-300 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-2xs cursor-pointer"
               >
                 <option :value="1">{{ $t('booking.solo') }}</option>
                 <option :value="2">{{ $t('booking.couple') }}</option>
@@ -724,7 +724,7 @@ function subscribeNewsletter() {
               </label>
               <select
                 v-model="quickBooking.dateOption"
-                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="w-full bg-white dark:bg-gray-900 border border-warm-300 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-2xs cursor-pointer"
               >
                 <option value="tonight">{{ $t('booking.tonight') }}</option>
                 <option value="tomorrow">{{ $t('booking.tomorrow') }}</option>
@@ -739,7 +739,7 @@ function subscribeNewsletter() {
               </label>
               <select
                 v-model="quickBooking.timeSlot"
-                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="w-full bg-white dark:bg-gray-900 border border-warm-300 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-2xs cursor-pointer"
               >
                 <option value="12:30">{{ $t('booking.timeLunch') }}</option>
                 <option value="14:00">{{ $t('booking.timeLateLunch') }}</option>
@@ -757,7 +757,7 @@ function subscribeNewsletter() {
               </label>
               <select
                 v-model="quickBooking.seatingZone"
-                class="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="w-full bg-white dark:bg-gray-900 border border-warm-300 dark:border-warm-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-warm-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-2xs cursor-pointer"
               >
                 <option value="Main Dining Hall">{{ $t('booking.zoneMain') }}</option>
                 <option value="Sky Garden Terrace">{{ $t('booking.zoneTerrace') }}</option>
@@ -904,7 +904,7 @@ function subscribeNewsletter() {
               'px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 shadow-sm cursor-pointer',
               activeExperienceId === exp.id
                 ? 'bg-primary-500 text-white shadow-primary-500/25 shadow-md scale-105'
-                : 'bg-white dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700'
+                : 'bg-white dark:bg-gray-900 border border-warm-200 dark:border-warm-800 text-warm-700 dark:text-warm-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 shadow-2xs'
             ]"
           >
             {{ exp.tabName }}
@@ -912,7 +912,7 @@ function subscribeNewsletter() {
         </div>
 
         <!-- Active Experience Dynamic Showcase Card -->
-        <div class="card overflow-hidden bg-white dark:bg-warm-800/90 border border-warm-200 dark:border-warm-700/80 shadow-2xl transition-all duration-500">
+        <div class="card-glass overflow-hidden shadow-2xl transition-all duration-500">
           <div class="grid grid-cols-1 lg:grid-cols-12 items-center">
 
             <!-- Visual Image Preview -->
@@ -1278,7 +1278,7 @@ function subscribeNewsletter() {
         <!-- Carousel Frame -->
         <div class="relative max-w-3xl mx-auto">
           <Transition name="fade-slide" mode="out-in">
-            <div :key="activeTestimonial" class="card bg-warm-900 border-warm-800 p-8 sm:p-12 text-center relative shadow-2xl">
+            <div :key="activeTestimonial" class="card-glass bg-white/95 dark:bg-warm-900/95 backdrop-blur-md border border-warm-200/80 dark:border-white/10 p-8 sm:p-12 text-center relative shadow-2xl">
               <!-- Rating Stars -->
               <div class="flex justify-center gap-1.5 mb-6">
                 <Star v-for="i in testimonials[activeTestimonial].stars" :key="i" :size="20" class="text-amber-400 fill-amber-400" />
@@ -1356,7 +1356,7 @@ function subscribeNewsletter() {
         <div
           v-for="(faq, i) in faqs"
           :key="i"
-          class="rounded-2xl border border-warm-200 dark:border-warm-700/80 bg-white dark:bg-warm-800/90 overflow-hidden transition-all duration-200 shadow-sm"
+          class="rounded-2xl border border-warm-200/90 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm overflow-hidden transition-all duration-200 shadow-xs hover:border-primary-400/40"
         >
           <button
             type="button"
@@ -1415,7 +1415,7 @@ function subscribeNewsletter() {
     </section>
 
     <!-- ══ REAL CONTACT, LOCATION & HOURS DETAILS ═════════════════════════════ -->
-    <section class="py-16 bg-white dark:bg-warm-900 border-b border-warm-200 dark:border-warm-800">
+    <section class="py-16 bg-white dark:bg-gray-950 border-y border-warm-200/80 dark:border-white/10">
       <div class="page-container">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 

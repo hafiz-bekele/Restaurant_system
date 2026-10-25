@@ -2,7 +2,9 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 import { guestApi } from '../../services/api'
+import { Send } from '@lucide/vue'
 
 const { t } = useI18n()
 const form = ref({ name: '', email: '', subject: '', message: '' })
@@ -65,9 +67,16 @@ async function submit() {
 
         <p v-if="error" class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2">{{ error }}</p>
 
-        <button type="submit" :disabled="loading" class="btn-primary w-full justify-center py-3 font-semibold">
-          {{ loading ? $t('contactPage.sending') : $t('contactPage.sendMessage') }}
-        </button>
+        <AppButton
+          type="submit"
+          :loading="loading"
+          :loading-text="$t('contactPage.sending')"
+          size="lg"
+          full-width
+          :icon="Send"
+        >
+          {{ $t('contactPage.sendMessage') }}
+        </AppButton>
       </form>
     </div>
   </DefaultLayout>

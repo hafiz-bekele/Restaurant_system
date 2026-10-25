@@ -6,6 +6,7 @@ import { Search, SlidersHorizontal, X, UtensilsCrossed, Leaf, ChevronDown } from
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import DishCard from '../../components/menu/DishCard.vue'
 import DishCardSkeleton from '../../components/ui/DishCardSkeleton.vue'
+import LoadingState from '../../components/ui/LoadingState.vue'
 import { menuApi } from '../../services/api'
 
 const route  = useRoute()
@@ -37,7 +38,7 @@ const queryParams = computed(() => ({
   sort:       sort.value,
 }))
 
-const { data: dishData, isLoading } = useQuery({
+const { data: dishData, isLoading, isError, error, refetch } = useQuery({
   queryKey: ['dishes', queryParams],
   queryFn:  () => menuApi.dishes(queryParams.value).then(r => r.data),
   keepPreviousData: true,
@@ -74,7 +75,7 @@ function clearAll() {
       </div>
 
       <!-- ── Sticky search + filter bar ─────────────────────────── -->
-      <div class="sticky top-16 z-30 bg-warm-50/95 dark:bg-gray-950/95 backdrop-blur-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-3 pt-2 mb-6 border-b border-warm-100 dark:border-warm-800">
+      <div class="sticky top-16 z-30 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-3 pt-2 mb-6 border-b border-warm-200/80 dark:border-white/10 shadow-xs">
 
         <div class="flex gap-2 items-center">
           <!-- Search input -->
@@ -175,7 +176,7 @@ function clearAll() {
             'shrink-0 snap-start px-4 py-2 rounded-full text-sm font-semibold transition-all border',
             !category
               ? 'bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/25'
-              : 'bg-white dark:bg-gray-900 border-warm-200 dark:border-warm-700 text-warm-700 dark:text-warm-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400'
+              : 'bg-white dark:bg-gray-900 border-warm-200 dark:border-warm-800 text-warm-700 dark:text-warm-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 shadow-2xs'
           ]"
         >
           <span class="flex items-center gap-1.5">
@@ -191,7 +192,7 @@ function clearAll() {
             'shrink-0 snap-start px-4 py-2 rounded-full text-sm font-semibold transition-all border whitespace-nowrap',
             category === cat.slug
               ? 'bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/25'
-              : 'bg-white dark:bg-gray-900 border-warm-200 dark:border-warm-700 text-warm-700 dark:text-warm-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400'
+              : 'bg-white dark:bg-gray-900 border-warm-200 dark:border-warm-800 text-warm-700 dark:text-warm-300 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 shadow-2xs'
           ]"
         >{{ cat.name }}</button>
       </div>
@@ -200,13 +201,13 @@ function clearAll() {
       <div class="hidden sm:flex items-center gap-2 mb-8">
         <button
           @click="veg = !veg"
-          :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all', veg ? 'bg-green-500 text-white border-green-500 shadow-sm' : 'border-warm-300 dark:border-warm-700 text-warm-600 dark:text-warm-300 hover:border-green-400']"
+          :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all', veg ? 'bg-green-500 text-white border-green-500 shadow-sm' : 'bg-white dark:bg-gray-900 border-warm-200 dark:border-warm-800 text-warm-600 dark:text-warm-300 hover:border-green-400 shadow-2xs']"
         >
           <Leaf :size="12" /> {{ $t('menu.veg') }}
         </button>
         <button
           @click="vegan = !vegan"
-          :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all', vegan ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'border-warm-300 dark:border-warm-700 text-warm-600 dark:text-warm-300 hover:border-green-400']"
+          :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all', vegan ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white dark:bg-gray-900 border-warm-200 dark:border-warm-800 text-warm-600 dark:text-warm-300 hover:border-green-400 shadow-2xs']"
         >
           <Leaf :size="12" /> {{ $t('menu.vegan') }}
         </button>
@@ -220,38 +221,34 @@ function clearAll() {
         </template>
       </div>
 
-      <!-- ── Loading skeletons ───────────────────────────────────── -->
-      <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-        <DishCardSkeleton v-for="i in 8" :key="i" />
-      </div>
-
-      <!-- ── Dish grid ───────────────────────────────────────────── -->
-      <TransitionGroup
-        v-else-if="dishes.length"
-        tag="div"
-        class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
-        enter-from-class="opacity-0 translate-y-4"
-        enter-active-class="transition-all duration-300"
-        leave-to-class="opacity-0 scale-95"
-        leave-active-class="transition-all duration-200 absolute"
+      <!-- ── LoadingState Container ────────────────────────────── -->
+      <LoadingState
+        :loading="isLoading"
+        :error="isError ? error : null"
+        :empty="!dishes.length && !isLoading"
+        :empty-title="$t('menu.noDishesFound')"
+        :empty-description="search ? $t('menu.noResultsFor', { search }) : $t('menu.noDishesMatch')"
+        skeleton-type="dishes"
+        :skeleton-count="8"
+        @retry="refetch"
       >
-        <DishCard v-for="dish in dishes" :key="dish.id" :dish="dish" />
-      </TransitionGroup>
+        <template #empty-action>
+          <button @click="clearAll" class="btn-outline text-sm mt-3">
+            <X :size="15" /> {{ $t('menu.clearAll') }}
+          </button>
+        </template>
 
-      <!-- ── Empty state ─────────────────────────────────────────── -->
-      <div v-else class="flex flex-col items-center justify-center py-20 text-center">
-        <div class="w-20 h-20 rounded-2xl bg-warm-100 dark:bg-warm-800 flex items-center justify-center mb-5">
-          <Search :size="36" class="text-warm-300 dark:text-warm-600" />
-        </div>
-        <h3 class="font-heading font-bold text-lg text-warm-800 dark:text-warm-200 mb-2">{{ $t('menu.noDishesFound') }}</h3>
-        <p class="text-sm text-warm-500 dark:text-warm-400 mb-6 max-w-xs">
-          {{ search ? $t('menu.noResultsFor', { search }) : $t('menu.noDishesMatch') }}
-          {{ $t('menu.adjustFilters') }}
-        </p>
-        <button @click="clearAll" class="btn-outline text-sm">
-          <X :size="15" /> {{ $t('menu.clearAll') }}
-        </button>
-      </div>
+        <TransitionGroup
+          tag="div"
+          class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
+          enter-from-class="opacity-0 translate-y-4"
+          enter-active-class="transition-all duration-300"
+          leave-to-class="opacity-0 scale-95"
+          leave-active-class="transition-all duration-200 absolute"
+        >
+          <DishCard v-for="dish in dishes" :key="dish.id" :dish="dish" />
+        </TransitionGroup>
+      </LoadingState>
 
     </div>
   </DefaultLayout>

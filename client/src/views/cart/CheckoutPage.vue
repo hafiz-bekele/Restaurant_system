@@ -9,8 +9,10 @@ import { orderApi, guestApi, paymentApi } from '../../services/api'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import {
   MapPin, CreditCard, ShoppingBag, CheckCircle, Truck,
-  Utensils, Smartphone, User, Phone, Mail, Sparkles, AlertCircle
+  Utensils, Smartphone, User, Phone, Mail, Sparkles, AlertCircle, Loader2
 } from '@lucide/vue'
+import CircleLoader from '../../components/ui/CircleLoader.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const cart    = useCartStore()
@@ -136,6 +138,7 @@ async function placeOrder() {
       payload.table_id = Number(form.value.table_id)
     }
 
+    ui.startProcess(form.value.payment_method === 'chapa' ? 'Connecting to payment gateway...' : 'Placing your order...')
     const { data } = await orderApi.create(payload)
     const newOrder = data.data
     ui.toast(t('checkoutPage.orderPlacedSuccess'), 'success')
@@ -170,6 +173,7 @@ async function placeOrder() {
     }
   } finally {
     loading.value = false
+    ui.stopProcess()
   }
 }
 </script>
@@ -442,13 +446,15 @@ async function placeOrder() {
         </div>
 
         <!-- 6. Submit Button -->
-        <button
+        <AppButton
           type="submit"
-          :disabled="loading"
-          class="btn-primary w-full justify-center py-3.5 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transition-all cursor-pointer"
+          :loading="loading"
+          :loading-text="$t('checkoutPage.placingOrder')"
+          size="lg"
+          full-width
         >
-          {{ loading ? $t('checkoutPage.placingOrder') : (form.payment_method === 'chapa' ? $t('checkoutPage.payWithChapa') : $t('checkoutPage.confirmOrder')) }}
-        </button>
+          {{ form.payment_method === 'chapa' ? $t('checkoutPage.payWithChapa') : $t('checkoutPage.confirmOrder') }}
+        </AppButton>
       </form>
     </div>
   </DefaultLayout>

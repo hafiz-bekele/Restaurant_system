@@ -4,8 +4,10 @@ import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useUiStore }   from '../../stores/ui'
-import { ChefHat, ArrowLeft } from '@lucide/vue'
+import { ChefHat, ArrowLeft, Loader2 } from '@lucide/vue'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
+import CircleLoader from '../../components/ui/CircleLoader.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 import { APP_NAME } from '../../config'
 
 const { t } = useI18n()
@@ -20,6 +22,7 @@ const error   = ref('')
 async function submit() {
   error.value   = ''
   loading.value = true
+  ui.startProcess('Creating customer account...')
   try {
     await auth.register(form.value)
     ui.toast(t('auth.accountCreatedToast'), 'success')
@@ -29,12 +32,19 @@ async function submit() {
     error.value = errors ? Object.values(errors).flat().join(' ') : (e.response?.data?.message ?? t('auth.registrationFailed'))
   } finally {
     loading.value = false
+    ui.stopProcess()
   }
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-warm-50 dark:bg-gray-950 flex flex-col justify-between p-4 sm:p-6 transition-colors duration-200">
+  <div class="min-h-screen bg-warm-50 dark:bg-[#07080c] flex flex-col justify-between p-4 sm:p-6 transition-colors duration-200 relative overflow-hidden">
+    <!-- Ambient Background Accents -->
+    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
+      <div class="absolute -top-[15%] -right-[10%] w-[50vw] max-w-[500px] aspect-square rounded-full bg-gradient-to-br from-primary-400/15 via-amber-300/8 to-transparent dark:from-primary-500/10 dark:via-orange-600/5 dark:to-transparent blur-3xl opacity-25"></div>
+      <div class="absolute -bottom-[15%] -left-[10%] w-[45vw] max-w-[450px] aspect-square rounded-full bg-gradient-to-tr from-indigo-300/10 via-primary-300/8 to-transparent dark:from-indigo-600/8 dark:via-primary-600/5 dark:to-transparent blur-3xl opacity-20"></div>
+    </div>
+
     <!-- Top Header Bar with Storefront Link & Theme Toggle -->
     <header class="w-full max-w-4xl mx-auto flex items-center justify-between py-2 shrink-0">
       <RouterLink
@@ -50,7 +60,7 @@ async function submit() {
       </div>
     </header>
 
-    <div class="card w-full max-w-md mx-auto p-6 sm:p-8 my-auto shadow-card border border-warm-100 dark:border-warm-800">
+    <div class="card-glass w-full max-w-md mx-auto p-6 sm:p-8 my-auto shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_24px_56px_rgba(0,0,0,0.5)]">
       <div class="text-center mb-6">
         <RouterLink to="/" class="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-heading font-bold text-2xl group">
           <div class="p-2 rounded-xl bg-primary-50 dark:bg-primary-950/40 group-hover:scale-105 transition-transform">
@@ -86,9 +96,16 @@ async function submit() {
 
         <p v-if="error" class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2">{{ error }}</p>
 
-        <button type="submit" :disabled="loading" class="btn-primary w-full justify-center py-3 mt-2">
-          {{ loading ? $t('auth.creating') : $t('auth.createAccountBtn') }}
-        </button>
+        <AppButton
+          type="submit"
+          :loading="loading"
+          :loading-text="$t('auth.creating')"
+          size="lg"
+          full-width
+          class="mt-2"
+        >
+          {{ $t('auth.createAccountBtn') }}
+        </AppButton>
       </form>
 
       <p class="text-center text-sm text-warm-500 dark:text-warm-400 mt-6">

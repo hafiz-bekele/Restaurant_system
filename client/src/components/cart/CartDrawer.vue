@@ -1,8 +1,9 @@
 <script setup>
-import { X, Trash2, Plus, Minus, ShoppingBag } from '@lucide/vue'
+import { X, Trash2, Plus, Minus, ShoppingBag, Loader2 } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
 import { useUiStore }   from '../../stores/ui'
+import CircleLoader     from '../ui/CircleLoader.vue'
 
 const cart = useCartStore()
 const ui   = useUiStore()
@@ -30,12 +31,12 @@ async function updateQty(item, delta) {
 
       <!-- Drawer -->
     <Transition enter-from-class="translate-x-full" enter-active-class="transition-transform duration-300 ease-out" leave-to-class="translate-x-full" leave-active-class="transition-transform duration-200 ease-in">
-      <aside v-if="cart.open" class="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white dark:bg-gray-900 flex flex-col shadow-2xl" role="dialog" aria-label="Shopping cart">
+      <aside v-if="cart.open" class="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white/95 dark:bg-[#0c0d12]/95 backdrop-blur-md border-l border-warm-200/80 dark:border-white/10 flex flex-col shadow-2xl" role="dialog" aria-label="Shopping cart">
         <!-- Mobile drag handle pill -->
         <div class="w-12 h-1.5 bg-warm-200 dark:bg-warm-700 rounded-full mx-auto mt-2.5 mb-0.5 md:hidden" aria-hidden="true"></div>
 
         <!-- Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-warm-100 dark:border-warm-800">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-white/40 dark:border-white/10">
           <h2 class="font-heading font-bold text-lg text-warm-900 dark:text-white flex items-center gap-2">
             <ShoppingBag :size="20" /> {{ $t('cart.title') }}
             <span v-if="cart.itemCount" class="badge badge-orange">{{ cart.itemCount }}</span>
@@ -68,25 +69,32 @@ async function updateQty(item, delta) {
               <div class="flex items-center gap-2 mt-2">
                 <button
                   @click="updateQty(item, -1)"
-                  class="w-8 h-8 rounded-lg bg-warm-100 dark:bg-warm-800 hover:bg-warm-200 dark:hover:bg-warm-700 flex items-center justify-center transition-colors active:scale-95"
+                  :disabled="cart.updatingItemId === item.id"
+                  class="w-8 h-8 rounded-lg bg-warm-100 dark:bg-warm-800 hover:bg-warm-200 dark:hover:bg-warm-700 disabled:opacity-50 flex items-center justify-center transition-colors active:scale-95"
                   :aria-label="`Decrease ${item.dish?.name} quantity`"
                 >
                   <Minus :size="14" />
                 </button>
-                <span class="text-sm font-semibold w-7 text-center select-none">{{ item.quantity }}</span>
+                <span class="text-sm font-semibold w-7 text-center select-none flex items-center justify-center">
+                  <CircleLoader v-if="cart.updatingItemId === item.id" size="xs" color="primary" />
+                  <span v-else>{{ item.quantity }}</span>
+                </span>
                 <button
                   @click="updateQty(item, 1)"
-                  class="w-8 h-8 rounded-lg bg-warm-100 dark:bg-warm-800 hover:bg-warm-200 dark:hover:bg-warm-700 flex items-center justify-center transition-colors active:scale-95"
+                  :disabled="cart.updatingItemId === item.id"
+                  class="w-8 h-8 rounded-lg bg-warm-100 dark:bg-warm-800 hover:bg-warm-200 dark:hover:bg-warm-700 disabled:opacity-50 flex items-center justify-center transition-colors active:scale-95"
                   :aria-label="`Increase ${item.dish?.name} quantity`"
                 >
                   <Plus :size="14" />
                 </button>
                 <button
                   @click="cart.removeItem(item.id)"
-                  class="ml-auto w-8 h-8 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-colors active:scale-95"
+                  :disabled="cart.updatingItemId === item.id"
+                  class="ml-auto w-8 h-8 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 flex items-center justify-center transition-colors active:scale-95"
                   :aria-label="`Remove ${item.dish?.name}`"
                 >
-                  <Trash2 :size="15" />
+                  <CircleLoader v-if="cart.updatingItemId === item.id" size="xs" color="amber" />
+                  <Trash2 v-else :size="15" />
                 </button>
               </div>
             </div>
@@ -94,12 +102,12 @@ async function updateQty(item, delta) {
         </div>
 
         <!-- Summary -->
-        <div v-if="cart.cart?.items?.length" class="px-6 py-4 pb-8 md:pb-4 border-t border-warm-100 dark:border-warm-800 space-y-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <div v-if="cart.cart?.items?.length" class="px-6 py-4 pb-8 md:pb-4 border-t border-warm-200/80 dark:border-white/10 space-y-3 bg-warm-50/95 dark:bg-[#111318]/95 backdrop-blur-sm">
           <div class="space-y-1 text-sm">
             <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>{{ $t('cart.subtotal') }}</span><span>${{ Number(cart.totals.subtotal).toFixed(2) }}</span></div>
             <div v-if="cart.totals.discount > 0" class="flex justify-between text-green-600"><span>{{ $t('cart.discount') }}</span><span>-${{ Number(cart.totals.discount).toFixed(2) }}</span></div>
             <div class="flex justify-between text-warm-600 dark:text-warm-400"><span>{{ $t('cart.tax') }}</span><span>${{ Number(cart.totals.tax).toFixed(2) }}</span></div>
-            <div class="flex justify-between font-bold text-warm-900 dark:text-white pt-1 border-t border-warm-100 dark:border-warm-800"><span>{{ $t('cart.total') }}</span><span>${{ Number(cart.totals.total).toFixed(2) }}</span></div>
+            <div class="flex justify-between font-bold text-warm-900 dark:text-white pt-1 border-t border-white/40 dark:border-white/10"><span>{{ $t('cart.total') }}</span><span>${{ Number(cart.totals.total).toFixed(2) }}</span></div>
           </div>
           <RouterLink to="/checkout" @click="cart.closeDrawer" class="btn-primary w-full justify-center py-3">
             {{ $t('cart.checkout') }}

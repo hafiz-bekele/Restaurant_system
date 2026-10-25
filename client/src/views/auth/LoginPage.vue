@@ -5,8 +5,10 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useUiStore }   from '../../stores/ui'
 import { APP_NAME } from '../../config'
-import { ChefHat, Mail, Lock, Eye, EyeOff, ArrowLeft, User, Sparkles, LogOut, Check } from '@lucide/vue'
+import { ChefHat, Mail, Lock, Eye, EyeOff, ArrowLeft, User, Sparkles, LogOut, Check, Loader2 } from '@lucide/vue'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
+import CircleLoader from '../../components/ui/CircleLoader.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const auth   = useAuthStore()
@@ -19,18 +21,24 @@ const password = ref('')
 const showPw   = ref(false)
 const loading  = ref(false)
 const error    = ref('')
+const selectedDemo = ref('')
 
 const demoAccounts = [
-  { label: 'Admin',     email: 'admin@restaurant.com',     pass: 'password', role: 'Full Admin' },
-  { label: 'Cashier',   email: 'cashier@restaurant.com',   pass: 'password', role: 'POS Cashier' },
-  { label: 'Waiter',    email: 'waiter@restaurant.com',    pass: 'password', role: 'Server' },
-  { label: 'Kitchen',   email: 'kitchen@restaurant.com',   pass: 'password', role: 'Head Chef' },
-  { label: 'Reception', email: 'reception@restaurant.com', pass: 'password', role: 'Front Desk' },
+  { label: 'Admin',       email: 'admin@restaurant.com',      pass: 'Adm!nP@ss#2026',    role: 'Hotel Admin' },
+  { label: 'Super Admin', email: 'superadmin@restaurant.com', pass: 'S@perAdm!n#2026',  role: 'Super Admin' },
+  { label: 'Manager',     email: 'manager@restaurant.com',    pass: 'M@nager$ecure#2026',role: 'Manager' },
+  { label: 'Cashier',     email: 'cashier@restaurant.com',    pass: 'C@shierP0S#2026',   role: 'POS Cashier' },
+  { label: 'Waiter',      email: 'waiter@restaurant.com',     pass: 'W@iterFloor#2026',  role: 'Server' },
+  { label: 'Kitchen',     email: 'kitchen@restaurant.com',    pass: 'K!tchen$t@ff#2026', role: 'Head Chef' },
+  { label: 'Reception',   email: 'reception@restaurant.com',  pass: 'R3cept!on#2026',    role: 'Front Desk' },
+  { label: 'Delivery',    email: 'delivery@restaurant.com',   pass: 'D3livery#2026',     role: 'Delivery Driver' },
 ]
 
 function fillDemo(acc) {
-  email.value    = acc.email
-  password.value = acc.pass
+  selectedDemo.value = acc.label
+  email.value        = acc.email
+  password.value     = acc.pass
+  error.value        = ''
   ui.toast(t('auth.demoSelectedToast', { label: acc.label }), 'info')
 }
 
@@ -42,6 +50,7 @@ async function handleSignOut() {
 async function submit() {
   error.value   = ''
   loading.value = true
+  ui.startProcess('Authenticating credentials...')
   try {
     const user = await auth.login({ email: email.value, password: password.value })
     ui.toast(t('auth.welcomeBackToast', { name: user.name }), 'success')
@@ -72,12 +81,19 @@ async function submit() {
     error.value = e.response?.data?.message ?? t('auth.invalidCredentials')
   } finally {
     loading.value = false
+    ui.stopProcess()
   }
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-warm-50 dark:bg-gray-950 flex flex-col justify-between p-4 sm:p-6 transition-colors duration-200">
+  <div class="min-h-screen bg-warm-50 dark:bg-[#07080c] flex flex-col justify-between p-4 sm:p-6 transition-colors duration-200 relative overflow-hidden">
+    <!-- Ambient Background Accents -->
+    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
+      <div class="absolute -top-[15%] -right-[10%] w-[50vw] max-w-[500px] aspect-square rounded-full bg-gradient-to-br from-primary-400/15 via-amber-300/8 to-transparent dark:from-primary-500/10 dark:via-orange-600/5 dark:to-transparent blur-3xl opacity-25"></div>
+      <div class="absolute -bottom-[15%] -left-[10%] w-[45vw] max-w-[450px] aspect-square rounded-full bg-gradient-to-tr from-indigo-300/10 via-primary-300/8 to-transparent dark:from-indigo-600/8 dark:via-primary-600/5 dark:to-transparent blur-3xl opacity-20"></div>
+    </div>
+
     <!-- Top Header Bar with Storefront Link & Theme Toggle -->
     <header class="w-full max-w-4xl mx-auto flex items-center justify-between py-2 shrink-0">
       <RouterLink
@@ -93,10 +109,10 @@ async function submit() {
       </div>
     </header>
 
-    <div class="card w-full max-w-md mx-auto p-6 sm:p-8 my-auto shadow-card border border-warm-100 dark:border-warm-800">
+    <div class="card-glass w-full max-w-md mx-auto p-6 sm:p-8 my-auto shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_24px_56px_rgba(0,0,0,0.5)]">
 
       <!-- Already logged in notification banner -->
-      <div v-if="auth.isAuthenticated" class="mb-6 p-4 rounded-2xl bg-primary-50 dark:bg-primary-950/40 border border-primary-200 dark:border-primary-800/60">
+      <div v-if="auth.isAuthenticated" class="mb-6 p-4 rounded-2xl bg-white/95 dark:bg-primary-950/40 backdrop-blur-sm border border-primary-300/80 dark:border-primary-800/80 shadow-xs">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-bold text-xs uppercase tracking-wider text-primary-600 dark:text-primary-400">{{ $t('auth.currentlyLoggedIn') }}</p>
@@ -132,10 +148,13 @@ async function submit() {
       </div>
 
       <!-- Quick Demo Account Fillers -->
-      <div class="mb-5 p-3 rounded-2xl bg-warm-100/70 dark:bg-white/5 border border-warm-200/80 dark:border-white/10">
-        <div class="flex items-center gap-1.5 text-xs font-bold text-warm-700 dark:text-warm-300 mb-2">
-          <Sparkles :size="13" class="text-primary-500" />
-          <span>{{ $t('auth.quickDemoTitle') }}</span>
+      <div class="mb-5 p-3 rounded-2xl bg-white/95 dark:bg-white/[0.04] backdrop-blur-sm border border-warm-200/90 dark:border-white/10 shadow-2xs">
+        <div class="flex items-center justify-between gap-1.5 text-xs font-bold text-warm-700 dark:text-warm-300 mb-2">
+          <div class="flex items-center gap-1.5">
+            <Sparkles :size="13" class="text-primary-500" />
+            <span>{{ $t('auth.quickDemoTitle') }}</span>
+          </div>
+          <span class="text-[10px] font-normal text-warm-500 dark:text-warm-400">1-click fill</span>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
           <button
@@ -143,10 +162,19 @@ async function submit() {
             :key="acc.label"
             type="button"
             @click="fillDemo(acc)"
-            class="text-[11px] font-semibold px-2 py-1.5 rounded-lg bg-white dark:bg-warm-800 text-warm-800 dark:text-warm-200 border border-warm-200 dark:border-warm-700 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors shadow-2xs text-center"
+            :class="[
+              'text-[11px] font-semibold px-2 py-1.5 rounded-lg border transition-all text-center',
+              selectedDemo === acc.label
+                ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
+                : 'bg-white dark:bg-warm-800 text-warm-800 dark:text-warm-200 border-warm-200 dark:border-warm-700 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 shadow-2xs'
+            ]"
           >
             {{ acc.label }}
           </button>
+        </div>
+        <div v-if="selectedDemo" class="mt-2.5 pt-2 border-t border-warm-200/70 dark:border-white/10 flex items-center justify-between text-[11px] text-warm-600 dark:text-warm-400">
+          <span class="truncate max-w-[200px]">Selected: <strong class="text-warm-900 dark:text-white font-mono">{{ email }}</strong></span>
+          <span class="font-mono text-warm-500 text-[10px] shrink-0">Pass: {{ password }}</span>
         </div>
       </div>
 
@@ -172,9 +200,15 @@ async function submit() {
 
         <p v-if="error" class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2">{{ error }}</p>
 
-        <button type="submit" :disabled="loading" class="btn-primary w-full justify-center py-3 text-base font-semibold shadow-md">
-          {{ loading ? $t('auth.signingIn') : $t('auth.signInBtn') }}
-        </button>
+        <AppButton
+          type="submit"
+          :loading="loading"
+          :loading-text="$t('auth.signingIn')"
+          size="lg"
+          full-width
+        >
+          {{ $t('auth.signInBtn') }}
+        </AppButton>
       </form>
 
       <p class="text-center text-sm text-warm-500 dark:text-warm-400 mt-6">

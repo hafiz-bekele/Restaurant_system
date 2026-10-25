@@ -6,6 +6,7 @@ import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import { useCartStore } from '../../stores/cart'
 import { useUiStore } from '../../stores/ui'
 import { ShoppingBag, Trash2, Plus, Minus, Tag, ShieldCheck, Sparkles, ArrowRight } from '@lucide/vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const cart = useCartStore()
@@ -146,14 +147,17 @@ async function handleApplyCoupon(code) {
                 class="input text-xs uppercase font-mono tracking-wider flex-1"
                 @keydown.enter.prevent="handleApplyCoupon()"
               />
-              <button
+              <AppButton
                 type="button"
                 @click="handleApplyCoupon()"
-                :disabled="applyingCoupon"
-                class="btn-secondary text-xs px-4"
+                :loading="applyingCoupon"
+                :loading-text="$t('cartPage.applying')"
+                variant="secondary"
+                size="sm"
+                class="px-4"
               >
-                {{ applyingCoupon ? $t('cartPage.applying') : $t('cartPage.apply') }}
-              </button>
+                {{ $t('cartPage.apply') }}
+              </AppButton>
             </div>
           </div>
         </div>

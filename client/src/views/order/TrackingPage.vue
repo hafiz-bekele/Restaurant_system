@@ -82,12 +82,16 @@ function toggleRatingForm(dishId) {
     activeRatingDishId.value = null
   } else {
     activeRatingDishId.value = dishId
-    if (!ratingValues.value[dishId]) ratingValues.value[dishId] = 5
+    if (!ratingValues.value[dishId]) ratingValues.value[dishId] = 0
   }
 }
 
 async function submitDishReview(dishId) {
-  const rating = ratingValues.value[dishId] || 5
+  const rating = ratingValues.value[dishId]
+  if (!rating || rating < 1 || rating > 5) {
+    ui.toast(t('trackingPage.pleaseSelectRating'), 'warning')
+    return
+  }
   const comment = commentValues.value[dishId]?.trim() || null
 
   submittingReview.value = true
@@ -348,20 +352,24 @@ onUnmounted(() => {
                       @mouseenter="hoverStars[item.dish_id] = s"
                       @mouseleave="hoverStars[item.dish_id] = 0"
                       @click="ratingValues[item.dish_id] = s"
-                      class="p-1 hover:scale-110 transition-transform"
+                      class="p-1 hover:scale-110 transition-transform cursor-pointer"
+                      :aria-label="`Rate ${s} stars`"
                     >
                       <Star
                         :size="24"
                         :class="[
-                          'transition-colors',
-                          s <= (hoverStars[item.dish_id] || ratingValues[item.dish_id] || 5)
+                          'transition-colors duration-150',
+                          s <= (hoverStars[item.dish_id] || ratingValues[item.dish_id] || 0) && ((hoverStars[item.dish_id] || 0) > 0 || (ratingValues[item.dish_id] || 0) > 0)
                             ? 'text-amber-400 fill-amber-400'
-                            : 'text-warm-300 dark:text-warm-700'
+                            : 'text-warm-300 dark:text-warm-700 hover:text-amber-300'
                         ]"
                       />
                     </button>
-                    <span class="text-xs font-bold text-amber-600 ml-2">
-                      {{ $t('trackingPage.starsCount', { count: (hoverStars[item.dish_id] || ratingValues[item.dish_id] || 5) }) }}
+                    <span v-if="(hoverStars[item.dish_id] || ratingValues[item.dish_id])" class="text-xs font-bold text-amber-600 ml-2">
+                      {{ $t('trackingPage.starsCount', { count: (hoverStars[item.dish_id] || ratingValues[item.dish_id]) }) }}
+                    </span>
+                    <span v-else class="text-xs font-medium text-warm-400 ml-2">
+                      {{ $t('trackingPage.clickToSelect') }}
                     </span>
                   </div>
                 </div>

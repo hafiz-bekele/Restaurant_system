@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { guestApi } from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 import { AlertTriangle, CheckCircle } from '@lucide/vue'
 
 const { t } = useI18n()
@@ -89,9 +90,15 @@ async function submit() {
           <textarea v-model="form.description" rows="4" maxlength="1000" class="input resize-none" :placeholder="$t('guestComplaint.detailsPlaceholder')"></textarea>
         </div>
 
-        <button type="submit" :disabled="loading" class="btn-primary w-full justify-center py-3">
-          {{ loading ? $t('guestComplaint.submittingBtn') : $t('guestComplaint.submitBtn') }}
-        </button>
+        <AppButton
+          type="submit"
+          :loading="loading"
+          :loading-text="$t('guestComplaint.submittingBtn')"
+          size="lg"
+          full-width
+        >
+          {{ $t('guestComplaint.submitBtn') }}
+        </AppButton>
       </form>
     </div>
   </DefaultLayout>

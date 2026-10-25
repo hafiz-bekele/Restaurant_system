@@ -6,6 +6,7 @@ import { useUiStore }   from '../../stores/ui'
 import { profileApi }   from '../../services/api'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 import { APP_NAME } from '../../config'
 import { Sparkles, Moon, Sun } from '@lucide/vue'
 
@@ -60,7 +61,14 @@ async function save() {
             <label class="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-1.5">{{ $t('profilePage.phone') }}</label>
             <input v-model="form.phone" type="tel" class="input" />
           </div>
-          <button type="submit" :disabled="saving" class="btn-primary">{{ saving ? $t('profilePage.saving') : $t('profilePage.saveChanges') }}</button>
+          <AppButton
+            type="submit"
+            :loading="saving"
+            :loading-text="$t('profilePage.saving')"
+            variant="primary"
+          >
+            {{ $t('profilePage.saveChanges') }}
+          </AppButton>
         </form>
       </div>
 

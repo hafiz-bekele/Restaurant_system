@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\V1\Staff\DeliveryController;
 use App\Http\Controllers\Api\V1\Staff\KitchenController;
 use App\Http\Controllers\Api\V1\Staff\ReceptionController;
 use App\Http\Controllers\Api\V1\Staff\WaiterController;
+use App\Http\Controllers\Api\V1\UploadController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -42,9 +43,10 @@ Route::prefix('v1')->group(function () {
     // ── Auth ─────────────────────────────────────────────────────────────────
     Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
-        Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+        Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('api.login');
         Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
         Route::get('me', [AuthController::class, 'me'])->middleware('auth:sanctum');
+        Route::get('verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
     });
 
     // ── Public menu ───────────────────────────────────────────────────────────
@@ -124,6 +126,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('favorites/{dishId}', [FavoriteController::class, 'destroy']);
         Route::get('reviews/my', [ReviewController::class, 'myReviews']);
         Route::post('reviews', [ReviewController::class, 'store']);
+        Route::post('upload/image', [UploadController::class, 'uploadImage']);
 
         // Staff — kitchen (REQ-8.x)
         Route::middleware('role:kitchen|manager|admin|super-admin')->group(function () {
@@ -182,6 +185,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('role:admin|manager|super-admin')->prefix('admin')->group(function () {
 
             // Dishes
+            Route::post('dishes/{id}/restore', [AdminDishController::class, 'restore']);
             Route::apiResource('dishes', AdminDishController::class);
 
             // Reviews Moderation

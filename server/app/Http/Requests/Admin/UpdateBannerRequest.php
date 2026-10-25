@@ -17,7 +17,9 @@ class UpdateBannerRequest extends FormRequest
         return [
             'title'      => ['sometimes', 'string', 'max:255'],
             'subtitle'   => ['nullable', 'string', 'max:255'],
-            'image'      => ['sometimes', 'string', 'max:500'],
+            'image'      => $this->hasFile('image')
+                ? ['sometimes', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif,svg', 'max:10240']
+                : ['sometimes', 'string', 'max:2000'],
             'link'       => ['nullable', 'url', 'max:500'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active'  => ['boolean'],

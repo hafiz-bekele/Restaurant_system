@@ -17,8 +17,10 @@ class Dish extends Model
     protected $fillable = [
         'category_id',
         'name',
+        'name_am',
         'slug',
         'description',
+        'description_am',
         'price',
         'image',
         'calories',
@@ -49,12 +51,24 @@ class Dish extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (Dish $dish) {
+            if (empty($dish->slug)) {
+                $base = \Illuminate\Support\Str::slug($dish->name);
+                $dish->slug = ($base ?: 'dish') . '-' . \Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6));
+            }
+        });
+    }
+
     public function toSearchableArray(): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'name_am' => $this->name_am,
             'description' => $this->description,
+            'description_am' => $this->description_am,
             'category' => $this->relationLoaded('category') ? $this->category?->name : null,
         ];
     }

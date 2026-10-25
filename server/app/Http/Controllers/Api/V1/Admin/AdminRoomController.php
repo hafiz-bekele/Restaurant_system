@@ -9,6 +9,7 @@ use App\Models\Room;
 use App\Models\RoomBooking;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AdminRoomController extends Controller
@@ -25,16 +26,38 @@ class AdminRoomController extends Controller
 
     public function store(StoreRoomRequest $request): JsonResponse
     {
-        $data               = $request->validated();
-        $data['hotel_id']   = app('current_hotel_id');
-        $data['qr_token']   = Str::random(32);
+        $data             = $request->validated();
+        $data['hotel_id'] = app('current_hotel_id');
+        $data['qr_token'] = Str::random(32);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('rooms', 'public');
+            $data['image'] = Storage::disk('public')->url($path);
+        } elseif (!empty($data['image_url']) && empty($data['image'])) {
+            $data['image'] = $data['image_url'];
+        }
+        unset($data['image_url']);
 
         return $this->success(Room::create($data), 'Room created', 201);
     }
 
     public function update(UpdateRoomRequest $request, Room $room): JsonResponse
     {
-        $room->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            if ($room->image && Str::contains($room->image, '/storage/rooms/')) {
+                $oldPath = Str::after($room->image, '/storage/');
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $request->file('image')->store('rooms', 'public');
+            $data['image'] = Storage::disk('public')->url($path);
+        } elseif (!empty($data['image_url']) && empty($data['image'])) {
+            $data['image'] = $data['image_url'];
+        }
+        unset($data['image_url']);
+
+        $room->update($data);
 
         return $this->success($room->fresh(), 'Room updated');
     }

@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('api', \App\Http\Middleware\SetTenantFromRequest::class);
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') || $request->expectsJson() ? null : '/login');
         $middleware->alias([
             'tenant'             => \App\Http\Middleware\SetTenantFromRequest::class,
             'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,

@@ -11,6 +11,16 @@ class StoreRoomRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('image_url') && !$this->hasFile('image') && !$this->filled('image')) {
+            $this->merge(['image' => $this->input('image_url')]);
+        }
+        if ($this->has('is_active')) {
+            $this->merge(['is_active' => filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
+        }
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -20,6 +30,11 @@ class StoreRoomRequest extends FormRequest
             'capacity'        => ['required', 'integer', 'min:1', 'max:10'],
             'price_per_night' => ['required', 'numeric', 'min:0'],
             'amenities'       => ['nullable', 'array'],
+            'description'     => ['nullable', 'string'],
+            'image'           => $this->hasFile('image')
+                ? ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif,svg', 'max:10240']
+                : ['nullable', 'string', 'max:2000'],
+            'image_url'       => ['nullable', 'string', 'max:2000'],
             'is_active'       => ['boolean'],
         ];
     }

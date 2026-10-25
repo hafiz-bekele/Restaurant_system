@@ -11,15 +11,39 @@ class StoreDishRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('image_url') && !$this->hasFile('image') && !$this->filled('image')) {
+            $this->merge(['image' => $this->input('image_url')]);
+        }
+        if ($this->has('is_available')) {
+            $this->merge(['is_available' => filter_var($this->is_available, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
+        }
+        if ($this->has('is_featured')) {
+            $this->merge(['is_featured' => filter_var($this->is_featured, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+        if ($this->has('is_vegetarian')) {
+            $this->merge(['is_vegetarian' => filter_var($this->is_vegetarian, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+        if ($this->has('is_vegan')) {
+            $this->merge(['is_vegan' => filter_var($this->is_vegan, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
             'category_id'    => ['required', 'integer', 'exists:categories,id'],
             'name'           => ['required', 'string', 'max:255'],
+            'name_am'        => ['nullable', 'string', 'max:255'],
             'description'    => ['nullable', 'string'],
+            'description_am' => ['nullable', 'string'],
             'price'          => ['required', 'numeric', 'min:0'],
-            'image'          => ['nullable', 'string'],
+            'image'          => $this->hasFile('image')
+                ? ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif,svg', 'max:10240']
+                : ['nullable', 'string', 'max:2000'],
+            'image_url'      => ['nullable', 'string', 'max:2000'],
             'calories'       => ['nullable', 'integer'],
             'prep_time'      => ['nullable', 'integer'],
             'is_vegetarian'  => ['boolean'],

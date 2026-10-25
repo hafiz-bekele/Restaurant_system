@@ -6,6 +6,8 @@ import { useUiStore } from '../../stores/ui'
 import { useI18n } from 'vue-i18n'
 import { ShoppingBag, UserCheck, Utensils, RefreshCw, X, Search, Plus, Trash2, CheckCircle } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
+import LoadingState from '../../components/ui/LoadingState.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const ui = useUiStore()
@@ -28,7 +30,7 @@ const newOrderNotes = ref('')
 const dishSearch = ref('')
 const creatingOrder = ref(false)
 
-const { data: ordersData, isLoading } = useQuery({
+const { data: ordersData, isLoading, isError, error, refetch } = useQuery({
   queryKey: ['admin', 'orders', status],
   queryFn: () => adminApi.orders({ status: status.value || undefined }).then(r => r.data),
   refetchInterval: 15000,
@@ -215,13 +217,20 @@ async function submitNewOrder() {
       </div>
     </div>
 
-    <!-- Loading Skeleton -->
-    <TableSkeleton v-if="isLoading" :rows="6" :cols="7" />
-
-    <!-- Orders Table -->
-    <div v-else class="card overflow-x-auto shadow-sm">
-      <table class="w-full text-sm text-left">
-        <thead class="bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
+    <!-- Orders LoadingState -->
+    <LoadingState
+      :loading="isLoading"
+      :error="isError ? error : null"
+      :empty="orders().length === 0 && !isLoading"
+      :empty-title="$t('adminOrders.noOrdersMatch')"
+      empty-description="No customer or dining orders match your active filter criteria."
+      skeleton-type="table"
+      :table-columns="8"
+      @retry="refetch"
+    >
+      <div class="card overflow-x-auto shadow-sm">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-400 text-xs uppercase font-semibold">
           <tr>
             <th class="px-5 py-3.5">{{ $t('adminOrders.thRef') }}</th>
             <th class="px-5 py-3.5">{{ $t('adminOrders.thTypeLocation') }}</th>
@@ -317,11 +326,8 @@ async function submitNewOrder() {
           </tr>
         </tbody>
       </table>
-
-      <div v-if="orders().length === 0" class="text-center py-12 text-warm-500 text-sm">
-        {{ $t('adminOrders.noOrdersMatch') }}
-      </div>
     </div>
+  </LoadingState>
 
     <!-- In-House / Phone Order Modal for Admin/Manager -->
     <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -437,13 +443,16 @@ async function submitNewOrder() {
                 <span class="text-primary-600 dark:text-primary-400">ETB {{ grandTotal.toFixed(2) }}</span>
               </div>
 
-              <button
+              <AppButton
                 @click="submitNewOrder"
-                :disabled="!newOrderItems.length || creatingOrder"
-                class="btn-primary w-full justify-center text-xs py-2.5 mt-2 shadow-md"
+                :loading="creatingOrder"
+                :loading-text="$t('adminOrders.dispatchingBtn')"
+                :disabled="!newOrderItems.length"
+                full-width
+                class="text-xs py-2.5 mt-2 shadow-md"
               >
-                {{ creatingOrder ? $t('adminOrders.dispatchingBtn') : $t('adminOrders.createDispatchBtn') }}
-              </button>
+                {{ $t('adminOrders.createDispatchBtn') }}
+              </AppButton>
             </div>
           </div>
         </div>
@@ -478,9 +487,13 @@ async function submitNewOrder() {
 
           <div class="flex justify-end gap-3 pt-3 border-t border-warm-100 dark:border-warm-800">
             <button type="button" @click="showReassignModal = false" class="btn-ghost">{{ $t('adminOrders.cancelBtn') }}</button>
-            <button type="submit" :disabled="reassigning" class="btn-primary">
-              {{ reassigning ? $t('adminOrders.reassigningBtn') : $t('adminOrders.confirmReassignBtn') }}
-            </button>
+            <AppButton
+              type="submit"
+              :loading="reassigning"
+              :loading-text="$t('adminOrders.reassigningBtn')"
+            >
+              {{ $t('adminOrders.confirmReassignBtn') }}
+            </AppButton>
           </div>
         </form>
       </div>

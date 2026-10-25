@@ -10,6 +10,7 @@ import {
   CreditCard, Layers, Clock, Flame, UserCheck, AlertTriangle, ArrowRight
 } from '@lucide/vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const ui = useUiStore()
@@ -1291,9 +1292,14 @@ function roleBadgeClass(role) {
                 <button type="button" @click="showReassignModal = false" class="btn-outline flex-1 text-xs">
                   Cancel
                 </button>
-                <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
-                  {{ saving ? 'Saving...' : 'Confirm Assignment' }}
-                </button>
+                <AppButton
+                  type="submit"
+                  :loading="saving"
+                  loading-text="Saving..."
+                  class="flex-1 text-xs py-2.5 font-semibold"
+                >
+                  Confirm Assignment
+                </AppButton>
               </div>
             </form>
           </div>
@@ -1461,14 +1467,15 @@ function roleBadgeClass(role) {
             <button type="button" @click="showPermissionsModal = false" class="btn-outline text-xs py-2 px-3.5">
               {{ $t('adminUsers.cancel') }}
             </button>
-            <button
+            <AppButton
               type="button"
               @click="savePermissionsAndRole"
-              :disabled="saving"
-              class="btn-primary text-xs py-2 px-4 shadow-md font-semibold"
+              :loading="saving"
+              :loading-text="$t('adminUsers.savingChanges')"
+              class="text-xs py-2 px-4 shadow-md font-semibold"
             >
-              {{ saving ? $t('adminUsers.savingChanges') : $t('adminUsers.savePermsBtn') }}
-            </button>
+              {{ $t('adminUsers.savePermsBtn') }}
+            </AppButton>
           </div>
         </div>
       </div>
@@ -1558,9 +1565,14 @@ function roleBadgeClass(role) {
 
               <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-neutral-800">
                 <button type="button" @click="showModal = false" class="btn-outline flex-1 text-xs">{{ $t('adminUsers.cancel') }}</button>
-                <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
-                  {{ saving ? $t('adminUsers.onboardingBtn') : $t('adminUsers.createAssignBtn') }}
-                </button>
+                <AppButton
+                  type="submit"
+                  :loading="saving"
+                  :loading-text="$t('adminUsers.onboardingBtn')"
+                  class="flex-1 text-xs py-2.5 font-semibold"
+                >
+                  {{ $t('adminUsers.createAssignBtn') }}
+                </AppButton>
               </div>
             </form>
           </div>
@@ -1672,9 +1684,14 @@ function roleBadgeClass(role) {
 
               <div class="flex gap-3 pt-3 border-t border-warm-100 dark:border-neutral-800">
                 <button type="button" @click="showEditModal = false" class="btn-outline flex-1 text-xs">Cancel</button>
-                <button type="submit" :disabled="saving" class="btn-primary flex-1 text-xs py-2.5 font-semibold">
-                  {{ saving ? 'Saving Changes...' : 'Save User Profile' }}
-                </button>
+                <AppButton
+                  type="submit"
+                  :loading="saving"
+                  loading-text="Saving Changes..."
+                  class="flex-1 text-xs py-2.5 font-semibold"
+                >
+                  Save User Profile
+                </AppButton>
               </div>
             </form>
           </div>

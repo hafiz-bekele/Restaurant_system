@@ -10,6 +10,7 @@ import {
 } from '@lucide/vue'
 import RoomCardSkeleton from '../../components/ui/RoomCardSkeleton.vue'
 import TableSkeleton from '../../components/ui/TableSkeleton.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const ui = useUiStore()
@@ -111,7 +112,10 @@ function buildPayload() {
     return fd
   }
   const payload = { ...form.value }
-  if (!payload.image_url) delete payload.image_url
+  if (imageMode.value === 'url') {
+    payload.image = form.value.image_url || null
+  }
+  delete payload.image_url
   if (!payload.description) delete payload.description
   return payload
 }
@@ -596,10 +600,17 @@ const roomStatusClass  = (s) => s === 'available' ? 'badge-green' : s === 'occup
                 {{ editingRoom ? $t('adminRooms.modalEditNotice') : $t('adminRooms.modalAddNotice') }}
               </p>
               <div class="flex gap-2">
-                <button @click="closeModal" class="btn-outline text-sm py-2 px-4">{{ $t('adminRooms.cancelBtn') }}</button>
-                <button @click="save" :disabled="saving" class="btn-primary text-sm py-2 px-5 shadow-md">
-                  {{ saving ? $t('adminRooms.savingBtn') : editingRoom ? $t('adminRooms.saveChangesBtn') : $t('adminRooms.addRoomBtn') }}
-                </button>
+                <button type="button" @click="closeModal" class="btn-outline text-sm py-2 px-4 cursor-pointer">{{ $t('adminRooms.cancelBtn') }}</button>
+                <AppButton
+                  type="button"
+                  @click="save"
+                  :loading="saving"
+                  :loading-text="$t('adminRooms.savingBtn')"
+                  variant="primary"
+                  size="md"
+                >
+                  {{ editingRoom ? $t('adminRooms.saveChangesBtn') : $t('adminRooms.addRoomBtn') }}
+                </AppButton>
               </div>
             </div>
 

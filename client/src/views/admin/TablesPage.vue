@@ -6,6 +6,8 @@ import api from '../../services/api'
 import { useUiStore } from '../../stores/ui'
 import { useI18n } from 'vue-i18n'
 import { Plus, Trash2, X, QrCode, RefreshCw } from '@lucide/vue'
+import CircleLoader from '../../components/ui/CircleLoader.vue'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const { t } = useI18n()
 const ui = useUiStore()
@@ -98,19 +100,25 @@ const statusColors = { available: 'badge-green', occupied: 'badge-red', reserved
       >{{ area }}</button>
     </div>
 
-    <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div v-for="i in 8" :key="i" class="card p-4 space-y-3 border border-warm-100 dark:border-warm-800">
-        <div class="flex items-start justify-between">
-          <div class="space-y-1.5">
-            <div class="skeleton h-4 w-20 rounded"></div>
-            <div class="skeleton h-3 w-28 rounded"></div>
+    <div v-if="isLoading" class="space-y-4">
+      <div class="card p-8 flex flex-col items-center justify-center text-center border border-warm-100 dark:border-warm-800">
+        <CircleLoader size="lg" color="blue" label="Loading floor tables..." label-position="bottom" />
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div v-for="i in 8" :key="i" class="card p-4 space-y-3 border border-warm-100 dark:border-warm-800">
+          <div class="flex items-start justify-between">
+            <div class="space-y-1.5">
+              <div class="skeleton h-4 w-20 rounded"></div>
+              <div class="skeleton h-3 w-28 rounded"></div>
+            </div>
+            <div class="skeleton h-5 w-14 !rounded-full"></div>
           </div>
-          <div class="skeleton h-5 w-14 !rounded-full"></div>
-        </div>
-        <div class="flex items-center gap-2 pt-2 border-t border-warm-100 dark:border-warm-800">
-          <div class="skeleton h-6 w-6 rounded-lg"></div>
-          <div class="skeleton h-6 w-6 rounded-lg"></div>
-          <div class="skeleton h-6 w-6 rounded-lg ml-auto"></div>
+          <div class="flex items-center gap-2 pt-2 border-t border-warm-100 dark:border-warm-800">
+            <div class="skeleton h-6 w-6 rounded-lg"></div>
+            <div class="skeleton h-6 w-6 rounded-lg"></div>
+            <div class="skeleton h-6 w-6 rounded-lg ml-auto"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -162,8 +170,16 @@ const statusColors = { available: 'badge-green', occupied: 'badge-red', reserved
                 <input v-model="form.area" type="text" class="input" placeholder="Indoor, Terrace…" />
               </div>
               <div class="flex gap-3 pt-2">
-                <button type="button" @click="showModal = false" class="btn-outline flex-1">{{ $t('adminTables.cancel') }}</button>
-                <button type="submit" :disabled="saving" class="btn-primary flex-1">{{ saving ? $t('adminTables.creating') : $t('adminTables.createTable') }}</button>
+                <button type="button" @click="showModal = false" class="btn-outline flex-1 cursor-pointer">{{ $t('adminTables.cancel') }}</button>
+                <AppButton
+                  type="submit"
+                  :loading="saving"
+                  :loading-text="$t('adminTables.creating')"
+                  variant="primary"
+                  class="flex-1"
+                >
+                  {{ $t('adminTables.createTable') }}
+                </AppButton>
               </div>
             </form>
           </div>

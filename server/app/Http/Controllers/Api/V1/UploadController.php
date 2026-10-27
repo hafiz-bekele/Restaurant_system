@@ -16,7 +16,7 @@ class UploadController extends Controller
     {
         $request->validate([
             'image'  => ['required', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif,svg', 'max:10240'],
-            'folder' => ['nullable', 'string', 'in:dishes,rooms,banners,avatars,uploads'],
+            'folder' => ['nullable', 'string', 'in:dishes,rooms,banners,avatars,uploads,reviews'],
         ]);
 
         $folder = $request->input('folder', 'uploads');

@@ -3,14 +3,17 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useI18n } from 'vue-i18n'
-import { menuApi, reviewApi } from '../../services/api'
+import { menuApi, reviewApi, adminApi } from '../../services/api'
 import { useCartStore } from '../../stores/cart'
 import { useUiStore }   from '../../stores/ui'
 import { useAuthStore } from '../../stores/auth'
 import DefaultLayout from '../../layouts/DefaultLayout.vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import CircleLoader from '../../components/ui/CircleLoader.vue'
-import { Star, Clock, Leaf, Plus, Minus, MessageSquare, ThumbsUp, Send, CheckCircle2 } from '@lucide/vue'
+import {
+  Star, Clock, Leaf, Plus, Minus, MessageSquare, ThumbsUp, Send, CheckCircle2,
+  Camera, Image as ImageIcon, X, ShieldCheck, ArrowUpDown, Filter, Sparkles, Loader2
+} from '@lucide/vue'
 
 const { t, locale } = useI18n()
 const route       = useRoute()
@@ -26,9 +29,18 @@ const submittingReview = ref(false)
 const showReviewForm   = ref(false)
 
 // Review Form state - unselected by default so user explicitly selects their rating
-const ratingHover = ref(0)
-const newRating   = ref(0)
-const newComment  = ref('')
+const ratingHover    = ref(0)
+const newRating      = ref(0)
+const newTitle       = ref('')
+const newComment     = ref('')
+const uploadedImages = ref([])
+const uploadingImages = ref(false)
+const lightboxImage  = ref(null)
+
+// Filtering & Sorting
+const selectedRatingFilter = ref('')
+const withImagesOnly       = ref(false)
+const sortOrder            = ref('latest')
 
 const isAmharic = computed(() => locale.value === 'am')
 
@@ -55,12 +67,80 @@ async function fetchReviews(dishId) {
   if (!dishId) return
   loadingReviews.value = true
   try {
-    const { data } = await reviewApi.dishReviews(dishId)
+    const params = {
+      rating: selectedRatingFilter.value || undefined,
+      with_images: withImagesOnly.value ? 1 : undefined,
+      sort: sortOrder.value,
+    }
+    const { data } = await reviewApi.dishReviews(dishId, params)
     reviewsData.value = data.data
   } catch (err) {
     console.error('Failed to load reviews', err)
   } finally {
     loadingReviews.value = false
+  }
+}
+
+function selectFilterRating(rating) {
+  if (selectedRatingFilter.value === rating) {
+    selectedRatingFilter.value = ''
+  } else {
+    selectedRatingFilter.value = rating
+  }
+  if (dish.value?.id) fetchReviews(dish.value.id)
+}
+
+function toggleWithImagesOnly() {
+  withImagesOnly.value = !withImagesOnly.value
+  if (dish.value?.id) fetchReviews(dish.value.id)
+}
+
+function changeSortOrder(order) {
+  sortOrder.value = order
+  if (dish.value?.id) fetchReviews(dish.value.id)
+}
+
+async function handleFileUpload(event) {
+  const files = Array.from(event.target.files || [])
+  if (!files.length) return
+  if (uploadedImages.value.length + files.length > 5) {
+    ui.toast('Maximum 5 images allowed per review', 'warning')
+    return
+  }
+  uploadingImages.value = true
+  try {
+    for (const file of files) {
+      const res = await adminApi.uploadImage(file, 'reviews')
+      if (res.data?.data?.url) {
+        uploadedImages.value.push(res.data.data.url)
+      }
+    }
+    ui.toast('Photo uploaded successfully', 'success')
+  } catch (e) {
+    ui.toast('Failed to upload image', 'error')
+  } finally {
+    uploadingImages.value = false
+    event.target.value = ''
+  }
+}
+
+function removeImage(index) {
+  uploadedImages.value.splice(index, 1)
+}
+
+async function toggleHelpful(rev) {
+  const prevLiked = rev.is_helpful_by_me
+  const prevCount = rev.helpful_count || 0
+  rev.is_helpful_by_me = !prevLiked
+  rev.helpful_count = prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1
+
+  try {
+    const { data } = await reviewApi.toggleHelpful(rev.id)
+    rev.is_helpful_by_me = data.data.is_helpful
+    rev.helpful_count = data.data.helpful_count
+  } catch {
+    rev.is_helpful_by_me = prevLiked
+    rev.helpful_count = prevCount
   }
 }
 
@@ -140,11 +220,15 @@ async function handleReviewSubmit() {
     await reviewApi.submit({
       dish_id: dish.value.id,
       rating:  newRating.value,
+      title:   newTitle.value.trim() || null,
       comment: newComment.value.trim() || null,
+      images:  uploadedImages.value.length ? uploadedImages.value : null,
     })
 
     ui.toast('Thank you! Your review has been submitted successfully.', 'success')
+    newTitle.value = ''
     newComment.value = ''
+    uploadedImages.value = []
     newRating.value = 0
     showReviewForm.value = false
 
@@ -407,6 +491,21 @@ function getInitials(name) {
                 </div>
               </div>
 
+              <!-- Title Field -->
+              <div>
+                <label for="review-title" class="block text-xs font-semibold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-2">
+                  {{ $t('dish.reviewTitle') }}
+                </label>
+                <input
+                  id="review-title"
+                  v-model="newTitle"
+                  type="text"
+                  maxlength="120"
+                  :placeholder="$t('dish.reviewTitlePlaceholder')"
+                  class="input w-full text-sm p-3.5 rounded-2xl"
+                />
+              </div>
+
               <!-- Comment Field -->
               <div>
                 <label for="review-comment" class="block text-xs font-semibold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-2">
@@ -423,6 +522,52 @@ function getInitials(name) {
                 <div class="text-right text-xs text-warm-400 mt-1">
                   {{ newComment.length }}/1000 {{ $t('dish.characters') }}
                 </div>
+              </div>
+
+              <!-- Photo Upload Area -->
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-warm-500 dark:text-warm-400 mb-2">
+                  {{ $t('dish.uploadPhotos') }}
+                </label>
+                <div class="flex flex-wrap items-center gap-3">
+                  <!-- Image Previews -->
+                  <div
+                    v-for="(img, idx) in uploadedImages"
+                    :key="idx"
+                    class="relative w-20 h-20 rounded-2xl overflow-hidden border border-warm-200 dark:border-warm-700 group shadow-sm"
+                  >
+                    <img :src="img" alt="Review Photo" class="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      @click="removeImage(idx)"
+                      class="absolute top-1 right-1 p-1 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
+                      title="Remove photo"
+                    >
+                      <X :size="12" />
+                    </button>
+                  </div>
+
+                  <!-- Upload Button Dropzone -->
+                  <label
+                    v-if="uploadedImages.length < 5"
+                    class="w-20 h-20 border-2 border-dashed border-warm-300 dark:border-warm-700 hover:border-amber-400 dark:hover:border-amber-400 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors text-warm-500 hover:text-amber-500 bg-warm-50/50 dark:bg-warm-800/40"
+                  >
+                    <Loader2 v-if="uploadingImages" :size="20" class="animate-spin text-amber-500" />
+                    <template v-else>
+                      <Camera :size="20" />
+                      <span class="text-[10px] mt-1 font-medium">{{ uploadedImages.length }}/5</span>
+                    </template>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      class="hidden"
+                      :disabled="uploadingImages"
+                      @change="handleFileUpload"
+                    />
+                  </label>
+                </div>
+                <p class="text-[11px] text-warm-400 mt-1.5">{{ $t('dish.uploadPhotosPrompt') }}</p>
               </div>
 
               <!-- Submit Button -->
@@ -499,6 +644,72 @@ function getInitials(name) {
             </div>
           </div>
 
+          <!-- Reviews Filter & Sort Toolbar -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 p-3 bg-white dark:bg-warm-900/60 rounded-2xl border border-warm-200/60 dark:border-warm-800">
+            <!-- Rating filter pills -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                @click="selectFilterRating('')"
+                :class="[
+                  'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all',
+                  !selectedRatingFilter
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-300 hover:bg-warm-200'
+                ]"
+              >
+                {{ $t('dish.filterAll') }}
+              </button>
+              <button
+                v-for="r in [5, 4, 3, 2, 1]"
+                :key="r"
+                type="button"
+                @click="selectFilterRating(String(r))"
+                :class="[
+                  'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all',
+                  selectedRatingFilter === String(r)
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-300 hover:bg-warm-200'
+                ]"
+              >
+                <span>{{ r }}</span>
+                <Star :size="12" class="fill-current text-current" />
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2 self-end sm:self-auto">
+              <!-- Photos only toggle -->
+              <button
+                type="button"
+                @click="toggleWithImagesOnly"
+                :class="[
+                  'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border',
+                  withImagesOnly
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40'
+                    : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 border-transparent hover:bg-warm-200'
+                ]"
+              >
+                <ImageIcon :size="13" />
+                <span>{{ $t('dish.withPhotosOnly') }}</span>
+              </button>
+
+              <!-- Sort dropdown -->
+              <div class="flex items-center gap-1 text-xs">
+                <ArrowUpDown :size="13" class="text-warm-400 shrink-0" />
+                <select
+                  :value="sortOrder"
+                  @change="changeSortOrder($event.target.value)"
+                  class="input py-1 px-2.5 text-xs rounded-xl bg-warm-50 dark:bg-warm-800"
+                >
+                  <option value="latest">{{ $t('dish.sortLatest') }}</option>
+                  <option value="rating_desc">{{ $t('dish.sortHighest') }}</option>
+                  <option value="rating_asc">{{ $t('dish.sortLowest') }}</option>
+                  <option value="helpful">{{ $t('dish.sortHelpful') }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <!-- Reviews List -->
           <div v-if="loadingReviews" class="space-y-4">
             <div v-for="i in 3" :key="i" class="card p-5 space-y-3">
@@ -526,9 +737,18 @@ function getInitials(name) {
                     {{ getInitials(rev.user?.name) }}
                   </div>
                   <div>
-                    <h4 class="font-heading font-semibold text-sm text-warm-900 dark:text-white">
-                      {{ rev.user?.name || $t('dish.verifiedDiner') }}
-                    </h4>
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-heading font-semibold text-sm text-warm-900 dark:text-white">
+                        {{ rev.user?.name || $t('dish.verifiedDiner') }}
+                      </h4>
+                      <span
+                        v-if="rev.order?.order_number"
+                        class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-500/20"
+                      >
+                        <ShieldCheck :size="12" />
+                        {{ $t('dish.verifiedOrder', { order: rev.order.order_number }) }}
+                      </span>
+                    </div>
                     <span class="text-xs text-warm-400">
                       {{ formatDate(rev.created_at) }}
                     </span>
@@ -547,13 +767,67 @@ function getInitials(name) {
                 </div>
               </div>
 
+              <!-- Title -->
+              <h5 v-if="rev.title" class="font-heading font-bold text-sm text-warm-900 dark:text-white mb-1.5 pl-13">
+                {{ rev.title }}
+              </h5>
+
               <!-- Comment Body -->
               <p v-if="rev.comment" class="text-sm text-warm-700 dark:text-warm-300 leading-relaxed pl-13">
                 {{ rev.comment }}
               </p>
-              <p v-else class="text-xs text-warm-400 italic pl-13">
+              <p v-else-if="!rev.title" class="text-xs text-warm-400 italic pl-13">
                 {{ $t('dish.ratedWithoutComment', { rating: rev.rating }) }}
               </p>
+
+              <!-- Attached Photos Gallery -->
+              <div v-if="rev.images && rev.images.length" class="flex flex-wrap gap-2.5 mt-3 pl-13">
+                <button
+                  v-for="(img, idx) in rev.images"
+                  :key="idx"
+                  type="button"
+                  @click="lightboxImage = img"
+                  class="w-16 h-16 rounded-xl overflow-hidden border border-warm-200 dark:border-warm-700 hover:scale-105 transition-transform cursor-zoom-in"
+                >
+                  <img :src="img" :alt="`Review photo ${idx + 1}`" class="w-full h-full object-cover" />
+                </button>
+              </div>
+
+              <!-- Helpful Counter & Action -->
+              <div class="mt-4 pl-13 flex items-center justify-between">
+                <button
+                  type="button"
+                  @click="toggleHelpful(rev)"
+                  :class="[
+                    'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all',
+                    rev.is_helpful_by_me
+                      ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
+                      : 'text-warm-500 hover:bg-warm-100 dark:hover:bg-warm-800'
+                  ]"
+                >
+                  <ThumbsUp :size="13" :class="{ 'fill-current': rev.is_helpful_by_me }" />
+                  <span>{{ rev.helpful_count > 0 ? $t('dish.helpfulMarked', { count: rev.helpful_count }) : $t('dish.helpfulBtn') }}</span>
+                </button>
+              </div>
+
+              <!-- Management Official Reply Card -->
+              <div
+                v-if="rev.admin_reply"
+                class="mt-4 ml-13 p-4 rounded-2xl bg-gradient-to-r from-amber-500/5 to-primary-500/5 border border-amber-500/20 text-xs space-y-1.5"
+              >
+                <div class="flex items-center justify-between font-semibold text-amber-700 dark:text-amber-400">
+                  <span class="flex items-center gap-1.5">
+                    <Sparkles :size="13" />
+                    {{ $t('dish.managementReply') }}
+                  </span>
+                  <span v-if="rev.replied_at" class="text-[11px] font-normal text-warm-400">
+                    {{ formatDate(rev.replied_at) }}
+                  </span>
+                </div>
+                <p class="text-warm-700 dark:text-warm-300 leading-relaxed">
+                  {{ rev.admin_reply }}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -624,6 +898,25 @@ function getInitials(name) {
         >
           {{ $t('dish.addToCart') }}
         </AppButton>
+      </div>
+    </div>
+
+    <!-- Photo Lightbox Modal -->
+    <div
+      v-if="lightboxImage"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      @click.self="lightboxImage = null"
+    >
+      <div class="relative max-w-3xl max-h-[90vh] bg-warm-900 rounded-3xl overflow-hidden shadow-2xl border border-warm-700">
+        <button
+          type="button"
+          @click="lightboxImage = null"
+          class="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/60 hover:bg-black/90 text-white transition-colors"
+          aria-label="Close photo preview"
+        >
+          <X :size="20" />
+        </button>
+        <img :src="lightboxImage" alt="Enlarged photo" class="max-w-full max-h-[85vh] object-contain mx-auto" />
       </div>
     </div>
   </DefaultLayout>

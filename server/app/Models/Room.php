@@ -15,7 +15,7 @@ class Room extends Model
     protected $fillable = [
         'hotel_id', 'room_number', 'type', 'capacity',
         'price_per_night', 'qr_token', 'amenities',
-        'image', 'status', 'is_active',
+        'image', 'status', 'is_active', 'avg_rating', 'reviews_count',
     ];
 
     protected function casts(): array
@@ -24,6 +24,8 @@ class Room extends Model
             'amenities'       => 'array',
             'price_per_night' => 'decimal:2',
             'is_active'       => 'boolean',
+            'avg_rating'      => 'float',
+            'reviews_count'   => 'integer',
         ];
     }
 
@@ -42,11 +44,28 @@ class Room extends Model
         return $this->hasMany(RoomBooking::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function activeBooking(): ?RoomBooking
     {
         return $this->bookings()
             ->whereIn('status', ['confirmed', 'checked_in'])
             ->latest()
             ->first();
+    }
+
+    public static function recalculateRating(int $roomId): void
+    {
+        $approved = Review::where('room_id', $roomId)->where('is_approved', true);
+        $count = $approved->count();
+        $avg = $count > 0 ? round($approved->avg('rating'), 1) : 0;
+
+        static::withoutGlobalScopes()->where('id', $roomId)->update([
+            'avg_rating'    => $avg,
+            'reviews_count' => $count,
+        ]);
     }
 }

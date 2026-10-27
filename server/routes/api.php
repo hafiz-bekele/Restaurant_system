@@ -53,8 +53,11 @@ Route::prefix('v1')->group(function () {
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/{category}', [CategoryController::class, 'show']);
     Route::get('dishes/featured', [DishController::class, 'featured']);
-    Route::get('dishes/{slug}', [DishController::class, 'show']);
     Route::get('dishes/{dish}/reviews', [ReviewController::class, 'dishReviews']);
+    Route::get('dishes/{slug}', [DishController::class, 'show']);
+    Route::get('rooms/{room}/reviews', [ReviewController::class, 'roomReviews']);
+    Route::get('reviews/featured', [ReviewController::class, 'featuredReviews']);
+    Route::post('reviews/{review}/helpful', [ReviewController::class, 'toggleHelpful']);
     Route::get('dishes', [DishController::class, 'index']);
     Route::get('search', [DishController::class, 'search']);
 
@@ -126,6 +129,8 @@ Route::prefix('v1')->group(function () {
         Route::delete('favorites/{dishId}', [FavoriteController::class, 'destroy']);
         Route::get('reviews/my', [ReviewController::class, 'myReviews']);
         Route::post('reviews', [ReviewController::class, 'store']);
+        Route::put('reviews/{review}', [ReviewController::class, 'update']);
+        Route::delete('reviews/{review}', [ReviewController::class, 'destroy']);
         Route::post('upload/image', [UploadController::class, 'uploadImage']);
 
         // Staff — kitchen (REQ-8.x)
@@ -191,6 +196,9 @@ Route::prefix('v1')->group(function () {
             // Reviews Moderation
             Route::get('reviews', [AdminReviewController::class, 'index']);
             Route::patch('reviews/{review}', [AdminReviewController::class, 'update']);
+            Route::post('reviews/{review}/reply', [AdminReviewController::class, 'reply']);
+            Route::delete('reviews/{review}/reply', [AdminReviewController::class, 'deleteReply']);
+            Route::post('reviews/bulk', [AdminReviewController::class, 'bulkAction']);
             Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy']);
 
             // Orders

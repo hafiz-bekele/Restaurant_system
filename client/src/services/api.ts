@@ -136,7 +136,12 @@ export const profileApi = {
 // Reviews
 export const reviewApi = {
   dishReviews:   (dishId: number | string, params?: Record<string, any>) => api.get(`/dishes/${dishId}/reviews`, { params }),
+  roomReviews:   (roomId: number | string, params?: Record<string, any>) => api.get(`/rooms/${roomId}/reviews`, { params }),
+  featured:      (params?: Record<string, any>) => api.get('/reviews/featured', { params }),
   submit:        (data: Record<string, any>) => api.post('/reviews', data),
+  update:        (id: number | string, data: Record<string, any>) => api.put(`/reviews/${id}`, data),
+  delete:        (id: number | string) => api.delete(`/reviews/${id}`),
+  toggleHelpful: (id: number | string) => api.post(`/reviews/${id}/helpful`),
   myReviews:     (params?: Record<string, any>) => api.get('/reviews/my', { params }),
 }
 
@@ -308,6 +313,9 @@ export const adminApi = {
   // Reviews Moderation
   reviews:            (params?: Record<string, any>) => api.get('/admin/reviews', { params }),
   updateReview:       (id: number | string, data: Record<string, any>) => api.patch(`/admin/reviews/${id}`, data),
+  replyReview:        (id: number | string, reply: string) => api.post(`/admin/reviews/${id}/reply`, { admin_reply: reply }),
+  deleteReviewReply:  (id: number | string)          => api.delete(`/admin/reviews/${id}/reply`),
+  bulkReviews:        (action: string, ids: (number | string)[]) => api.post('/admin/reviews/bulk', { action, ids }),
   deleteReview:       (id: number | string)          => api.delete(`/admin/reviews/${id}`),
 
   // File Upload
